@@ -1400,9 +1400,6 @@ function KolonnenView({ kolonnen, projekt }) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// TAGEBUCH (mit Supabase)
-// ════════════════════════════════════════════════════════════════════════════
-// ════════════════════════════════════════════════════════════════════════════
 // DIKTIERFUNKTION – Web Speech API
 // ════════════════════════════════════════════════════════════════════════════
 function DiktierFeld({ label, value, rows = 3, onChange }) {
@@ -1536,6 +1533,7 @@ function DiktierFeld({ label, value, rows = 3, onChange }) {
 // ════════════════════════════════════════════════════════════════════════════
 // TAGEBUCH (mit Supabase + Foto-Upload + Diktat)
 // ════════════════════════════════════════════════════════════════════════════
+function TagesbuchView({ berichte, setBerichte, sbConnected }) {
   const [open,       setOpen]       = useState(false);
   const [detail,     setDetail]     = useState(null); // Bericht-Detailansicht
   const [form,       setForm]       = useState({ taetigkeit:"", besonderheiten:"", material:"", arbeiter:0, maengel:0 });
