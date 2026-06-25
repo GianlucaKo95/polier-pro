@@ -1,0 +1,43 @@
+{
+  "name": "Polier Pro – Baustellenmanagement",
+  "short_name": "Polier Pro",
+  "description": "Baustellenmanagement für Poliere im Hoch- und Tiefbau",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#1C2027",
+  "theme_color": "#F5C400",
+  "lang": "de",
+  "permissions": ["microphone"],
+  "icons": [
+    { "src": "/icons/icon-72.png",   "sizes": "72x72",   "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-96.png",   "sizes": "96x96",   "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-128.png",  "sizes": "128x128", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-144.png",  "sizes": "144x144", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-152.png",  "sizes": "152x152", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-192.png",  "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-384.png",  "sizes": "384x384", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-512.png",  "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "screenshots": [
+    { "src": "/screenshots/dashboard.png", "sizes": "390x844", "type": "image/png", "form_factor": "narrow", "label": "Baustellen-Dashboard" },
+    { "src": "/screenshots/felder.png",    "sizes": "390x844", "type": "image/png", "form_factor": "narrow", "label": "Betonfeld-Planer" }
+  ],
+  "categories": ["business", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Neue Baustelle",
+      "short_name": "Neu",
+      "description": "Neue Baustelle anlegen",
+      "url": "/?action=neue-baustelle",
+      "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Tagesbericht",
+      "short_name": "Bericht",
+      "description": "Neuen Tagesbericht erfassen",
+      "url": "/?action=neuer-bericht",
+      "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96" }]
+    }
+  ]
+}

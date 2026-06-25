@@ -1,0 +1,25 @@
+name: "Polier Pro"
+description: "Baustellenmanagement für Poliere – Betonfelder, Kolonnen, Tagesberichte"
+version: "1.0.0"
+slug: "polier_pro"
+init: false
+arch:
+  - aarch64
+  - amd64
+  - armhf
+  - armv7
+  - i386
+startup: application
+boot: auto
+ports:
+  3000/tcp: 3000
+ports_description:
+  3000/tcp: "Polier Pro Web-Interface"
+panel_icon: "mdi:hard-hat"
+panel_title: "Polier Pro"
+panel_admin: true
+homeassistant_api: false
+hassio_api: false
+options: {}
+schema: {}
+image: "ghcr.io/GianlucaKo95/polier-pro-addon/{arch}"

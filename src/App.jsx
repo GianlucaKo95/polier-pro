@@ -1,0 +1,4192 @@
+import { useState, useEffect, useRef } from "react";
+
+// ─── Design Tokens ───────────────────────────────────────────────────────────
+const C = {
+  bg:           "#1C2027",
+  bgMid:        "#252B35",
+  bgLight:      "#2E3541",
+  bgFaint:      "#3A3F4A",
+  gelb:         "#F5C400",
+  beton:        "#8A8F99",
+  betonLight:   "#BEC3CC",
+  gruen:        "#2EAF6A",
+  rot:          "#D94040",
+  rost:         "#C45C2A",
+  blau:         "#4A9EE0",
+  text:         "#E8EBF0",
+  muted:        "#9AA0AE",
+};
+
+// ─── Supabase Config ─────────────────────────────────────────────────────────
+// Ersetze diese Werte mit deinen echten Supabase-Credentials
+const SUPABASE_URL = "https://DEIN-PROJEKT.supabase.co";
+const SUPABASE_ANON_KEY = "DEIN-ANON-KEY";
+
+async function sbFetch(path, opts = {}) {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+      headers: {
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        "Content-Type": "application/json",
+        "Prefer": "return=representation",
+        ...opts.headers,
+      },
+      ...opts,
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
+// ─── Fallback Mock Data (wenn Supabase nicht konfiguriert) ───────────────────
+const MOCK_FELDER = [
+  { id: 1, name: "A1 – Fundament Nord",    status: "done",        m2: 48,  geplant: "2025-06-10", betoniert: "2025-06-10", dauer_tage: 1, festigkeit: 98 },
+  { id: 2, name: "A2 – Fundament Ost",     status: "done",        m2: 52,  geplant: "2025-06-12", betoniert: "2025-06-12", dauer_tage: 1, festigkeit: 87 },
+  { id: 3, name: "B1 – Bodenplatte Mitte", status: "in_progress", m2: 120, geplant: "2025-06-22", betoniert: null,         dauer_tage: 2, festigkeit: null },
+  { id: 4, name: "B2 – Bodenplatte West",  status: "planned",     m2: 135, geplant: "2025-06-25", betoniert: null,         dauer_tage: 2, festigkeit: null },
+  { id: 5, name: "C1 – Wand EG Nord",      status: "planned",     m2: 64,  geplant: "2025-07-01", betoniert: null,         dauer_tage: 1, festigkeit: null },
+  { id: 6, name: "C2 – Wand EG Ost",       status: "planned",     m2: 60,  geplant: "2025-07-03", betoniert: null,         dauer_tage: 1, festigkeit: null },
+  { id: 7, name: "D1 – Decke EG",          status: "blocked",     m2: 280, geplant: "2025-07-10", betoniert: null,         dauer_tage: 3, festigkeit: null },
+];
+
+const MOCK_KOLONNEN = [
+  { id: 1, name: "Kolonne Huber", vorarbeiter: "Thomas Huber", einsatz: "B1 – Bodenplatte Mitte", stunden: 7.5,
+    mitarbeiter: [
+      { id: 101, name: "Thomas Huber",   rolle: "Vorarbeiter", erfasstIdent: null },
+      { id: 102, name: "Klaus Bauer",    rolle: "Facharbeiter", erfasstIdent: null },
+      { id: 103, name: "Ali Yilmaz",     rolle: "Facharbeiter", erfasstIdent: null },
+      { id: 104, name: "Stefan Müller",  rolle: "Helfer",       erfasstIdent: null },
+    ]
+  },
+  { id: 2, name: "Kolonne Meier", vorarbeiter: "Maria Meier", einsatz: "Schalung C1", stunden: 8,
+    mitarbeiter: [
+      { id: 201, name: "Maria Meier",    rolle: "Vorarbeiter", erfasstIdent: null },
+      { id: 202, name: "Peter Schmidt",  rolle: "Facharbeiter", erfasstIdent: null },
+      { id: 203, name: "Jan Fischer",    rolle: "Facharbeiter", erfasstIdent: null },
+    ]
+  },
+  { id: 3, name: "Kolonne Schmidt", vorarbeiter: "Hans Schmidt", einsatz: "Bewehrung B2", stunden: 6,
+    mitarbeiter: [
+      { id: 301, name: "Hans Schmidt",   rolle: "Vorarbeiter", erfasstIdent: null },
+      { id: 302, name: "Ozan Demir",     rolle: "Facharbeiter", erfasstIdent: null },
+      { id: 303, name: "Felix Wagner",   rolle: "Facharbeiter", erfasstIdent: null },
+      { id: 304, name: "Lukas Brand",    rolle: "Facharbeiter", erfasstIdent: null },
+      { id: 305, name: "Max Richter",    rolle: "Helfer",       erfasstIdent: null },
+    ]
+  },
+];
+
+const MOCK_BERICHTE = [
+  { id: 1, datum: "22.06.2025", wetter: "☀️ 14°C", arbeiter: 12, taetigkeit: "Betonage B1 gestartet, 60m² abgeschlossen. Schalung C1 aufgebaut.", maengel: 0 },
+  { id: 2, datum: "21.06.2025", wetter: "⛅ 13°C", arbeiter: 10, taetigkeit: "Bewehrungsarbeiten B1 abgeschlossen. Betonierplan freigegeben.",      maengel: 1 },
+  { id: 3, datum: "20.06.2025", wetter: "🌧️ 9°C",  arbeiter: 8,  taetigkeit: "Schlechtwettertag. Nur Innenarbeiten. Schalung A2 ausgeschalt.",      maengel: 0 },
+];
+
+// ─── Wetter Utilities ────────────────────────────────────────────────────────
+const WMO_ICONS = {
+  0:"☀️",1:"🌤️",2:"⛅",3:"☁️",
+  45:"🌫️",48:"🌫️",
+  51:"🌦️",53:"🌦️",55:"🌧️",
+  61:"🌧️",63:"🌧️",65:"🌧️",
+  71:"🌨️",73:"🌨️",75:"❄️",
+  80:"🌦️",81:"🌧️",82:"⛈️",
+  95:"⛈️",96:"⛈️",99:"⛈️",
+};
+function wmoIcon(code) { return WMO_ICONS[code] || "🌡️"; }
+
+function betonCheck(w) {
+  const warn = [];
+  if (!w) return warn;
+  if (w.temp < 5)    warn.push("🚫 Temperatur unter 5°C – Frostschutzmaßnahmen erforderlich");
+  if (w.temp > 30)   warn.push("⚠️ Hitze über 30°C – Nachbehandlung intensivieren");
+  if (w.wind > 40)   warn.push("🚫 Wind über 40 km/h – Betonage nicht empfohlen");
+  if (w.rain > 5)    warn.push("🚫 Starkregen – Betonage stoppen");
+  if (w.humidity>90) warn.push("⚠️ Sehr hohe Luftfeuchtigkeit");
+  return warn;
+}
+
+// ─── Gantt Utilities ─────────────────────────────────────────────────────────
+function addDays(dateStr, n) {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + n);
+  return d;
+}
+function daysBetween(a, b) {
+  return Math.round((new Date(b) - new Date(a)) / 86400000);
+}
+function fmt(dateStr) {
+  const d = new Date(dateStr);
+  return `${d.getDate().toString().padStart(2,"0")}.${(d.getMonth()+1).toString().padStart(2,"0")}`;
+}
+
+// ─── Status Helpers ───────────────────────────────────────────────────────────
+const STATUS_COLOR = { done:"#2EAF6A", in_progress:"#F5C400", planned:"#8A8F99", blocked:"#D94040" };
+const STATUS_LABEL = { done:"✅ Fertig", in_progress:"🔄 Läuft", planned:"📅 Geplant", blocked:"🚫 Blockiert" };
+
+// ════════════════════════════════════════════════════════════════════════════
+// WEATHER COMPONENT (Open-Meteo API)
+// ════════════════════════════════════════════════════════════════════════════
+function WeatherView({ compact = false }) {
+  const [weather, setWeather] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [loc, setLoc] = useState({ lat: 48.137, lon: 11.576, name: "München" });
+
+  useEffect(() => {
+    fetchWeather(loc.lat, loc.lon);
+  }, [loc.lat, loc.lon]);
+
+  async function fetchWeather(lat, lon) {
+    setLoading(true);
+    try {
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
+        + `&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,weather_code`
+        + `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code`
+        + `&timezone=Europe%2FBerlin&forecast_days=7`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const cur = data.current;
+      setWeather({
+        temp:     Math.round(cur.temperature_2m),
+        humidity: cur.relative_humidity_2m,
+        rain:     cur.precipitation,
+        wind:     Math.round(cur.wind_speed_10m),
+        icon:     wmoIcon(cur.weather_code),
+        forecast: data.daily.time.slice(0,7).map((day,i) => ({
+          day:  ["So","Mo","Di","Mi","Do","Fr","Sa"][new Date(day).getDay()],
+          date: day,
+          max:  Math.round(data.daily.temperature_2m_max[i]),
+          min:  Math.round(data.daily.temperature_2m_min[i]),
+          rain: data.daily.precipitation_sum[i],
+          icon: wmoIcon(data.daily.weather_code[i]),
+        })),
+      });
+    } catch (e) {
+      setWeather(null);
+    }
+    setLoading(false);
+  }
+
+  const warn = betonCheck(weather);
+  const ok = warn.length === 0;
+
+  if (loading) return (
+    <div style={{ background: C.bgMid, borderRadius: 12, padding: 20, textAlign:"center", color: C.muted }}>
+      ⏳ Wetterdaten werden geladen…
+    </div>
+  );
+
+  if (!weather) return (
+    <div style={{ background: C.bgMid, borderRadius: 12, padding: 20, textAlign:"center", color: C.rot }}>
+      ❌ Wetterdaten nicht verfügbar
+    </div>
+  );
+
+  if (compact) return (
+    <div style={{ background: C.bgMid, borderRadius: 12, padding: "14px 16px", border: `1px solid ${ok ? C.gruen : C.rost}`, marginBottom: 14 }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+        <div>
+          <div style={{ color: C.muted, fontSize: 11, textTransform:"uppercase", letterSpacing:1 }}>{loc.name}</div>
+          <div style={{ color: C.text, fontSize: 26, fontWeight: 700 }}>{weather.icon} {weather.temp}°C</div>
+          <div style={{ color: C.muted, fontSize: 12 }}>💨 {weather.wind} km/h · 💧 {weather.humidity}% · 🌧️ {weather.rain}mm</div>
+        </div>
+        <div style={{ background: ok ? C.gruen : C.rost, color:"#fff", borderRadius:8, padding:"8px 14px", fontWeight:700, fontSize:13, textAlign:"center" }}>
+          {ok ? "✅ Betonage\nmöglich" : "⚠️ Prüfen"}
+        </div>
+      </div>
+      {warn.length > 0 && (
+        <div style={{ background:"#3A1A1A", borderRadius:8, padding:"8px 12px", marginTop:10 }}>
+          {warn.map((w,i) => <div key={i} style={{ color:"#FF9999", fontSize:12 }}>{w}</div>)}
+        </div>
+      )}
+      <div style={{ display:"flex", gap:6, marginTop:10, overflowX:"auto" }}>
+        {weather.forecast.map((f,i) => (
+          <div key={i} style={{ minWidth:46, background: C.bgLight, borderRadius:8, padding:"6px 4px", textAlign:"center",
+            border: betonCheck({temp:f.max,wind:0,rain:f.rain,humidity:70}).length > 0 ? `1px solid ${C.rost}` : "none" }}>
+            <div style={{ color: C.muted, fontSize:10 }}>{f.day}</div>
+            <div style={{ fontSize:16 }}>{f.icon}</div>
+            <div style={{ color: C.text, fontSize:11, fontWeight:600 }}>{f.max}°</div>
+            {f.rain > 0 && <div style={{ color:"#6CA8FF", fontSize:10 }}>{f.rain}mm</div>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // Full weather view
+  return (
+    <div>
+      <div style={{ background: C.bgMid, borderRadius:12, padding:18, border:`1px solid ${ok ? C.gruen : C.rost}`, marginBottom:14 }}>
+        <div style={{ color: C.muted, fontSize:11, textTransform:"uppercase", letterSpacing:1, marginBottom:4 }}>📍 {loc.name} · Live-Wetter</div>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+          <div>
+            <div style={{ color: C.text, fontSize:42, fontWeight:800 }}>{weather.icon} {weather.temp}°C</div>
+            <div style={{ color: C.muted, fontSize:13, marginTop:4 }}>
+              💨 {weather.wind} km/h Wind &nbsp;|&nbsp; 💧 {weather.humidity}% Feuchte &nbsp;|&nbsp; 🌧️ {weather.rain} mm
+            </div>
+          </div>
+        </div>
+        <div style={{ background: ok ? "#1A3A28" : "#3A1A1A", borderRadius:10, padding:14, marginTop:14 }}>
+          <div style={{ color: ok ? C.gruen : C.rot, fontWeight:700, fontSize:15, marginBottom: warn.length ? 8 : 0 }}>
+            {ok ? "✅ Betonage heute möglich" : "🚫 Betonage eingeschränkt"}
+          </div>
+          {warn.map((w,i) => <div key={i} style={{ color:"#FF9999", fontSize:13, marginTop:4 }}>{w}</div>)}
+        </div>
+      </div>
+
+      {/* Checkliste */}
+      <div style={{ background: C.bgMid, borderRadius:12, padding:16, marginBottom:14 }}>
+        <div style={{ color: C.gelb, fontWeight:700, marginBottom:12 }}>🧱 Betonier-Checkliste</div>
+        {[
+          ["Temperatur",    `${weather.temp}°C`,        weather.temp >= 5 && weather.temp <= 30, "5°C – 30°C"],
+          ["Wind",          `${weather.wind} km/h`,     weather.wind <= 40,                      "max. 40 km/h"],
+          ["Niederschlag",  `${weather.rain} mm`,       weather.rain <= 5,                       "max. 5 mm"],
+          ["Luftfeuchte",   `${weather.humidity}%`,     weather.humidity <= 90,                  "max. 90%"],
+        ].map(([k,v,ok,limit]) => (
+          <div key={k} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 0", borderBottom:`1px solid ${C.bgFaint}` }}>
+            <div>
+              <div style={{ color: C.betonLight, fontSize:14 }}>{k}</div>
+              <div style={{ color: C.muted, fontSize:11 }}>Grenzwert: {limit}</div>
+            </div>
+            <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+              <span style={{ color: C.text, fontWeight:700 }}>{v}</span>
+              <span style={{ fontSize:18 }}>{ok ? "✅" : "🚫"}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* 7-Tage */}
+      <div style={{ background: C.bgMid, borderRadius:12, padding:16 }}>
+        <div style={{ color: C.gelb, fontWeight:700, marginBottom:12 }}>📅 7-Tage Betonierplan</div>
+        {weather.forecast.map((f,i) => {
+          const dayWarn = betonCheck({ temp:f.max, wind:30, rain:f.rain, humidity:70 });
+          const dayOk = dayWarn.length === 0;
+          return (
+            <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+              padding:"10px 12px", borderRadius:8, marginBottom:6,
+              background: dayOk ? "#1A2E1E" : "#2E1A1A",
+              border: `1px solid ${dayOk ? C.gruen : C.rot}` }}>
+              <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                <span style={{ fontSize:20 }}>{f.icon}</span>
+                <div>
+                  <div style={{ color: C.text, fontWeight:600, fontSize:13 }}>{f.day} · {new Date(f.date).getDate()}.{(new Date(f.date).getMonth()+1).toString().padStart(2,"0")}.</div>
+                  <div style={{ color: C.muted, fontSize:11 }}>{f.min}° – {f.max}° · {f.rain > 0 ? `🌧️ ${f.rain}mm` : "kein Regen"}</div>
+                </div>
+              </div>
+              <div style={{ color: dayOk ? C.gruen : C.rot, fontWeight:700, fontSize:12 }}>
+                {dayOk ? "✅ OK" : "🚫 Nein"}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// GANTT CHART
+// ════════════════════════════════════════════════════════════════════════════
+function GanttView({ felder }) {
+  const heute = new Date("2025-06-22");
+  const startDate = new Date("2025-06-08");
+  const endDate = new Date("2025-07-20");
+  const totalDays = daysBetween(startDate.toISOString().slice(0,10), endDate.toISOString().slice(0,10));
+  const scrollRef = useRef(null);
+
+  // Scroll to today on mount
+  useEffect(() => {
+    if (scrollRef.current) {
+      const todayOffset = daysBetween(startDate.toISOString().slice(0,10), heute.toISOString().slice(0,10));
+      scrollRef.current.scrollLeft = todayOffset * 28 - 60;
+    }
+  }, []);
+
+  // Generate day headers
+  const days = [];
+  for (let i = 0; i <= totalDays; i++) {
+    const d = new Date(startDate);
+    d.setDate(d.getDate() + i);
+    days.push(d);
+  }
+
+  const todayOffset = daysBetween(startDate.toISOString().slice(0,10), heute.toISOString().slice(0,10));
+  const DAY_W = 28;
+
+  return (
+    <div>
+      <div style={{ color: C.text, fontWeight:700, marginBottom:12 }}>📅 Betonfeld-Terminplan</div>
+
+      {/* Legend */}
+      <div style={{ display:"flex", gap:12, marginBottom:12, flexWrap:"wrap" }}>
+        {Object.entries(STATUS_LABEL).map(([k,v]) => (
+          <div key={k} style={{ display:"flex", alignItems:"center", gap:5, fontSize:11 }}>
+            <div style={{ width:10, height:10, borderRadius:2, background: STATUS_COLOR[k] }} />
+            <span style={{ color: C.muted }}>{v.split(" ")[1]}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Scrollable Gantt */}
+      <div style={{ background: C.bgMid, borderRadius:12, overflow:"hidden" }}>
+        <div ref={scrollRef} style={{ overflowX:"auto" }}>
+          <div style={{ minWidth: (totalDays + 1) * DAY_W + 130 }}>
+
+            {/* Header row */}
+            <div style={{ display:"flex", borderBottom:`1px solid ${C.bgFaint}` }}>
+              <div style={{ width:130, minWidth:130, padding:"8px 10px", color: C.muted, fontSize:11, borderRight:`1px solid ${C.bgFaint}` }}>Feld</div>
+              {days.map((d,i) => {
+                const isToday = d.toDateString() === heute.toDateString();
+                const isMon = d.getDay() === 1;
+                const isSun = d.getDay() === 0;
+                return (
+                  <div key={i} style={{
+                    width: DAY_W, minWidth: DAY_W, textAlign:"center", padding:"4px 0",
+                    background: isToday ? C.gelb+"33" : isSun ? C.bgLight : "transparent",
+                    borderRight: isMon ? `1px solid ${C.bgFaint}` : "none",
+                  }}>
+                    {(isMon || isToday) && (
+                      <div style={{ color: isToday ? C.gelb : C.muted, fontSize:9, fontWeight: isToday ? 700 : 400 }}>
+                        {isToday ? "●" : `${d.getDate()}.${(d.getMonth()+1).toString().padStart(2,"0")}`}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Felder rows */}
+            {felder.map(f => {
+              const startOff = daysBetween(startDate.toISOString().slice(0,10), f.geplant);
+              const dur = f.dauer_tage || 1;
+              const isLate = f.status !== "done" && new Date(f.geplant) < heute;
+              return (
+                <div key={f.id} style={{ display:"flex", alignItems:"center", borderBottom:`1px solid ${C.bgFaint}`, minHeight:40 }}>
+                  <div style={{ width:130, minWidth:130, padding:"6px 10px", borderRight:`1px solid ${C.bgFaint}` }}>
+                    <div style={{ color: C.text, fontSize:11, fontWeight:600, lineHeight:1.2 }}>{f.name.split("–")[0].trim()}</div>
+                    <div style={{ color: C.muted, fontSize:10 }}>{f.m2}m²</div>
+                  </div>
+                  <div style={{ flex:1, position:"relative", height:40 }}>
+                    {/* Today line */}
+                    <div style={{ position:"absolute", left: todayOffset * DAY_W, top:0, bottom:0, width:2, background: C.gelb, opacity:0.7, zIndex:10 }} />
+
+                    {/* Bar */}
+                    <div style={{
+                      position:"absolute",
+                      left: startOff * DAY_W + 2,
+                      top: 8, height: 24,
+                      width: dur * DAY_W - 4,
+                      background: STATUS_COLOR[f.status],
+                      borderRadius: 5,
+                      opacity: 0.9,
+                      display:"flex", alignItems:"center", paddingLeft:6,
+                      overflow:"hidden",
+                      boxShadow: isLate ? `0 0 0 2px ${C.rot}` : "none",
+                    }}>
+                      <span style={{ color:"#fff", fontSize:10, fontWeight:700, whiteSpace:"nowrap" }}>
+                        {f.status === "in_progress" ? "▶ " : ""}{f.name.split("–")[1]?.trim() || f.name}
+                        {isLate ? " ⚠️" : ""}
+                      </span>
+                    </div>
+
+                    {/* Festigkeit indicator */}
+                    {f.festigkeit && (
+                      <div style={{
+                        position:"absolute",
+                        left: (startOff + dur) * DAY_W + 4,
+                        top:14, height:12,
+                        width: 32,
+                        background: f.festigkeit >= 95 ? C.gruen+"44" : C.gelb+"44",
+                        borderRadius:3, display:"flex", alignItems:"center", justifyContent:"center"
+                      }}>
+                        <span style={{ fontSize:9, color: C.text }}>{f.festigkeit}%</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Verzögerungen */}
+      {felder.filter(f => f.status !== "done" && new Date(f.geplant) < heute).length > 0 && (
+        <div style={{ background:"#2E1A1A", borderRadius:10, padding:14, marginTop:12 }}>
+          <div style={{ color: C.rot, fontWeight:700, marginBottom:8 }}>⚠️ Verzögerungen</div>
+          {felder.filter(f => f.status !== "done" && new Date(f.geplant) < heute).map(f => (
+            <div key={f.id} style={{ color:"#FF9999", fontSize:13, marginBottom:4 }}>
+              {f.name} – {daysBetween(f.geplant, heute.toISOString().slice(0,10))} Tage Verzug
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// SUPABASE STATUS + SETUP
+// ════════════════════════════════════════════════════════════════════════════
+function SupabaseStatus({ connected }) {
+  return (
+    <div style={{ background: connected ? "#1A3A28" : C.bgLight, borderRadius:8, padding:"8px 14px",
+      border:`1px solid ${connected ? C.gruen : C.bgFaint}`, marginBottom:14,
+      display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+      <div>
+        <div style={{ color: connected ? C.gruen : C.muted, fontWeight:700, fontSize:12 }}>
+          {connected ? "🟢 Supabase verbunden" : "⚫ Supabase nicht konfiguriert"}
+        </div>
+        <div style={{ color: C.muted, fontSize:10 }}>
+          {connected ? "Echtzeit-Daten aktiv" : "Mock-Daten werden angezeigt"}
+        </div>
+      </div>
+      {!connected && (
+        <div style={{ color: C.gelb, fontSize:11, textAlign:"right" }}>
+          URL + Key<br/>eintragen →
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// BETONFELDER (mit Supabase)
+// ════════════════════════════════════════════════════════════════════════════
+// ─── Unterfeld-Schnellanlage Modal ──────────────────────────────────────────
+function UnterfeldSchnellanlage({ parent, onAdd, onClose }) {
+  const [praefix, setPraefix] = useState(parent.name.split(" ")[0] || "F");
+  const [datum,   setDatum]   = useState(parent.geplant || "");
+  const [modus,   setModus]   = useState("gleich"); // "gleich" | "einzeln"
+  const [stdM2,   setStdM2]   = useState(30);
+  const [felder,  setFelder]  = useState([
+    { name: `${parent.name.split(" ")[0] || "F"}-01`, m2: 30, datum: parent.geplant || "" },
+    { name: `${parent.name.split(" ")[0] || "F"}-02`, m2: 80, datum: parent.geplant || "" },
+    { name: `${parent.name.split(" ")[0] || "F"}-03`, m2: 40, datum: parent.geplant || "" },
+  ]);
+
+  const totalM2 = modus === "gleich"
+    ? felder.length * stdM2
+    : felder.reduce((s, f) => s + (Number(f.m2) || 0), 0);
+
+  const elternM2 = parent.m2 || 0;
+  const diffM2   = elternM2 - totalM2;
+  const diffOk   = Math.abs(diffM2) < 1;
+
+  function updateFeld(i, key, val) {
+    setFelder(prev => prev.map((f, idx) => idx === i ? { ...f, [key]: val } : f));
+  }
+
+  function addFeld() {
+    const nr = String(felder.length + 1).padStart(2, "0");
+    setFelder(prev => [...prev, { name: `${praefix}-${nr}`, m2: stdM2, datum }]);
+  }
+
+  function removeFeld(i) {
+    setFelder(prev => prev.filter((_, idx) => idx !== i));
+  }
+
+  // Wenn Präfix ändert → alle Namen aktualisieren
+  function updatePraefix(val) {
+    setPraefix(val);
+    setFelder(prev => prev.map((f, i) => ({ ...f, name: `${val}-${String(i+1).padStart(2,"0")}` })));
+  }
+
+  // Wenn Modus auf "gleich" → stdM2 auf alle anwenden
+  function switchModus(m) {
+    setModus(m);
+    if (m === "gleich") setFelder(prev => prev.map(f => ({ ...f, m2: stdM2 })));
+  }
+
+  function anlegen() {
+    const neu = felder.map((f, i) => ({
+      id:              Date.now() + i,
+      name:            f.name,
+      m2:              modus === "gleich" ? stdM2 : (Number(f.m2) || 0),
+      geplant:         f.datum || datum,
+      dauer_tage:      1,
+      bewehrung:       parent.bewehrung || "",
+      abhaengigkeiten: [],
+      status:          "planned",
+      festigkeit:      null,
+      betoniert:       null,
+      parentId:        parent.id,
+      gewerk:          parent.gewerk || "",
+    }));
+    onAdd(neu);
+    onClose();
+  }
+
+  return (
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:400,
+      display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
+      <div style={{ background: C.bgMid, borderRadius:"16px 16px 0 0", padding:20,
+        width:"100%", maxWidth:520, maxHeight:"90vh", overflowY:"auto" }}>
+
+        {/* Header */}
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
+          <div style={{ color: C.gelb, fontWeight:700, fontSize:16 }}>⚡ Unterfelder Schnellanlage</div>
+          <button onClick={onClose} style={{ background:"none", border:"none", color: C.muted, fontSize:22, cursor:"pointer" }}>✕</button>
+        </div>
+        <div style={{ color: C.muted, fontSize:12, marginBottom:14 }}>
+          Unterfelder für <span style={{ color: C.text, fontWeight:700 }}>{parent.name}</span>
+          {elternM2 > 0 && <span style={{ color: C.muted }}> · {elternM2} m² gesamt</span>}
+        </div>
+
+        {/* Präfix + Datum */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
+          <div>
+            <Label>Kürzel / Präfix</Label>
+            <input value={praefix} onChange={e => updatePraefix(e.target.value)}
+              style={inputStyle()} placeholder="z.B. BF" />
+          </div>
+          <div>
+            <Label>Standard-Termin</Label>
+            <input type="date" value={datum} onChange={e => {
+              setDatum(e.target.value);
+              setFelder(prev => prev.map(f => ({ ...f, datum: e.target.value })));
+            }} style={inputStyle()} />
+          </div>
+        </div>
+
+        {/* Modus-Auswahl */}
+        <div style={{ marginBottom:14 }}>
+          <Label>m²-Modus</Label>
+          <div style={{ display:"flex", gap:8, marginTop:6 }}>
+            {[["gleich","🔲 Alle gleich"],["einzeln","✏️ Individuell"]].map(([v,l]) => (
+              <button key={v} onClick={() => switchModus(v)}
+                style={{ flex:1, background: modus===v ? C.gelb : C.bgFaint,
+                  color: modus===v ? "#1C2027" : C.muted,
+                  border:"none", borderRadius:8, padding:"9px 0",
+                  fontWeight: modus===v ? 700 : 400, cursor:"pointer", fontSize:13 }}>
+                {l}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Gleich-Modus: Standard m² */}
+        {modus === "gleich" && (
+          <div style={{ marginBottom:14 }}>
+            <Label>m² pro Feld</Label>
+            <div style={{ display:"flex", alignItems:"center", gap:10, marginTop:6 }}>
+              <StepBtn onClick={() => { setStdM2(m=>Math.max(1,m-5)); setFelder(prev=>prev.map(f=>({...f,m2:Math.max(1,stdM2-5)}))); }}>−</StepBtn>
+              <input type="number" value={stdM2}
+                onChange={e => { setStdM2(+e.target.value); setFelder(prev=>prev.map(f=>({...f,m2:+e.target.value}))); }}
+                style={{ ...inputStyle(), width:80, textAlign:"center", fontSize:18, fontWeight:700 }} />
+              <StepBtn onClick={() => { setStdM2(m=>m+5); setFelder(prev=>prev.map(f=>({...f,m2:stdM2+5}))); }}>+</StepBtn>
+              <span style={{ color: C.muted, fontSize:13 }}>m²</span>
+            </div>
+          </div>
+        )}
+
+        {/* Feldliste */}
+        <div style={{ marginBottom:10 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+            <Label>Felder ({felder.length})</Label>
+            <button onClick={addFeld}
+              style={{ background: C.bgFaint, color: C.text, border:"none", borderRadius:7,
+                padding:"4px 12px", cursor:"pointer", fontSize:12 }}>+ Feld</button>
+          </div>
+
+          {felder.map((f, i) => (
+            <div key={i} style={{ display:"flex", gap:8, alignItems:"center", marginBottom:7 }}>
+              {/* Nummer-Badge */}
+              <div style={{ background: C.bgFaint, color: C.muted, borderRadius:6,
+                padding:"4px 8px", fontSize:11, fontWeight:700, minWidth:28, textAlign:"center" }}>
+                {i+1}
+              </div>
+              {/* Name */}
+              <input value={f.name} onChange={e => updateFeld(i, "name", e.target.value)}
+                style={{ ...inputStyle(), flex:2, fontSize:12, padding:"8px 10px" }} />
+              {/* m² — nur im Einzelmodus editierbar */}
+              <div style={{ position:"relative", flex:1 }}>
+                <input
+                  type="number"
+                  value={f.m2}
+                  readOnly={modus === "gleich"}
+                  onChange={e => modus === "einzeln" && updateFeld(i, "m2", +e.target.value)}
+                  style={{ ...inputStyle(), fontSize:13, padding:"8px 10px",
+                    color: modus === "gleich" ? C.muted : C.text,
+                    background: modus === "gleich" ? C.bgFaint : C.bgLight,
+                    cursor: modus === "gleich" ? "default" : "text" }}
+                />
+                <span style={{ position:"absolute", right:8, top:"50%", transform:"translateY(-50%)",
+                  color: C.muted, fontSize:10, pointerEvents:"none" }}>m²</span>
+              </div>
+              {/* Löschen */}
+              <button onClick={() => removeFeld(i)}
+                style={{ background:"none", border:"none", color: C.rot, cursor:"pointer", fontSize:18, padding:"0 2px" }}>✕</button>
+            </div>
+          ))}
+        </div>
+
+        {/* Summen-Anzeige */}
+        <div style={{ background: diffOk ? "#1A3A28" : elternM2 > 0 ? "#2A2010" : C.bgFaint,
+          borderRadius:10, padding:"10px 14px", marginBottom:14,
+          border:`1px solid ${diffOk ? C.gruen : elternM2 > 0 ? C.gelb : C.bgLight}` }}>
+          <div style={{ display:"flex", justifyContent:"space-between" }}>
+            <span style={{ color: C.muted, fontSize:12 }}>Summe Unterfelder</span>
+            <span style={{ color: C.text, fontWeight:700 }}>{totalM2} m²</span>
+          </div>
+          {elternM2 > 0 && (
+            <div style={{ display:"flex", justifyContent:"space-between", marginTop:4 }}>
+              <span style={{ color: C.muted, fontSize:12 }}>Elternfeld</span>
+              <span style={{ color: C.muted }}>{elternM2} m²</span>
+            </div>
+          )}
+          {elternM2 > 0 && (
+            <div style={{ display:"flex", justifyContent:"space-between", marginTop:4 }}>
+              <span style={{ color: C.muted, fontSize:12 }}>Differenz</span>
+              <span style={{ color: diffOk ? C.gruen : C.gelb, fontWeight:700 }}>
+                {diffM2 > 0 ? `−${diffM2}` : diffM2 < 0 ? `+${Math.abs(diffM2)}` : "✓ Passt genau"} {diffOk ? "" : "m²"}
+              </span>
+            </div>
+          )}
+        </div>
+
+        <button onClick={anlegen} disabled={felder.length === 0}
+          style={{ width:"100%", background: felder.length > 0 ? C.gelb : C.bgFaint,
+            color: felder.length > 0 ? "#1C2027" : C.muted,
+            border:"none", borderRadius:10, padding:14, fontWeight:700, cursor:"pointer", fontSize:15 }}>
+          ⚡ {felder.length} Unterfelder anlegen · {totalM2} m² gesamt
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Einzelnes Elternfeld mit Unterfeldern ───────────────────────────────────
+function FeldKarte({ f, unterfelder, selected, onSelect, onEdit, onSchnell, onStatusChange }) {
+  const hatUnter = unterfelder.length > 0;
+  const unterDone = unterfelder.filter(u => u.status === "done").length;
+  const unterPct  = hatUnter ? Math.round(unterDone / unterfelder.length * 100) : null;
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div style={{ marginBottom: 8 }}>
+      {/* Elternfeld */}
+      <div onClick={() => onSelect(f)}
+        style={{ background: C.bgMid,
+          border:`2px solid ${selected?.id === f.id ? C.gelb : STATUS_COLOR[f.status]}`,
+          borderRadius: expanded ? "10px 10px 0 0" : 10,
+          padding:"12px 14px", cursor:"pointer" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+          <div style={{ flex:1 }}>
+            {f.gewerk && <div style={{ color: C.muted, fontSize:10, marginBottom:2 }}>{f.gewerk}</div>}
+            <div style={{ color: C.text, fontSize:13, fontWeight:700 }}>{f.name}</div>
+            <div style={{ color: C.muted, fontSize:11, marginTop:3 }}>
+              {f.m2} m²{f.geplant ? ` · ${fmt(f.geplant)}` : ""}
+              {hatUnter && <span style={{ color: C.beton, marginLeft:6 }}>· {unterfelder.length} Unterfelder</span>}
+            </div>
+            {(f.subIds||[]).length > 0 && (
+              <div style={{ marginTop:5 }}>
+                <span style={{ color: C.blau, fontSize:10 }}>🏢 Sub zugewiesen</span>
+              </div>
+            )}
+          </div>
+          <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4 }}>
+            <div style={{ background: STATUS_COLOR[f.status], color:"#fff", fontSize:9,
+              padding:"2px 7px", borderRadius:20 }}>
+              {STATUS_LABEL[f.status]?.split(" ")[0]}
+            </div>
+            {hatUnter && (
+              <div onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
+                style={{ color: C.muted, fontSize:11, cursor:"pointer", userSelect:"none" }}>
+                {expanded ? "▲" : "▼"} {unterDone}/{unterfelder.length}
+              </div>
+            )}
+          </div>
+        </div>
+        {/* Unterfeld-Fortschritt */}
+        {hatUnter && (
+          <div style={{ marginTop:8 }}>
+            <div style={{ background: C.bgFaint, borderRadius:3, height:5 }}>
+              <div style={{ background: unterPct === 100 ? C.gruen : C.gelb,
+                width:`${unterPct}%`, height:"100%", borderRadius:3, transition:"width 0.4s" }} />
+            </div>
+            <div style={{ color: C.muted, fontSize:10, marginTop:2 }}>{unterPct}% der Unterfelder fertig</div>
+          </div>
+        )}
+        {f.festigkeit && !hatUnter && (
+          <div style={{ marginTop:6 }}>
+            <div style={{ background: C.bgFaint, borderRadius:3, height:4 }}>
+              <div style={{ background: f.festigkeit >= 95 ? C.gruen : C.gelb,
+                width:`${f.festigkeit}%`, height:"100%", borderRadius:3 }} />
+            </div>
+            <div style={{ color: C.muted, fontSize:10, marginTop:2 }}>Festigkeit {f.festigkeit}%</div>
+          </div>
+        )}
+      </div>
+
+      {/* Unterfelder (ausgeklappt) */}
+      {expanded && hatUnter && (
+        <div style={{ background: C.bgLight, borderRadius:"0 0 10px 10px",
+          border:`1px solid ${C.bgFaint}`, borderTop:"none", padding:"8px 10px" }}>
+          {unterfelder.map(u => (
+            <div key={u.id} onClick={() => onSelect(u)}
+              style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+                background: C.bgMid, borderRadius:8, padding:"8px 10px", marginBottom:5,
+                border:`1.5px solid ${selected?.id === u.id ? C.gelb : STATUS_COLOR[u.status]}`,
+                cursor:"pointer" }}>
+              <div>
+                <div style={{ color: C.text, fontSize:12, fontWeight:600 }}>{u.name}</div>
+                <div style={{ color: C.muted, fontSize:10 }}>{u.m2} m²{u.geplant ? ` · ${fmt(u.geplant)}` : ""}</div>
+              </div>
+              <div style={{ display:"flex", gap:6, alignItems:"center" }}>
+                <div style={{ background: STATUS_COLOR[u.status], color:"#fff",
+                  fontSize:9, padding:"2px 6px", borderRadius:20 }}>
+                  {STATUS_LABEL[u.status]?.split(" ")[0]}
+                </div>
+                <button onClick={e => { e.stopPropagation(); onEdit(u); }}
+                  style={{ background:"none", border:"none", color: C.muted, cursor:"pointer", fontSize:14 }}>✏️</button>
+              </div>
+            </div>
+          ))}
+          <button onClick={() => onSchnell(f)}
+            style={{ width:"100%", background: C.bgFaint, color: C.muted,
+              border:`1px dashed ${C.beton}`, borderRadius:8, padding:"7px 0",
+              cursor:"pointer", fontSize:12, marginTop:2 }}>
+            ⚡ Weitere Unterfelder hinzufügen
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Detailpanel für ausgewähltes Feld ───────────────────────────────────────
+function FeldDetail({ selected, felder, onEdit, onStatusChange, onSchnell, projSubs=[], onSaveFeld }) {
+  const istUnterfeld = !!selected.parentId;
+  const eltern = istUnterfeld ? felder.find(f => f.id === selected.parentId) : null;
+  const unterfelder = felder.filter(f => f.parentId === selected.id);
+
+  function toggleSubFeld(subId) {
+    const current = selected.subIds || [];
+    const updated = current.includes(subId)
+      ? current.filter(x => x !== subId)
+      : [...current, subId];
+    onSaveFeld({ ...selected, subIds: updated });
+  }
+
+  const zugewieseneSubs = projSubs.filter(s => (selected.subIds||[]).includes(s.id));
+
+  return (
+    <div style={{ background: C.bgLight, borderRadius:10, padding:16,
+      border:`1px solid ${C.gelb}`, marginBottom:8 }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
+        <div style={{ flex:1 }}>
+          {eltern && <div style={{ color: C.muted, fontSize:10, marginBottom:2 }}>↳ Unterfeld von {eltern.name}</div>}
+          {selected.gewerk && <div style={{ color: C.muted, fontSize:11 }}>{selected.gewerk}</div>}
+          <div style={{ color: C.gelb, fontWeight:700, fontSize:15 }}>{selected.name}</div>
+          {/* Zugewiesene Subs Badge */}
+          {zugewieseneSubs.length > 0 && (
+            <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginTop:6 }}>
+              {zugewieseneSubs.map(s => (
+                <div key={s.id} style={{ background:"#1A2040", color: C.blau,
+                  fontSize:10, padding:"2px 8px", borderRadius:10, border:`1px solid ${C.blau}44` }}>
+                  🏢 {s.name}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div style={{ display:"flex", gap:6 }}>
+          {!istUnterfeld && unterfelder.length === 0 && (
+            <button onClick={() => onSchnell(selected)}
+              style={{ background: C.bgFaint, color: C.text, border:`1px solid ${C.beton}`,
+                borderRadius:8, padding:"5px 10px", cursor:"pointer", fontSize:11 }}>
+              ⚡ Unterfelder
+            </button>
+          )}
+          <button onClick={() => onEdit(selected)}
+            style={{ background: C.bgFaint, color: C.text, border:"none",
+              borderRadius:8, padding:"5px 12px", cursor:"pointer", fontSize:12 }}>
+            ✏️ Bearbeiten
+          </button>
+        </div>
+      </div>
+
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:12 }}>
+        {[
+          ["Fläche",    `${selected.m2} m²`],
+          ["Geplant",   selected.geplant ? fmt(selected.geplant) : "—"],
+          ["Dauer",     `${selected.dauer_tage || 1} Tag(e)`],
+          ["Bewehrung", selected.bewehrung || "—"],
+          ...(selected.festigkeit ? [["Festigkeit", `${selected.festigkeit}%`]] : []),
+          ...(selected.elektro_phase   ? [["Elektro",  selected.elektro_phase]]   : []),
+          ...(selected.sanitaer_phase  ? [["Sanitär",  selected.sanitaer_phase]]  : []),
+          ...(selected.heizung_phase   ? [["Heizung",  selected.heizung_phase]]   : []),
+          ...(selected.belegreife      ? [["Belegreife",selected.belegreife]]      : []),
+          ...(selected.ausbau_phase    ? [["Ausbau",   selected.ausbau_phase]]    : []),
+          ...(selected.belag_phase     ? [["Belag",    selected.belag_phase]]     : []),
+        ].map(([k,v]) => (
+          <div key={k}>
+            <div style={{ color: C.muted, fontSize:10 }}>{k}</div>
+            <div style={{ color: C.text, fontSize:13, fontWeight:600 }}>{v}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Sub-Zuweisung auf Feldebene */}
+      {projSubs.length > 0 && (
+        <div style={{ marginBottom:12 }}>
+          <div style={{ color: C.muted, fontSize:11, marginBottom:6 }}>🏢 Subunternehmer für dieses Feld:</div>
+          <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
+            {projSubs.map(s => {
+              const aktiv = (selected.subIds||[]).includes(s.id);
+              return (
+                <div key={s.id} onClick={() => toggleSubFeld(s.id)}
+                  style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+                    background: aktiv ? "#1A2040" : C.bgFaint,
+                    border:`1.5px solid ${aktiv ? C.blau : "transparent"}`,
+                    borderRadius:8, padding:"8px 11px", cursor:"pointer" }}>
+                  <div>
+                    <div style={{ color: C.text, fontSize:12, fontWeight: aktiv ? 700 : 400 }}>{s.name}</div>
+                    <div style={{ display:"flex", gap:5, marginTop:3 }}>
+                      {s.gewerke.map(k => {
+                        const g = ALLE_GEWERKE.find(x=>x.key===k);
+                        return g ? <span key={k} style={{ color: C.muted, fontSize:10 }}>{g.icon}</span> : null;
+                      })}
+                      {s.stundensatz > 0 && <span style={{ color: C.muted, fontSize:10 }}>· {s.stundensatz}€/Std.</span>}
+                    </div>
+                  </div>
+                  <span style={{ fontSize:16 }}>{aktiv ? "🔵" : "⚪"}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {unterfelder.length > 0 ? (
+        <div style={{ background: C.bgFaint, borderRadius:8, padding:"8px 10px", marginBottom:10 }}>
+          <div style={{ color: C.muted, fontSize:11, marginBottom:4 }}>
+            Unterfelder: {unterfelder.filter(u=>u.status==="done").length}/{unterfelder.length} fertig
+          </div>
+          <div style={{ color: C.muted, fontSize:10 }}>
+            Status des Elternfeldes wird automatisch aktualisiert.
+          </div>
+        </div>
+      ) : (
+        <>
+          <div style={{ color: C.muted, fontSize:11, marginBottom:6 }}>Status ändern:</div>
+          <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+            {Object.entries(STATUS_LABEL).map(([k,v]) => (
+              <button key={k} onClick={() => onStatusChange(selected.id, k)}
+                style={{ background: selected.status === k ? STATUS_COLOR[k] : C.bgFaint,
+                  color: selected.status === k ? "#fff" : C.muted,
+                  border:"none", borderRadius:8, padding:"6px 12px", cursor:"pointer", fontSize:12 }}>
+                {v}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Haupt-BetonfelderView ────────────────────────────────────────────────────
+function BetonfelderView({ felder, setFelder, sbConnected, projektTyp, projSubs=[] }) {
+  const cfg = typConfig(projektTyp);
+  const [selected,     setSelected]     = useState(null);
+  const [editFeld,     setEditFeld]     = useState(null);
+  const [schnellParent,setSchnellParent]= useState(null);
+  const [gewerkFilter, setGewerkFilter] = useState("alle");
+
+  // Elternfelder = Felder ohne parentId
+  const elternFelder = felder.filter(f => !f.parentId);
+  const total  = elternFelder.length;
+  const done   = elternFelder.filter(f => f.status === "done").length;
+  const progress = total > 0 ? Math.round(done / total * 100) : 0;
+
+  const gefilterteEltern = gewerkFilter === "alle"
+    ? elternFelder
+    : elternFelder.filter(f => f.gewerk?.includes(gewerkFilter));
+
+  // Auto-Status: wenn alle Unterfelder eines Elternfelds fertig sind → Elternfeld auf "done"
+  function autoStatusUpdate(updatedFelder) {
+    return updatedFelder.map(f => {
+      const kinder = updatedFelder.filter(u => u.parentId === f.id);
+      if (kinder.length > 0 && kinder.every(u => u.status === "done") && f.status !== "done") {
+        return { ...f, status: "done" };
+      }
+      if (kinder.length > 0 && !kinder.every(u => u.status === "done") && f.status === "done") {
+        return { ...f, status: "in_progress" };
+      }
+      return f;
+    });
+  }
+
+  async function updateStatus(id, newStatus) {
+    const base = felder.map(f => f.id === id ? { ...f, status: newStatus } : f);
+    const updated = autoStatusUpdate(base);
+    setFelder(updated);
+    setSelected(updated.find(f => f.id === id) || null);
+  }
+
+  function handleSave(f) {
+    const base = felder.some(x => x.id === f.id)
+      ? felder.map(x => x.id === f.id ? f : x)
+      : [...felder, { ...f, id: Date.now() }];
+    setFelder(autoStatusUpdate(base));
+    setEditFeld(null);
+    setSelected(null);
+  }
+
+  function handleDelete(id) {
+    // also delete all children
+    setFelder(prev => autoStatusUpdate(
+      prev.filter(f => f.id !== id && f.parentId !== id)
+          .map(f => ({ ...f, abhaengigkeiten: (f.abhaengigkeiten||[]).filter(x => x !== id) }))
+    ));
+    setEditFeld(null);
+    setSelected(null);
+  }
+
+  function handleSchnellAdd(neuFelder) {
+    const base = [...felder, ...neuFelder];
+    setFelder(autoStatusUpdate(base));
+  }
+
+  return (
+    <div>
+      <SupabaseStatus connected={sbConnected} />
+
+      {/* Header */}
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+        <div style={{ color: C.text, fontWeight:700 }}>
+          {cfg.einheitenPl} · {done}/{total} fertig
+        </div>
+        <button onClick={() => setEditFeld({ name:"", m2:0, geplant:"", dauer_tage:1, bewehrung:"", abhaengigkeiten:[], status:"planned" })}
+          style={{ background: C.gelb, color:"#1C2027", border:"none", borderRadius:9,
+            padding:"7px 14px", fontWeight:700, cursor:"pointer", fontSize:13 }}>
+          + {cfg.einheitLabel}
+        </button>
+      </div>
+
+      {/* Fortschritt */}
+      <div style={{ background: C.bgFaint, borderRadius:4, height:8, marginBottom:14 }}>
+        <div style={{ background: C.gruen, width:`${progress}%`, height:"100%", borderRadius:4, transition:"width 0.6s" }} />
+      </div>
+
+      {felder.length === 0 ? (
+        <div style={{ background: C.bgMid, borderRadius:12, padding:32, textAlign:"center" }}>
+          <div style={{ fontSize:36 }}>🏗️</div>
+          <div style={{ color: C.muted, marginTop:10, marginBottom:16 }}>Noch keine {cfg.einheitenPl} angelegt.</div>
+          <button onClick={() => setEditFeld({ name:"", m2:0, geplant:"", dauer_tage:1, bewehrung:"", abhaengigkeiten:[], status:"planned" })}
+            style={{ background: C.gelb, color:"#1C2027", border:"none", borderRadius:10,
+              padding:"12px 24px", fontWeight:700, cursor:"pointer", fontSize:14 }}>
+            + Erste {cfg.einheitLabel} anlegen
+          </button>
+        </div>
+      ) : (
+        <>
+          {/* Gewerk-Filter */}
+          {projektTyp === "hochbau" && (
+            <div style={{ display:"flex", gap:6, marginBottom:10, overflowX:"auto", paddingBottom:2 }}>
+              <FilterBtn active={gewerkFilter==="alle"} onClick={() => setGewerkFilter("alle")}>
+                Alle ({elternFelder.length})
+              </FilterBtn>
+              {Object.values(HOCHBAU_GEWERKE).map(g => {
+                const n = elternFelder.filter(f => f.gewerk?.includes(g.label)).length;
+                if (!n) return null;
+                return (
+                  <FilterBtn key={g.label} active={gewerkFilter===g.label} onClick={() => setGewerkFilter(g.label)}>
+                    {g.icon} {g.label} ({n})
+                  </FilterBtn>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Feldliste */}
+          {gefilterteEltern.map(f => (
+            <FeldKarte
+              key={f.id}
+              f={f}
+              unterfelder={felder.filter(u => u.parentId === f.id)}
+              selected={selected}
+              onSelect={s => setSelected(selected?.id === s.id ? null : s)}
+              onEdit={setEditFeld}
+              onSchnell={setSchnellParent}
+              onStatusChange={updateStatus}
+            />
+          ))}
+
+          {/* Detail-Panel */}
+          {selected && (
+            <FeldDetail
+              selected={selected}
+              felder={felder}
+              onEdit={setEditFeld}
+              onStatusChange={updateStatus}
+              onSchnell={setSchnellParent}
+              projSubs={projSubs}
+              onSaveFeld={handleSave}
+            />
+          )}
+        </>
+      )}
+
+      {/* Modals */}
+      {editFeld !== null && (
+        <FeldEditor
+          feld={editFeld}
+          allFelder={felder}
+          onSave={handleSave}
+          onDelete={handleDelete}
+          onClose={() => setEditFeld(null)}
+          projektTyp={projektTyp}
+          projSubs={projSubs}
+        />
+      )}
+      {schnellParent && (
+        <UnterfeldSchnellanlage
+          parent={schnellParent}
+          onAdd={handleSchnellAdd}
+          onClose={() => setSchnellParent(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function FilterBtn({ active, onClick, children }) {
+  return (
+    <button onClick={onClick}
+      style={{ background: active ? C.gelb : C.bgFaint,
+        color: active ? "#1C2027" : C.muted,
+        border:"none", borderRadius:20, padding:"5px 12px", cursor:"pointer",
+        fontSize:11, fontWeight: active ? 700 : 400, whiteSpace:"nowrap" }}>
+      {children}
+    </button>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// KOLONNEN
+// ════════════════════════════════════════════════════════════════════════════
+// ─── Einzelner MA mit Stunden aus 123erfasst ────────────────────────────────
+function MitarbeiterZeilen({ ma, zeitdaten, vonDatum, bisDatum }) {
+  const [open, setOpen] = useState(false);
+
+  // Buchungen für diesen MA aus den geladenen Zeitdaten filtern
+  // Matching über Namen (Fallback wenn erfasstIdent nicht verknüpft)
+  const maBuchungen = zeitdaten.filter(z => {
+    if (ma.erfasstIdent) return z.person?.ident === ma.erfasstIdent;
+    const vn = (z.person?.formattedName || "").toLowerCase();
+    return vn.includes(ma.name.split(" ")[0].toLowerCase()) ||
+           vn.includes(ma.name.split(" ").pop().toLowerCase());
+  });
+
+  const totalH = maBuchungen.reduce((s, z) => s + (z.hours||0) + (z.minutes||0)/60, 0);
+  const hatDaten = zeitdaten.length > 0;
+
+  const ROLLEN_FARBE = { "Vorarbeiter": C.gelb, "Facharbeiter": C.blau, "Helfer": C.beton };
+
+  return (
+    <div style={{ marginBottom:6 }}>
+      {/* MA Zeile */}
+      <div onClick={() => hatDaten && setOpen(o => !o)}
+        style={{ display:"flex", alignItems:"center", gap:10,
+          background: open ? C.bgLight : C.bgFaint,
+          borderRadius: open ? "8px 8px 0 0" : 8,
+          padding:"10px 12px",
+          cursor: hatDaten ? "pointer" : "default",
+          border:`1px solid ${open ? C.gelb+"66" : "transparent"}` }}>
+        {/* Avatar */}
+        <div style={{ width:32, height:32, borderRadius:16, flexShrink:0,
+          background: C.bgMid, display:"flex", alignItems:"center", justifyContent:"center",
+          border:`2px solid ${ROLLEN_FARBE[ma.rolle] || C.beton}`,
+          color: ROLLEN_FARBE[ma.rolle] || C.beton, fontSize:13, fontWeight:700 }}>
+          {ma.name.split(" ").map(n=>n[0]).join("").slice(0,2)}
+        </div>
+        <div style={{ flex:1 }}>
+          <div style={{ color: C.text, fontSize:13, fontWeight:600 }}>{ma.name}</div>
+          <div style={{ color: ROLLEN_FARBE[ma.rolle] || C.muted, fontSize:10 }}>{ma.rolle}</div>
+        </div>
+        {/* Stunden */}
+        {hatDaten ? (
+          <div style={{ textAlign:"right" }}>
+            <div style={{ color: totalH > 0 ? C.gelb : C.muted, fontWeight:700, fontSize:14 }}>
+              {totalH > 0 ? totalH.toFixed(1)+"h" : "—"}
+            </div>
+            <div style={{ color: C.muted, fontSize:10 }}>
+              {maBuchungen.length > 0 ? `${maBuchungen.length} Buchung${maBuchungen.length>1?"en":""}` : "keine"}
+            </div>
+          </div>
+        ) : (
+          <div style={{ color: C.muted, fontSize:11 }}>nicht geladen</div>
+        )}
+        {hatDaten && maBuchungen.length > 0 && (
+          <div style={{ color: C.muted, fontSize:12 }}>{open ? "▲" : "▼"}</div>
+        )}
+      </div>
+
+      {/* Aufgeklappte Buchungen */}
+      {open && maBuchungen.length > 0 && (
+        <div style={{ background: C.bgMid, borderRadius:"0 0 8px 8px",
+          border:`1px solid ${C.gelb+"66"}`, borderTop:"none", padding:"8px 10px" }}>
+          {maBuchungen.map((z, i) => (
+            <div key={i} style={{ display:"flex", justifyContent:"space-between",
+              alignItems:"center", padding:"6px 4px",
+              borderBottom: i < maBuchungen.length-1 ? `1px solid ${C.bgFaint}` : "none" }}>
+              <div>
+                <div style={{ color: C.betonLight, fontSize:12 }}>
+                  {new Date(z.date).toLocaleDateString("de-DE", { weekday:"short", day:"2-digit", month:"2-digit" })}
+                </div>
+                {z.activity?.name && (
+                  <div style={{ color: C.muted, fontSize:10 }}>🔧 {z.activity.name}</div>
+                )}
+                {z.note && (
+                  <div style={{ color: C.muted, fontSize:10, fontStyle:"italic" }}>💬 {z.note}</div>
+                )}
+              </div>
+              <div style={{ color: C.gelb, fontWeight:700, fontSize:13 }}>
+                {(z.hours||0)}h{z.minutes > 0 ? ` ${z.minutes}min` : ""}
+              </div>
+            </div>
+          ))}
+          {/* MA-Summe */}
+          <div style={{ display:"flex", justifyContent:"space-between",
+            borderTop:`1px solid ${C.bgFaint}`, marginTop:4, paddingTop:6 }}>
+            <div style={{ color: C.muted, fontSize:11 }}>Gesamt</div>
+            <div style={{ color: C.gelb, fontWeight:800, fontSize:14 }}>{totalH.toFixed(1)} h</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Kolonne-Karte mit aufklappbarer MA-Liste ────────────────────────────────
+function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, erfasstVerbunden }) {
+  const [expanded, setExpanded] = useState(false);
+  const mas = k.mitarbeiter || [];
+  const totalMann = mas.length;
+
+  // Stunden dieser Kolonne aus Zeitdaten
+  const kolonneH = zeitdaten.filter(z => {
+    if (!mas.length) return false;
+    return mas.some(ma => {
+      if (ma.erfasstIdent) return z.person?.ident === ma.erfasstIdent;
+      const vn = (z.person?.formattedName || "").toLowerCase();
+      return vn.includes(ma.name.split(" ")[0].toLowerCase()) ||
+             vn.includes(ma.name.split(" ").pop().toLowerCase());
+    });
+  }).reduce((s, z) => s + (z.hours||0) + (z.minutes||0)/60, 0);
+
+  const anwesend = mas.filter(ma => zeitdaten.some(z => {
+    if (ma.erfasstIdent) return z.person?.ident === ma.erfasstIdent;
+    const vn = (z.person?.formattedName || "").toLowerCase();
+    return vn.includes(ma.name.split(" ")[0].toLowerCase()) ||
+           vn.includes(ma.name.split(" ").pop().toLowerCase());
+  })).length;
+
+  return (
+    <div style={{ marginBottom:12 }}>
+      {/* Kolonne Header */}
+      <div style={{ background: C.bgMid, borderRadius: expanded ? "12px 12px 0 0" : 12,
+        padding:"14px 16px", border:`1px solid ${C.bgFaint}`,
+        borderBottom: expanded ? "none" : undefined }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+          <div style={{ flex:1 }}>
+            <div style={{ color: C.text, fontWeight:700, fontSize:15 }}>{k.name}</div>
+            <div style={{ color: C.muted, fontSize:12, marginTop:2 }}>📍 {k.einsatz}</div>
+            {k.vorarbeiter && (
+              <div style={{ color: C.muted, fontSize:11, marginTop:2 }}>👷 VA: {k.vorarbeiter}</div>
+            )}
+          </div>
+          <div style={{ textAlign:"right" }}>
+            {erfasstVerbunden && kolonneH > 0 ? (
+              <div style={{ color: C.gelb, fontWeight:800, fontSize:18 }}>{kolonneH.toFixed(1)}h</div>
+            ) : (
+              <div style={{ color: C.gelb, fontSize:13 }}>👷 {totalMann} Mann</div>
+            )}
+            {erfasstVerbunden && (
+              <div style={{ color: C.muted, fontSize:10 }}>
+                {anwesend}/{totalMann} anwesend
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Fortschrittsbalken Anwesenheit */}
+        {erfasstVerbunden && totalMann > 0 && (
+          <div style={{ marginTop:10 }}>
+            <div style={{ background: C.bgFaint, borderRadius:4, height:5 }}>
+              <div style={{ background: anwesend === totalMann ? C.gruen : C.gelb,
+                width:`${(anwesend/totalMann)*100}%`, height:"100%", borderRadius:4, transition:"width 0.4s" }} />
+            </div>
+          </div>
+        )}
+
+        {/* MA-Vorschau Avatare */}
+        <div style={{ display:"flex", alignItems:"center", marginTop:10, gap:6 }}>
+          <div style={{ display:"flex" }}>
+            {mas.slice(0,5).map((ma, i) => (
+              <div key={ma.id} style={{ width:26, height:26, borderRadius:13,
+                background: C.bgFaint, border:`2px solid ${C.bgMid}`,
+                marginLeft: i > 0 ? -8 : 0,
+                display:"flex", alignItems:"center", justifyContent:"center",
+                color: C.muted, fontSize:10, fontWeight:700, zIndex:5-i }}>
+                {ma.name.split(" ").map(n=>n[0]).join("").slice(0,2)}
+              </div>
+            ))}
+            {mas.length > 5 && (
+              <div style={{ width:26, height:26, borderRadius:13,
+                background: C.bgFaint, border:`2px solid ${C.bgMid}`,
+                marginLeft:-8, display:"flex", alignItems:"center", justifyContent:"center",
+                color: C.muted, fontSize:9 }}>+{mas.length-5}</div>
+            )}
+          </div>
+          <button onClick={() => setExpanded(e => !e)}
+            style={{ marginLeft:"auto", background: C.bgFaint, border:"none", color: C.text,
+              borderRadius:8, padding:"5px 12px", cursor:"pointer", fontSize:12 }}>
+            {expanded ? "▲ Zuklappen" : "▼ Mitarbeiter"}
+          </button>
+        </div>
+      </div>
+
+      {/* Aufgeklappte MA-Liste */}
+      {expanded && (
+        <div style={{ background: C.bgLight, borderRadius:"0 0 12px 12px",
+          border:`1px solid ${C.bgFaint}`, borderTop:"none", padding:"10px 12px" }}>
+          {mas.map(ma => (
+            <MitarbeiterZeilen
+              key={ma.id}
+              ma={ma}
+              zeitdaten={zeitdaten}
+              vonDatum={vonDatum}
+              bisDatum={bisDatum}
+            />
+          ))}
+          {/* Kolonnen-Summe */}
+          {erfasstVerbunden && kolonneH > 0 && (
+            <div style={{ display:"flex", justifyContent:"space-between",
+              background: C.bgFaint, borderRadius:8, padding:"10px 12px", marginTop:8 }}>
+              <div style={{ color: C.muted, fontSize:12 }}>Kolonne gesamt</div>
+              <div style={{ color: C.gelb, fontWeight:800, fontSize:15 }}>{kolonneH.toFixed(1)} h</div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Haupt KolonnenView ───────────────────────────────────────────────────────
+function KolonnenView({ kolonnen, projekt }) {
+  const [zeitdaten,   setZeitdaten]   = useState([]);
+  const [ladeStatus,  setLadeStatus]  = useState("idle"); // idle | loading | ok | error
+  const [vonDatum,    setVonDatum]    = useState(() => {
+    const d = new Date(); d.setDate(d.getDate()-6);
+    return d.toISOString().slice(0,10);
+  });
+  const [bisDatum, setBisDatum] = useState(new Date().toISOString().slice(0,10));
+
+  const konfiguriert  = !ERFASST_PROXY.includes("DEIN-PROJEKT");
+  const erfasstLinked = konfiguriert && !!projekt?.erfasstIdent;
+
+  const totalMann = kolonnen.reduce((s,k) => s + (k.mitarbeiter?.length || 0), 0);
+  const totalStd  = zeitdaten.reduce((s,z) => s + (z.hours||0) + (z.minutes||0)/60, 0);
+
+  async function ladeZeiten() {
+    if (!erfasstLinked) return;
+    setLadeStatus("loading");
+    try {
+      const data = await erfasstQuery(Q_TIMES, {
+        from:         vonDatum + "T00:00:00",
+        to:           bisDatum + "T23:59:59",
+        projectIdent: projekt.erfasstIdent,
+      });
+      setZeitdaten(data?.hoursBlocks?.nodes || []);
+      setLadeStatus("ok");
+    } catch(e) {
+      setLadeStatus("error");
+    }
+  }
+
+  useEffect(() => { ladeZeiten(); }, [vonDatum, bisDatum, projekt?.erfasstIdent]);
+
+  return (
+    <div>
+      {/* KPI Leiste */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, marginBottom:14 }}>
+        <div style={{ background: C.bgMid, borderRadius:10, padding:"11px 12px", borderBottom:`3px solid ${C.gelb}` }}>
+          <div style={{ color: C.muted, fontSize:10 }}>Kolonnen</div>
+          <div style={{ color: C.text, fontWeight:800, fontSize:22 }}>{kolonnen.length}</div>
+        </div>
+        <div style={{ background: C.bgMid, borderRadius:10, padding:"11px 12px", borderBottom:`3px solid ${C.blau}` }}>
+          <div style={{ color: C.muted, fontSize:10 }}>Mitarbeiter</div>
+          <div style={{ color: C.text, fontWeight:800, fontSize:22 }}>{totalMann}</div>
+        </div>
+        <div style={{ background: C.bgMid, borderRadius:10, padding:"11px 12px", borderBottom:`3px solid ${C.gruen}` }}>
+          <div style={{ color: C.muted, fontSize:10 }}>Stunden Σ</div>
+          <div style={{ color: C.text, fontWeight:800, fontSize:22 }}>
+            {ladeStatus === "ok" ? totalStd.toFixed(1)+"h" : "—"}
+          </div>
+        </div>
+      </div>
+
+      {/* Datumsfilter (nur wenn 123erfasst verbunden) */}
+      {konfiguriert && (
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr auto", gap:8, marginBottom:14, alignItems:"end" }}>
+          <div>
+            <Label>Von</Label>
+            <input type="date" value={vonDatum} onChange={e => setVonDatum(e.target.value)} style={inputStyle()} />
+          </div>
+          <div>
+            <Label>Bis</Label>
+            <input type="date" value={bisDatum} onChange={e => setBisDatum(e.target.value)} style={inputStyle()} />
+          </div>
+          <button onClick={ladeZeiten}
+            style={{ background: C.bgFaint, border:"none", color: C.text,
+              borderRadius:8, padding:"10px 12px", cursor:"pointer", fontSize:16,
+              height:40, display:"flex", alignItems:"center" }}>
+            {ladeStatus === "loading" ? "⏳" : "🔄"}
+          </button>
+        </div>
+      )}
+
+      {/* Status-Banner */}
+      {!konfiguriert && (
+        <div style={{ background: C.bgFaint, borderRadius:8, padding:"8px 12px", marginBottom:12,
+          display:"flex", gap:8, alignItems:"center" }}>
+          <span style={{ fontSize:14 }}>ℹ️</span>
+          <span style={{ color: C.muted, fontSize:12 }}>
+            123erfasst nicht konfiguriert — Stunden werden aus Mock-Daten angezeigt.
+          </span>
+        </div>
+      )}
+      {konfiguriert && !erfasstLinked && (
+        <div style={{ background:"#2A2010", borderRadius:8, padding:"8px 12px", marginBottom:12,
+          display:"flex", gap:8, alignItems:"center" }}>
+          <span style={{ fontSize:14 }}>⚠️</span>
+          <span style={{ color: C.gelb, fontSize:12 }}>
+            Kein 123erfasst-Projekt verknüpft. Im ⏱️ Zeiten-Tab verknüpfen.
+          </span>
+        </div>
+      )}
+      {ladeStatus === "error" && (
+        <div style={{ background:"#2E1A1A", borderRadius:8, padding:"8px 12px", marginBottom:12, color: C.rot, fontSize:12 }}>
+          ❌ Zeitdaten konnten nicht geladen werden.
+        </div>
+      )}
+
+      {/* Kolonnen */}
+      {kolonnen.map(k => (
+        <KolonneKarte
+          key={k.id}
+          k={k}
+          zeitdaten={zeitdaten}
+          vonDatum={vonDatum}
+          bisDatum={bisDatum}
+          erfasstVerbunden={ladeStatus === "ok"}
+        />
+      ))}
+
+      <button style={{ width:"100%", background: C.bgFaint, color: C.text,
+        border:`1px dashed ${C.beton}`, borderRadius:10, padding:12, cursor:"pointer", fontSize:14 }}>
+        + Kolonne einteilen
+      </button>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// TAGEBUCH (mit Supabase)
+// ════════════════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════════
+// DIKTIERFUNKTION – Web Speech API
+// ════════════════════════════════════════════════════════════════════════════
+function DiktierFeld({ label, value, rows = 3, onChange }) {
+  const [aktiv,      setAktiv]      = useState(false);
+  const [unterstuetzt, setUnterstuetzt] = useState(true);
+  const [interim,    setInterim]    = useState(""); // Live-Vorschau während Diktat
+  const erkennerRef = useRef(null);
+
+  useEffect(() => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { setUnterstuetzt(false); return; }
+
+    const er = new SR();
+    er.lang           = "de-DE";
+    er.continuous     = true;   // Läuft bis manuell gestoppt
+    er.interimResults = true;   // Live-Vorschau während Sprechen
+
+    er.onresult = (e) => {
+      let finalText  = "";
+      let interimText = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) finalText  += t;
+        else                       interimText += t;
+      }
+      if (finalText) {
+        // Finalen Text anhängen (mit Leerzeichen wenn schon was da ist)
+        onChange((value + (value && !value.endsWith(" ") ? " " : "") + finalText).trimStart());
+      }
+      setInterim(interimText);
+    };
+
+    er.onerror = (e) => {
+      if (e.error !== "no-speech") { setAktiv(false); setInterim(""); }
+    };
+
+    er.onend = () => {
+      // Wenn noch aktiv (z.B. kurze Pause), automatisch neu starten
+      if (erkennerRef.current?._shouldRestart) {
+        try { er.start(); } catch {}
+      } else {
+        setAktiv(false);
+        setInterim("");
+      }
+    };
+
+    erkennerRef.current = er;
+    return () => { try { er.stop(); } catch {} };
+  }, [value]); // value als Dep damit Closure aktuell bleibt
+
+  function toggleDiktat() {
+    const er = erkennerRef.current;
+    if (!er) return;
+    if (aktiv) {
+      er._shouldRestart = false;
+      er.stop();
+      setAktiv(false);
+      setInterim("");
+    } else {
+      er._shouldRestart = true;
+      setAktiv(true);
+      try { er.start(); } catch {}
+    }
+  }
+
+  return (
+    <div style={{ marginBottom:14 }}>
+      {/* Label + Diktat-Button */}
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
+        <Label>{label}</Label>
+        {unterstuetzt && (
+          <button onClick={toggleDiktat}
+            style={{ background: aktiv ? C.rot : C.bgFaint,
+              color: aktiv ? "#fff" : C.muted,
+              border: aktiv ? `1px solid ${C.rot}` : `1px solid ${C.bgLight}`,
+              borderRadius:20, padding:"3px 10px", cursor:"pointer",
+              fontSize:11, fontWeight: aktiv ? 700 : 400,
+              display:"flex", alignItems:"center", gap:5,
+              transition:"all 0.2s" }}>
+            {aktiv ? (
+              <>
+                <span style={{ width:7, height:7, borderRadius:4,
+                  background:"#fff", display:"inline-block",
+                  animation:"blink 1s infinite" }} />
+                Diktat stoppen
+              </>
+            ) : "🎤 Diktieren"}
+          </button>
+        )}
+      </div>
+
+      {/* Pulsierende Aufnahme-Anzeige */}
+      {aktiv && (
+        <div style={{ background:"#2E1A1A", borderRadius:8, padding:"8px 12px",
+          marginBottom:6, display:"flex", alignItems:"center", gap:8,
+          border:`1px solid ${C.rot}44` }}>
+          <div style={{ width:8, height:8, borderRadius:4, background: C.rot,
+            flexShrink:0, animation:"blink 1s infinite" }} />
+          <div style={{ flex:1 }}>
+            {interim ? (
+              <span style={{ color:"#FF9999", fontSize:12, fontStyle:"italic" }}>
+                {interim}
+              </span>
+            ) : (
+              <span style={{ color: C.muted, fontSize:12 }}>Sprechen Sie jetzt…</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Textarea */}
+      <textarea rows={rows} value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={aktiv ? "Diktat läuft…" : "Tippen oder 🎤 Diktieren"}
+        style={{ width:"100%", background: aktiv ? "#1A1A2E" : C.bgLight,
+          color: C.text,
+          border:`1px solid ${aktiv ? C.rot+"66" : C.bgFaint}`,
+          borderRadius:8, padding:10, fontSize:13, resize:"none",
+          boxSizing:"border-box", transition:"border-color 0.2s, background 0.2s" }} />
+
+      <style>{`
+        @keyframes blink {
+          0%, 100% { opacity:1; }
+          50%       { opacity:0.2; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// TAGEBUCH (mit Supabase + Foto-Upload + Diktat)
+// ════════════════════════════════════════════════════════════════════════════
+  const [open,       setOpen]       = useState(false);
+  const [detail,     setDetail]     = useState(null); // Bericht-Detailansicht
+  const [form,       setForm]       = useState({ taetigkeit:"", besonderheiten:"", material:"", arbeiter:0, maengel:0 });
+  const [bilder,     setBilder]     = useState([]); // [{ dataUrl, name, typ }]
+  const [uploading,  setUploading]  = useState(false);
+  const fileRef = useRef(null);
+
+  function handleBilderWahl(e) {
+    const files = Array.from(e.target.files);
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        setBilder(prev => [...prev, {
+          dataUrl: ev.target.result,
+          name:    file.name,
+          typ:     file.type,
+          groesse: (file.size / 1024).toFixed(0) + " KB",
+        }]);
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = ""; // Reset damit gleiche Datei erneut wählbar
+  }
+
+  function bildEntfernen(i) {
+    setBilder(prev => prev.filter((_, idx) => idx !== i));
+  }
+
+  async function uploadBildSupabase(bild, berichtId) {
+    if (!sbConnected) return bild.dataUrl; // Fallback: lokal als dataUrl
+    try {
+      const base64 = bild.dataUrl.split(",")[1];
+      const ext    = bild.typ.split("/")[1] || "jpg";
+      const pfad   = `tagesberichte/${berichtId}/${Date.now()}.${ext}`;
+      // Supabase Storage Upload
+      const res = await fetch(`${SUPABASE_URL}/storage/v1/object/bautagebuch/${pfad}`, {
+        method: "POST",
+        headers: {
+          "apikey":        SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "Content-Type":  bild.typ,
+        },
+        body: Uint8Array.from(atob(base64), c => c.charCodeAt(0)),
+      });
+      if (!res.ok) return bild.dataUrl;
+      return `${SUPABASE_URL}/storage/v1/object/public/bautagebuch/${pfad}`;
+    } catch {
+      return bild.dataUrl;
+    }
+  }
+
+  async function saveBericht() {
+    setUploading(bilder.length > 0);
+    const berichtId = Date.now();
+
+    // Bilder hochladen (oder lokal behalten)
+    const bildUrls = await Promise.all(
+      bilder.map(b => uploadBildSupabase(b, berichtId))
+    );
+
+    const nb = {
+      id:           berichtId,
+      datum:        new Date().toLocaleDateString("de-DE"),
+      datumRaw:     new Date().toISOString().slice(0,10),
+      wetter:       "—",
+      arbeiter:     Number(form.arbeiter) || 0,
+      taetigkeit:   form.taetigkeit,
+      besonderheiten: form.besonderheiten,
+      material:     form.material,
+      maengel:      Number(form.maengel) || 0,
+      bilder:       bildUrls,
+    };
+    setBerichte(prev => [nb, ...prev]);
+
+    if (sbConnected) {
+      await sbFetch("tagesberichte", {
+        method: "POST",
+        body:   JSON.stringify({
+          ...form,
+          datum:   new Date().toISOString().slice(0,10),
+          bilder:  JSON.stringify(bildUrls),
+        }),
+      });
+    }
+    setUploading(false);
+    setOpen(false);
+    setForm({ taetigkeit:"", besonderheiten:"", material:"", arbeiter:0, maengel:0 });
+    setBilder([]);
+  }
+
+  function resetForm() {
+    setOpen(false);
+    setForm({ taetigkeit:"", besonderheiten:"", material:"", arbeiter:0, maengel:0 });
+    setBilder([]);
+  }
+
+  return (
+    <div>
+      <SupabaseStatus connected={sbConnected} />
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+        <div style={{ color: C.text, fontWeight:700 }}>Bautagebuch</div>
+        <button onClick={() => setOpen(true)}
+          style={{ background: C.gelb, color:"#1C2027", border:"none",
+            borderRadius:8, padding:"6px 14px", fontWeight:700, cursor:"pointer", fontSize:13 }}>
+          + Neuer Bericht
+        </button>
+      </div>
+
+      {/* Berichtsliste */}
+      {berichte.map((b, i) => (
+        <div key={i} onClick={() => setDetail(b)}
+          style={{ background: C.bgMid, borderRadius:10, padding:"14px 16px", marginBottom:10,
+            borderLeft:`3px solid ${C.gelb}`, cursor:"pointer" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
+            <div style={{ color: C.text, fontWeight:600 }}>{b.datum}</div>
+            <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+              {(b.bilder?.length > 0) && (
+                <div style={{ background: C.blau+"33", color: C.blau,
+                  fontSize:10, padding:"2px 7px", borderRadius:10 }}>
+                  📷 {b.bilder.length}
+                </div>
+              )}
+              <div style={{ color: C.muted, fontSize:12 }}>{b.wetter} · {b.arbeiter} Arbeiter</div>
+            </div>
+          </div>
+          <div style={{ color: C.betonLight, fontSize:13 }}>{b.taetigkeit}</div>
+          {b.maengel > 0 && (
+            <div style={{ color: C.rost, fontSize:12, marginTop:6 }}>⚠️ {b.maengel} Mängel</div>
+          )}
+          {/* Bildvorschau Thumbnails */}
+          {b.bilder?.length > 0 && (
+            <div style={{ display:"flex", gap:6, marginTop:10, flexWrap:"wrap" }}>
+              {b.bilder.slice(0,4).map((url, j) => (
+                <img key={j} src={url} alt=""
+                  style={{ width:56, height:56, borderRadius:6, objectFit:"cover",
+                    border:`1px solid ${C.bgFaint}` }} />
+              ))}
+              {b.bilder.length > 4 && (
+                <div style={{ width:56, height:56, borderRadius:6, background: C.bgFaint,
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                  color: C.muted, fontSize:12, fontWeight:700 }}>
+                  +{b.bilder.length - 4}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ))}
+
+      {/* ── Detail-Ansicht ── */}
+      {detail && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.9)", zIndex:300,
+          overflowY:"auto" }}>
+          <div style={{ background: C.bgMid, minHeight:"100vh", maxWidth:520, margin:"0 auto", padding:20 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+              <div style={{ color: C.gelb, fontWeight:700, fontSize:16 }}>📋 {detail.datum}</div>
+              <button onClick={() => setDetail(null)}
+                style={{ background: C.bgFaint, border:"none", color: C.text,
+                  borderRadius:8, padding:"6px 14px", cursor:"pointer" }}>✕ Schließen</button>
+            </div>
+
+            {/* Meta */}
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:14 }}>
+              {[
+                ["Wetter",    detail.wetter],
+                ["Arbeiter",  detail.arbeiter],
+                ["Mängel",    detail.maengel || 0],
+                ["Fotos",     detail.bilder?.length || 0],
+              ].map(([k,v]) => (
+                <div key={k} style={{ background: C.bgFaint, borderRadius:8, padding:"10px 12px" }}>
+                  <div style={{ color: C.muted, fontSize:10 }}>{k}</div>
+                  <div style={{ color: C.text, fontWeight:700, fontSize:16 }}>{v}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Textfelder */}
+            {[
+              ["Tätigkeiten",            detail.taetigkeit],
+              ["Besonderheiten / Mängel", detail.besonderheiten],
+              ["Materiallieferungen",    detail.material],
+            ].filter(([,v]) => v).map(([k,v]) => (
+              <div key={k} style={{ marginBottom:14 }}>
+                <div style={{ color: C.muted, fontSize:11, marginBottom:4 }}>{k}</div>
+                <div style={{ background: C.bgFaint, borderRadius:8, padding:"10px 12px",
+                  color: C.betonLight, fontSize:13, lineHeight:1.5 }}>{v}</div>
+              </div>
+            ))}
+
+            {/* Bilder Galerie */}
+            {detail.bilder?.length > 0 && (
+              <div>
+                <div style={{ color: C.muted, fontSize:11, marginBottom:8 }}>
+                  FOTOS ({detail.bilder.length})
+                </div>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+                  {detail.bilder.map((url, i) => (
+                    <img key={i} src={url} alt={`Foto ${i+1}`}
+                      onClick={() => window.open(url, "_blank")}
+                      style={{ width:"100%", aspectRatio:"4/3", objectFit:"cover",
+                        borderRadius:10, cursor:"pointer",
+                        border:`1px solid ${C.bgFaint}` }} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Neuer Bericht Modal ── */}
+      {open && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.8)", zIndex:200,
+          display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
+          <div style={{ background: C.bgMid, borderRadius:"16px 16px 0 0", padding:22,
+            width:"100%", maxWidth:520, maxHeight:"92vh", overflowY:"auto" }}>
+
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+              <div style={{ color: C.gelb, fontWeight:700, fontSize:16 }}>
+                📋 Tagesbericht – {new Date().toLocaleDateString("de-DE")}
+              </div>
+              <button onClick={resetForm}
+                style={{ background:"none", border:"none", color: C.muted, fontSize:22, cursor:"pointer" }}>✕</button>
+            </div>
+
+            {/* Zahlenfelder */}
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
+              <div>
+                <Label>Arbeiter heute</Label>
+                <input type="number" value={form.arbeiter||""}
+                  onChange={e => setForm(p=>({...p, arbeiter:e.target.value}))}
+                  placeholder="0" style={inputStyle()} />
+              </div>
+              <div>
+                <Label>Mängel</Label>
+                <input type="number" value={form.maengel||""}
+                  onChange={e => setForm(p=>({...p, maengel:e.target.value}))}
+                  placeholder="0" style={inputStyle()} />
+              </div>
+            </div>
+
+            {/* Textfelder mit Diktierfunktion */}
+            {[
+              ["Tätigkeiten",             "taetigkeit",    4],
+              ["Besonderheiten / Mängel", "besonderheiten",3],
+              ["Materiallieferungen",     "material",      2],
+            ].map(([label, key, rows]) => (
+              <DiktierFeld
+                key={key}
+                label={label}
+                value={form[key]}
+                rows={rows}
+                onChange={val => setForm(p => ({ ...p, [key]: val }))}
+              />
+            ))}
+
+            {/* ── Foto Upload ── */}
+            <div style={{ marginBottom:18 }}>
+              <Label>Fotos ({bilder.length})</Label>
+              <input ref={fileRef} type="file" accept="image/*" multiple capture="environment"
+                style={{ display:"none" }} onChange={handleBilderWahl} />
+
+              {/* Upload-Button */}
+              <div style={{ display:"flex", gap:8, marginTop:6, marginBottom:10 }}>
+                <button onClick={() => { fileRef.current.removeAttribute("capture"); fileRef.current.click(); }}
+                  style={{ flex:1, background: C.bgFaint, color: C.text,
+                    border:`1px dashed ${C.beton}`, borderRadius:10, padding:"10px 0",
+                    cursor:"pointer", fontSize:13 }}>
+                  📁 Galerie
+                </button>
+                <button onClick={() => { fileRef.current.setAttribute("capture","environment"); fileRef.current.click(); }}
+                  style={{ flex:1, background: C.bgFaint, color: C.text,
+                    border:`1px dashed ${C.beton}`, borderRadius:10, padding:"10px 0",
+                    cursor:"pointer", fontSize:13 }}>
+                  📷 Kamera
+                </button>
+              </div>
+
+              {/* Vorschau */}
+              {bilder.length > 0 && (
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:6 }}>
+                  {bilder.map((b, i) => (
+                    <div key={i} style={{ position:"relative" }}>
+                      <img src={b.dataUrl} alt=""
+                        style={{ width:"100%", aspectRatio:"1", objectFit:"cover",
+                          borderRadius:8, display:"block" }} />
+                      {/* Löschen-Button */}
+                      <button onClick={() => bildEntfernen(i)}
+                        style={{ position:"absolute", top:4, right:4,
+                          background:"rgba(0,0,0,0.65)", border:"none",
+                          color:"#fff", borderRadius:12, width:22, height:22,
+                          cursor:"pointer", fontSize:12, display:"flex",
+                          alignItems:"center", justifyContent:"center", padding:0 }}>
+                        ✕
+                      </button>
+                      <div style={{ color: C.muted, fontSize:9, marginTop:2,
+                        textAlign:"center", overflow:"hidden", textOverflow:"ellipsis",
+                        whiteSpace:"nowrap" }}>{b.groesse}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Speichern */}
+            <div style={{ display:"flex", gap:10 }}>
+              <button onClick={resetForm}
+                style={{ flex:1, background: C.bgFaint, color: C.muted,
+                  border:"none", borderRadius:8, padding:13, cursor:"pointer" }}>
+                Abbrechen
+              </button>
+              <button onClick={saveBericht} disabled={uploading}
+                style={{ flex:2, background: uploading ? C.bgFaint : C.gelb,
+                  color: uploading ? C.muted : "#1C2027",
+                  border:"none", borderRadius:8, padding:13, fontWeight:700,
+                  cursor: uploading ? "default" : "pointer", fontSize:15 }}>
+                {uploading ? "⏳ Bilder werden hochgeladen…"
+                  : sbConnected ? "💾 Speichern & Sync" : "💾 Speichern"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// DASHBOARD
+// ════════════════════════════════════════════════════════════════════════════
+function DashboardView({ felder, kolonnen, sbConnected }) {
+  const totalM2  = felder.reduce((s,f) => s + f.m2, 0);
+  const doneM2   = felder.filter(f => f.status === "done").reduce((s,f) => s + f.m2, 0);
+  const totalMann= kolonnen.reduce((s,k) => s + (k.mitarbeiter?.length || k.mitglieder || 0), 0);
+  const offen    = felder.filter(f => f.status !== "done").length;
+  const delayed  = felder.filter(f => f.status !== "done" && new Date(f.geplant) < new Date("2025-06-22")).length;
+
+  return (
+    <div>
+      <WeatherView compact />
+      <SupabaseStatus connected={sbConnected} />
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:16 }}>
+        {[
+          { l:"m² betoniert", v:`${doneM2}/${totalM2}`, u:"m²", col: C.gruen },
+          { l:"Mann heute",   v:totalMann,               u:"",   col: C.gelb  },
+          { l:"Felder offen", v:offen,                   u:"",   col: C.beton },
+          { l:"Verzug",       v:delayed,                 u:"",   col: delayed > 0 ? C.rot : C.gruen },
+        ].map(k => (
+          <div key={k.l} style={{ background: C.bgMid, borderRadius:10, padding:"14px 16px", borderBottom:`3px solid ${k.col}` }}>
+            <div style={{ color: C.muted, fontSize:11, textTransform:"uppercase", letterSpacing:0.8 }}>{k.l}</div>
+            <div style={{ color: C.text, fontSize:24, fontWeight:800 }}>{k.v}<span style={{ fontSize:12, fontWeight:400, marginLeft:2 }}>{k.u}</span></div>
+          </div>
+        ))}
+      </div>
+      <div style={{ color: C.text, fontWeight:700, marginBottom:10 }}>Aktive Kolonnen</div>
+      {kolonnen.map(k => (
+        <div key={k.id} style={{ background: C.bgMid, borderRadius:8, padding:"10px 14px", marginBottom:8,
+          display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+          <div>
+            <div style={{ color: C.text, fontSize:13, fontWeight:600 }}>{k.name}</div>
+            <div style={{ color: C.muted, fontSize:12 }}>{k.einsatz}</div>
+          </div>
+          <div style={{ color: C.gelb, fontSize:13, fontWeight:700 }}>👷 {k.mitglieder}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// MANUELLER EDITOR – Raster-Generator + Einzelfeld + Abhängigkeiten
+// ════════════════════════════════════════════════════════════════════════════
+const PRAEFIX_OPTIONEN = ["A","B","C","D","E","F"];
+
+// ─── Projekttyp-Konfiguration ────────────────────────────────────────────────
+// Gewerk-Definitionen für Hochbau-Ausbau
+const HOCHBAU_GEWERKE = {
+  rohbau: {
+    label: "Rohbau / Beton",
+    icon: "🏗️",
+    einheitLabel: "Betonfeld",
+    einheitenPl: "Felder",
+    feldTypen: ["Fundament", "Bodenplatte", "Wand", "Stütze", "Decke", "Treppe", "Balkon", "Fertigteil"],
+    bewehrung: ["BSt 500, Ø8, 20cm", "BSt 500, Ø10, 15cm", "BSt 500, Ø12, 15cm", "BSt 500, Ø14, 12cm", "BSt 500, Ø16, 10cm", "Keine / Unbewehrt"],
+    extraFelder: [
+      { key: "betonsorte", label: "Betonsorte", type: "select", optionen: ["C20/25 XC1", "C25/30 XC2", "C30/37 XC3", "C35/45 XC4", "Sonstige"] },
+      { key: "festigkeit", label: "Festigkeit (%)", type: "number", placeholder: "0–100" },
+    ],
+    namePlaceholder: "z.B. A1 – Bodenplatte Nord",
+    fortschrittLabel: "Felder betoniert",
+    betonCheck: true,
+  },
+  elektro: {
+    label: "Elektroinstallation",
+    icon: "⚡",
+    einheitLabel: "Bereich",
+    einheitenPl: "Bereiche",
+    feldTypen: ["Unterverteilung", "Leitungsverlegung", "Steckdosen / Schalter", "Beleuchtung", "Kabeltrasse", "Hausanschluss", "Zähleranlage", "Blitzschutz", "Photovoltaik-Anbindung"],
+    bewehrung: [],
+    extraFelder: [
+      { key: "elektro_phase", label: "Installationsphase", type: "select", optionen: ["Vorinstallation (Leerrohre)", "Rohinstallation (Kabel)", "Endinstallation", "Prüfung / Abnahme", "Abgenommen"] },
+      { key: "stromkreise", label: "Stromkreise (Anz.)", type: "number", placeholder: "0" },
+      { key: "norm", label: "Norm / Prüfung", type: "select", optionen: ["VDE 0100 ausstehend", "VDE 0100 geprüft", "E-Check bestanden", "Brandschutz geprüft"] },
+    ],
+    namePlaceholder: "z.B. EG – Wohnbereich West",
+    fortschrittLabel: "Bereiche abgenommen",
+    betonCheck: false,
+  },
+  sanitaer: {
+    label: "Sanitärinstallation",
+    icon: "🚿",
+    einheitLabel: "Einheit",
+    einheitenPl: "Einheiten",
+    feldTypen: ["Trinkwasser kalt", "Trinkwasser warm", "Abwasser", "Regenwasser", "Badezimmer", "Küche", "WC", "Technikraum", "Außenzapfstelle"],
+    bewehrung: [],
+    extraFelder: [
+      { key: "sanitaer_phase", label: "Installationsphase", type: "select", optionen: ["Vorinstallation (Schlitze/Kernbohrungen)", "Rohinstallation (Leitungen)", "Endinstallation (Armaturen)", "Druckprüfung", "Abgenommen"] },
+      { key: "druckprobe", label: "Druckprobe", type: "select", optionen: ["Ausstehend", "Bestanden", "Nicht bestanden", "Nicht erforderlich"] },
+      { key: "daemmung", label: "Rohrdämmung", type: "select", optionen: ["Keine", "Ausstehend", "Teilweise", "Vollständig"] },
+    ],
+    namePlaceholder: "z.B. OG – Bad Nordseite",
+    fortschrittLabel: "Einheiten abgenommen",
+    betonCheck: false,
+  },
+  heizung: {
+    label: "Heizung / HLKS",
+    icon: "🔥",
+    einheitLabel: "Bereich",
+    einheitenPl: "Bereiche",
+    feldTypen: ["Heizkessel / Wärmepumpe", "Verteilung / Verteiler", "Heizkörper", "Fußbodenheizung", "Lüftungsanlage", "Kälteanlage", "Solar-Thermie", "Übergabestation"],
+    bewehrung: [],
+    extraFelder: [
+      { key: "heizung_typ", label: "Heizsystem", type: "select", optionen: ["Gas-Brennwert", "Wärmepumpe Luft", "Wärmepumpe Erde", "Pellet", "Fernwärme", "Elektro", "Hybrid"] },
+      { key: "heizung_phase", label: "Montagephase", type: "select", optionen: ["Rohinstallation", "Endmontage", "Befüllung / Entlüftung", "Inbetriebnahme", "Abgenommen"] },
+      { key: "druckprobe", label: "Druckprobe", type: "select", optionen: ["Ausstehend", "Bestanden", "Nicht bestanden"] },
+    ],
+    namePlaceholder: "z.B. Heizzentrale UG",
+    fortschrittLabel: "Bereiche in Betrieb",
+    betonCheck: false,
+  },
+  estrich: {
+    label: "Estrich",
+    icon: "🪨",
+    einheitLabel: "Fläche",
+    einheitenPl: "Flächen",
+    feldTypen: ["Zementestrich", "Anhydritestrich", "Trockenestrich", "Heizestrich (FBH)", "Gefälleestrich", "Industrieestrich"],
+    bewehrung: ["Keine", "Estrichdrahtgitter 50×50", "Glasfasergewebe", "Stahlnadeln / PP-Fasern"],
+    extraFelder: [
+      { key: "estrich_typ", label: "Estrichart", type: "select", optionen: ["Zementestrich CT", "Anhydritestrich CA", "Trockenestrich", "Gussasphalt", "Kunstharzestrich"] },
+      { key: "schichtdicke", label: "Schichtdicke (mm)", type: "number", placeholder: "z.B. 60" },
+      { key: "trockenzeit", label: "Trocknungszeit (Tage)", type: "number", placeholder: "z.B. 28" },
+      { key: "belegreife", label: "Belegreife", type: "select", optionen: ["Ausstehend", "Gemessen – nicht belegreif", "Belegreif", "Belegt"] },
+    ],
+    namePlaceholder: "z.B. EG – Wohnbereich (85m²)",
+    fortschrittLabel: "Flächen belegreif",
+    betonCheck: false,
+  },
+  innenausbau: {
+    label: "Innenausbau / Trockenbau",
+    icon: "🪚",
+    einheitLabel: "Bereich",
+    einheitenPl: "Bereiche",
+    feldTypen: ["Trennwand GK", "Unterdecke", "Vorsatzschale", "Bekleidung", "Brandschutzwand", "Schachtverkleidung", "Fensterbänke", "Türen / Zargen"],
+    bewehrung: [],
+    extraFelder: [
+      { key: "ausbau_phase", label: "Phase", type: "select", optionen: ["Planung", "Ständerwerk", "Beplankung 1. Lage", "Beplankung 2. Lage", "Verspachtelung", "Fertig"] },
+      { key: "brandschutz", label: "Brandschutz", type: "select", optionen: ["Nicht erforderlich", "F30 ausstehend", "F30 abgenommen", "F60 ausstehend", "F60 abgenommen", "F90 abgenommen"] },
+    ],
+    namePlaceholder: "z.B. OG Flur – Trennwände",
+    fortschrittLabel: "Bereiche fertig",
+    betonCheck: false,
+  },
+  fliesen: {
+    label: "Fliesen / Beläge",
+    icon: "🟫",
+    einheitLabel: "Fläche",
+    einheitenPl: "Flächen",
+    feldTypen: ["Bodenfliesen", "Wandfliesen", "Außenfliesen", "Naturstein", "Parkett", "Laminat", "Teppich", "Vinyl / LVT"],
+    bewehrung: [],
+    extraFelder: [
+      { key: "belag_material", label: "Material", type: "text", placeholder: "z.B. Feinsteinzeug 60×60" },
+      { key: "verlegung", label: "Verlegemuster", type: "select", optionen: ["Reihenverband", "Versatz 1/3", "Versatz 1/2", "Diagonal", "Fischgrät", "Freies Muster"] },
+      { key: "belag_phase", label: "Status", type: "select", optionen: ["Untergrund vorbereiten", "Fliesenarbeiten", "Verfugung", "Abgenommen"] },
+    ],
+    namePlaceholder: "z.B. EG Bad – Boden (12m²)",
+    fortschrittLabel: "Flächen verlegt",
+    betonCheck: false,
+  },
+};
+
+const PROJEKTTYPEN = {
+  hochbau: {
+    label: "Hausbau / Hochbau",
+    icon: "🏠",
+    einheitLabel: "Position",
+    einheitenPl: "Positionen",
+    feldTypen: Object.values(HOCHBAU_GEWERKE).flatMap(g => g.feldTypen),
+    bewehrung: HOCHBAU_GEWERKE.rohbau.bewehrung,
+    betonsorte: ["C20/25 XC1", "C25/30 XC2", "C30/37 XC3", "C35/45 XC4", "Sonstige"],
+    gewerke: HOCHBAU_GEWERKE,
+    extraFelder: [
+      { key: "gewerk", label: "Gewerk", type: "select",
+        optionen: Object.entries(HOCHBAU_GEWERKE).map(([k,g]) => `${g.icon} ${g.label}`) },
+    ],
+    namePlaceholder: "z.B. EG – Bodenplatte / Bad Nord",
+    fortschrittLabel: "Positionen fertig",
+  },
+  tiefgarage: {
+    label: "Tiefgarage / Parkdeck",
+    icon: "🅿️",
+    einheitLabel: "Abschnitt",
+    einheitenPl: "Abschnitte",
+    feldTypen: ["Bodenplatte", "Wand", "Stütze", "Decke", "Rampe", "Widerlager", "Entwässerung"],
+    bewehrung: ["BSt 500, Ø10, 15cm", "BSt 500, Ø12, 15cm", "BSt 500, Ø14, 12cm", "BSt 500, Ø16, 10cm", "BSt 500, Ø20, 10cm", "Doppelkopfanker"],
+    betonsorte: ["C25/30 XC2 WU", "C30/37 XC3 WU", "C35/45 XC4 WU", "C30/37 XF1", "Sonstige"],
+    extraFelder: [],
+    namePlaceholder: "z.B. TG-A1 – Ebene -1 West",
+    fortschrittLabel: "Abschnitte fertig",
+  },
+  tiefbau: {
+    label: "Tiefbau / Straße",
+    icon: "🛣️",
+    einheitLabel: "Abschnitt",
+    einheitenPl: "Abschnitte",
+    feldTypen: ["Fahrbahn", "Gehweg", "Randstreifen", "Bordstein", "Entwässerungsrinne", "Kreuzungsbereich", "Brückenkappe"],
+    bewehrung: ["Bewehrungsmatte Q188", "Bewehrungsmatte Q257", "Bewehrungsmatte Q335", "Bewehrungsmatte Q524", "BSt 500, Ø12, 15cm", "Unbewehrt / Magerbeton"],
+    betonsorte: ["C30/37 XF4", "C35/45 XF4", "C40/50 XF4 XM", "C30/37 XF2", "Magerbeton C8/10", "Sonstige"],
+    extraFelder: [],
+    namePlaceholder: "z.B. FA-001 – Fahrbahn km 0+000",
+    fortschrittLabel: "Abschnitte betoniert",
+  },
+  dach: {
+    label: "Dach",
+    icon: "🏚️",
+    einheitLabel: "Fläche",
+    einheitenPl: "Flächen",
+    feldTypen: ["Hauptfläche", "Gaube", "Traufe", "First", "Ortgang", "Kehle", "Dachflächenfenster", "Kaminanschluss"],
+    bewehrung: ["Nicht zutreffend"],
+    betonsorte: ["Nicht zutreffend"],
+    extraFelder: [
+      { key: "material",     label: "Dachmaterial",      type: "select", optionen: ["Dachziegel Ton", "Dachziegel Beton", "Bitumenschindeln", "Stehfalzblech", "Trapezblech", "Gründach", "Flachdach EPDM"] },
+      { key: "eingedeckt_m2", label: "Eingedeckt (m²)", type: "number", placeholder: "0" },
+      { key: "daemmung",     label: "Dämmung",            type: "select", optionen: ["Keine", "Zwischensparren", "Aufsparren", "Untersparren", "Vollsparren"] },
+    ],
+    namePlaceholder: "z.B. Nordseite – Hauptfläche",
+    fortschrittLabel: "Flächen eingedeckt",
+  },
+  pv: {
+    label: "PV-Anlage",
+    icon: "☀️",
+    einheitLabel: "Modul-Reihe",
+    einheitenPl: "Reihen",
+    feldTypen: ["Modulreihe", "Wechselrichter", "DC-Verkabelung", "AC-Verkabelung", "Einspeisepunkt", "Montagegestell", "Erdung"],
+    bewehrung: ["Nicht zutreffend"],
+    betonsorte: ["Nicht zutreffend"],
+    extraFelder: [
+      { key: "module_anzahl",  label: "Module (Stk.)",     type: "number", placeholder: "0" },
+      { key: "kwp",            label: "Leistung (kWp)",    type: "number", placeholder: "0.0" },
+      { key: "elektro_status", label: "Elektroinstallation", type: "select", optionen: ["Ausstehend", "In Arbeit", "Abgeschlossen", "Abgenommen"] },
+      { key: "modul_typ",      label: "Modultyp",           type: "text",   placeholder: "z.B. Jinko 440W" },
+    ],
+    namePlaceholder: "z.B. Reihe A – Südseite (12 Module)",
+    fortschrittLabel: "Reihen installiert",
+  },
+};
+
+function typConfig(typ) {
+  return PROJEKTTYPEN[typ] || PROJEKTTYPEN.hochbau;
+}
+
+
+function leererFeld(id, name, m2, geplant) {
+  return { id, name, m2: m2||0, geplant: geplant||"", dauer_tage:1, betonsorte:"C25/30 XC2", bewehrung:"BSt 500, Ø12, 15cm", abhaengigkeiten:[], status:"planned", festigkeit:null, betoniert:null };
+}
+
+function RasterGenerator({ onGenerate }) {
+  const [zeilen,  setZeilen]  = useState(2);
+  const [spalten, setSpalten] = useState(3);
+  const [praefix, setPraefix] = useState("A");
+  const [m2,      setM2]      = useState(80);
+  const [geplant, setGeplant] = useState("2025-07-01");
+  const [schema,  setSchema]  = useState("alpha"); // alpha | num
+
+  const vorschau = [];
+  for (let z = 0; z < zeilen; z++) {
+    for (let s = 0; s < spalten; s++) {
+      const nr = schema === "alpha"
+        ? `${PRAEFIX_OPTIONEN[z]||z+1}${s+1}`
+        : `${praefix}${z * spalten + s + 1}`;
+      vorschau.push(nr);
+    }
+  }
+
+  function generate() {
+    const felder = vorschau.map((name, i) => leererFeld(Date.now()+i, name, m2, geplant));
+    onGenerate(felder);
+  }
+
+  return (
+    <div style={{ background: C.bgMid, borderRadius:14, padding:18, marginBottom:16 }}>
+      <div style={{ color: C.gelb, fontWeight:700, fontSize:15, marginBottom:14 }}>🔲 Raster generieren</div>
+
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:14 }}>
+        {/* Zeilen */}
+        <div>
+          <Label>Zeilen</Label>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <StepBtn onClick={() => setZeilen(z => Math.max(1,z-1))}>−</StepBtn>
+            <span style={{ color: C.text, fontWeight:700, fontSize:20, minWidth:24, textAlign:"center" }}>{zeilen}</span>
+            <StepBtn onClick={() => setZeilen(z => Math.min(10,z+1))}>+</StepBtn>
+          </div>
+        </div>
+        {/* Spalten */}
+        <div>
+          <Label>Spalten</Label>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <StepBtn onClick={() => setSpalten(s => Math.max(1,s-1))}>−</StepBtn>
+            <span style={{ color: C.text, fontWeight:700, fontSize:20, minWidth:24, textAlign:"center" }}>{spalten}</span>
+            <StepBtn onClick={() => setSpalten(s => Math.min(12,s+1))}>+</StepBtn>
+          </div>
+        </div>
+        {/* m² */}
+        <div>
+          <Label>Standard m² / Feld</Label>
+          <input type="number" value={m2} onChange={e => setM2(+e.target.value)}
+            style={inputStyle()} />
+        </div>
+        {/* Startdatum */}
+        <div>
+          <Label>Starttermin</Label>
+          <input type="date" value={geplant} onChange={e => setGeplant(e.target.value)}
+            style={inputStyle()} />
+        </div>
+      </div>
+
+      {/* Nummernschema */}
+      <div style={{ marginBottom:14 }}>
+        <Label>Nummernschema</Label>
+        <div style={{ display:"flex", gap:8 }}>
+          {[["alpha","A1, B2, C3…"],["num","Präfix + lfd. Nr."]].map(([v,l]) => (
+            <button key={v} onClick={() => setSchema(v)}
+              style={{ flex:1, background: schema===v ? C.gelb : C.bgLight,
+                color: schema===v ? "#1C2027" : C.muted,
+                border:"none", borderRadius:8, padding:"8px 0", cursor:"pointer", fontSize:12, fontWeight: schema===v ? 700 : 400 }}>
+              {l}
+            </button>
+          ))}
+        </div>
+        {schema === "num" && (
+          <div style={{ marginTop:8 }}>
+            <Label>Präfix</Label>
+            <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+              {PRAEFIX_OPTIONEN.map(p => (
+                <button key={p} onClick={() => setPraefix(p)}
+                  style={{ background: praefix===p ? C.gelb : C.bgLight, color: praefix===p ? "#1C2027" : C.muted,
+                    border:"none", borderRadius:6, padding:"4px 12px", cursor:"pointer", fontWeight:700 }}>
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Vorschau-Raster */}
+      <div style={{ marginBottom:14 }}>
+        <Label>Vorschau ({zeilen * spalten} Felder)</Label>
+        <div style={{ display:"grid", gridTemplateColumns:`repeat(${spalten}, 1fr)`, gap:4 }}>
+          {vorschau.map((name, i) => (
+            <div key={i} style={{ background: C.bgFaint, borderRadius:6, padding:"6px 4px", textAlign:"center",
+              color: C.betonLight, fontSize:11, fontWeight:600, border:`1px solid ${C.bgLight}` }}>
+              {name}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <button onClick={generate}
+        style={{ width:"100%", background: C.gelb, color:"#1C2027", border:"none",
+          borderRadius:10, padding:13, fontWeight:700, cursor:"pointer", fontSize:15 }}>
+        ✅ {zeilen * spalten} Felder erstellen
+      </button>
+    </div>
+  );
+}
+
+function FeldEditor({ feld, allFelder, onSave, onDelete, onClose, projektTyp, projSubs=[] }) {
+  const [f, setF] = useState({ ...feld });
+  const cfg = typConfig(projektTyp);
+
+  // For Hochbau: derive active Gewerk config from selected gewerk field
+  const aktivGewerk = projektTyp === "hochbau" && f.gewerk
+    ? Object.values(HOCHBAU_GEWERKE).find(g => f.gewerk.includes(g.label))
+    : null;
+  const aktivCfg = aktivGewerk || cfg;
+
+  function toggleAbh(id) {
+    setF(prev => ({
+      ...prev,
+      abhaengigkeiten: prev.abhaengigkeiten.includes(id)
+        ? prev.abhaengigkeiten.filter(x => x !== id)
+        : [...prev.abhaengigkeiten, id],
+    }));
+  }
+
+  return (
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.8)", zIndex:300,
+      display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
+      <div style={{ background: C.bgMid, borderRadius:"16px 16px 0 0", padding:20,
+        width:"100%", maxWidth:520, maxHeight:"90vh", overflowY:"auto" }}>
+
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+          <div style={{ color: C.gelb, fontWeight:700, fontSize:16 }}>
+            {feld.id ? "✏️ Position bearbeiten" : "➕ Neue Position"}
+          </div>
+          <button onClick={onClose} style={{ background:"none", border:"none", color: C.muted, fontSize:22, cursor:"pointer" }}>✕</button>
+        </div>
+
+        {/* Gewerk-Auswahl (nur Hochbau) */}
+        {projektTyp === "hochbau" && (
+          <div style={{ marginBottom:16 }}>
+            <Label>Gewerk *</Label>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6, marginTop:6 }}>
+              {Object.values(HOCHBAU_GEWERKE).map(g => {
+                const aktiv = f.gewerk?.includes(g.label);
+                return (
+                  <div key={g.label} onClick={() => setF(p => ({ ...p, gewerk: `${g.icon} ${g.label}`, bewehrung:"", name: p.name || "" }))}
+                    style={{ background: aktiv ? C.bgLight : C.bgFaint,
+                      border:`2px solid ${aktiv ? C.gelb : "transparent"}`,
+                      borderRadius:9, padding:"8px 10px", cursor:"pointer",
+                      display:"flex", alignItems:"center", gap:7 }}>
+                    <span style={{ fontSize:18 }}>{g.icon}</span>
+                    <span style={{ color: aktiv ? C.text : C.muted, fontSize:11, fontWeight: aktiv ? 700 : 400 }}>{g.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+
+        {/* Feldname */}
+        <div style={{ marginBottom:12 }}>
+          <Label>{cfg.einheitLabel}name / Nummer *</Label>
+          {/* Schnellauswahl Feldtyp */}
+          <div style={{ display:"flex", flexWrap:"wrap", gap:5, marginBottom:6 }}>
+            {aktivCfg.feldTypen.map(t => (
+              <button key={t} onClick={() => setF(p=>({...p, name: f.name ? f.name : t}))}
+                style={{ background: C.bgFaint, color: C.muted, border:"none", borderRadius:6,
+                  padding:"4px 9px", cursor:"pointer", fontSize:11 }}>{t}</button>
+            ))}
+          </div>
+          <input value={f.name} onChange={e => setF(p=>({...p,name:e.target.value}))}
+            placeholder={cfg.namePlaceholder} style={inputStyle()} />
+        </div>
+
+        {/* m² + Dauer */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12 }}>
+          <div>
+            <Label>Fläche (m²) *</Label>
+            <input type="number" value={f.m2||""} onChange={e => setF(p=>({...p,m2:+e.target.value}))}
+              placeholder="120" style={inputStyle()} />
+          </div>
+          <div>
+            <Label>Dauer (Tage)</Label>
+            <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:4 }}>
+              <StepBtn onClick={() => setF(p=>({...p,dauer_tage:Math.max(1,p.dauer_tage-1)}))}>−</StepBtn>
+              <span style={{ color: C.text, fontWeight:700, fontSize:18, minWidth:20, textAlign:"center" }}>{f.dauer_tage}</span>
+              <StepBtn onClick={() => setF(p=>({...p,dauer_tage:p.dauer_tage+1}))}>+</StepBtn>
+            </div>
+          </div>
+        </div>
+
+        {/* Termin */}
+        <div style={{ marginBottom:12 }}>
+          <Label>{aktivCfg.betonCheck === false ? "Geplanter Termin" : "Betoniertermin"}</Label>
+          <input type="date" value={f.geplant||""} onChange={e => setF(p=>({...p,geplant:e.target.value}))}
+            style={inputStyle()} />
+        </div>
+
+        {/* Typ-spezifische Extrafelder (Dach, PV) */}
+        {(aktivCfg.extraFelder||[]).map(ef => (
+          <div key={ef.key} style={{ marginBottom:12 }}>
+            <Label>{ef.label}</Label>
+            {ef.type === "select" ? (
+              <div style={{ display:"flex", flexWrap:"wrap", gap:5, marginBottom:6 }}>
+                {ef.optionen.map(o => (
+                  <button key={o} onClick={() => setF(p=>({...p,[ef.key]:o}))}
+                    style={{ background: f[ef.key]===o ? C.blau : C.bgFaint,
+                      color: f[ef.key]===o ? "#fff" : C.muted,
+                      border:"none", borderRadius:7, padding:"5px 9px", cursor:"pointer", fontSize:11 }}>
+                    {o}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <input type={ef.type} value={f[ef.key]||""} onChange={e => setF(p=>({...p,[ef.key]:e.target.value}))}
+                placeholder={ef.placeholder||""} style={inputStyle()} />
+            )}
+          </div>
+        ))}
+
+        {/* Bewehrung – nur bei Beton-Typen */}
+        {(aktivCfg.bewehrung||[]).length > 0 && !aktivCfg.bewehrung?.[0]?.startsWith("Nicht") && (
+        <div style={{ marginBottom:12 }}>
+          <Label>Bewehrung</Label>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:6 }}>
+            {(aktivCfg.bewehrung||[]).map(o => (
+              <button key={o} onClick={() => setF(p=>({...p,bewehrung:o}))}
+                style={{ background: f.bewehrung===o ? C.blau : C.bgFaint,
+                  color: f.bewehrung===o ? "#fff" : C.muted,
+                  border:"none", borderRadius:7, padding:"5px 10px", cursor:"pointer", fontSize:11 }}>
+                {o}
+              </button>
+            ))}
+          </div>
+          <input value={f.bewehrung||""} onChange={e => setF(p=>({...p,bewehrung:e.target.value}))}
+            placeholder="Oder eigene Eingabe…" style={inputStyle()} />
+        </div>
+        )}
+
+        {/* Sub-Zuweisung auf Feldebene */}
+        {projSubs.length > 0 && (
+          <div style={{ marginBottom:16 }}>
+            <Label>🏢 Subunternehmer für dieses Feld</Label>
+            <div style={{ display:"flex", flexDirection:"column", gap:6, marginTop:6 }}>
+              {projSubs.map(s => {
+                const aktiv = (f.subIds||[]).includes(s.id);
+                return (
+                  <div key={s.id} onClick={() => setF(p => ({
+                    ...p, subIds: aktiv
+                      ? (p.subIds||[]).filter(x=>x!==s.id)
+                      : [...(p.subIds||[]), s.id]
+                  }))}
+                    style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+                      background: aktiv ? "#1A2040" : C.bgLight,
+                      border:`1.5px solid ${aktiv ? C.blau : C.bgFaint}`,
+                      borderRadius:9, padding:"9px 12px", cursor:"pointer" }}>
+                    <div>
+                      <div style={{ color: C.text, fontSize:13, fontWeight: aktiv ? 700 : 400 }}>{s.name}</div>
+                      <div style={{ display:"flex", gap:6, marginTop:2 }}>
+                        {s.gewerke.map(k => {
+                          const g = ALLE_GEWERKE.find(x=>x.key===k);
+                          return g ? <span key={k} style={{ color: C.muted, fontSize:10 }}>{g.icon} {g.label}</span> : null;
+                        })}
+                        {s.stundensatz > 0 && <span style={{ color: C.muted, fontSize:10 }}>· {s.stundensatz}€/Std.</span>}
+                      </div>
+                    </div>
+                    <div style={{ fontSize:18 }}>{aktiv ? "🔵" : "⚪"}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Abhängigkeiten */}
+        {allFelder.filter(x => x.id !== f.id).length > 0 && (
+          <div style={{ marginBottom:16 }}>
+            <Label>🔗 Abhängigkeiten – muss fertig sein vor diesem Feld</Label>
+            <div style={{ display:"flex", flexDirection:"column", gap:6, marginTop:6 }}>
+              {allFelder.filter(x => x.id !== f.id).map(x => {
+                const active = f.abhaengigkeiten.includes(x.id);
+                return (
+                  <div key={x.id} onClick={() => toggleAbh(x.id)}
+                    style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+                      background: active ? "#1A2A3A" : C.bgLight,
+                      border:`1.5px solid ${active ? C.blau : C.bgFaint}`,
+                      borderRadius:9, padding:"9px 12px", cursor:"pointer" }}>
+                    <div>
+                      <div style={{ color: C.text, fontSize:13, fontWeight: active ? 700 : 400 }}>{x.name}</div>
+                      <div style={{ color: C.muted, fontSize:11 }}>{x.m2} m² · {x.status}</div>
+                    </div>
+                    <div style={{ fontSize:18 }}>{active ? "🔵" : "⚪"}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Buttons */}
+        <div style={{ display:"flex", gap:10 }}>
+          {feld.id && (
+            <button onClick={() => onDelete(f.id)}
+              style={{ background:"#2E1A1A", color: C.rot, border:`1px solid ${C.rot}`,
+                borderRadius:10, padding:"12px 16px", cursor:"pointer", fontSize:13 }}>
+              🗑️
+            </button>
+          )}
+          <button onClick={onClose}
+            style={{ flex:1, background: C.bgFaint, color: C.muted, border:"none", borderRadius:10, padding:13, cursor:"pointer" }}>
+            Abbrechen
+          </button>
+          <button onClick={() => onSave(f)} disabled={!f.name || !f.m2}
+            style={{ flex:2, background: f.name && f.m2 ? C.gelb : C.bgFaint,
+              color: f.name && f.m2 ? "#1C2027" : C.muted,
+              border:"none", borderRadius:10, padding:13, fontWeight:700, cursor:"pointer", fontSize:15 }}>
+            💾 Speichern
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EditorView({ felder, setFelder, projektTyp }) {
+  const cfg = typConfig(projektTyp);
+  const [showRaster, setShowRaster] = useState(false);
+  const [editFeld,   setEditFeld]   = useState(null); // null | {} (neu) | {…} (bestehend)
+  const [filter,     setFilter]     = useState("all");
+
+  function handleGenerate(neuFelder) {
+    setFelder(prev => {
+      const maxId = prev.reduce((m,f) => Math.max(m,f.id), 0);
+      return [...prev, ...neuFelder.map((f,i) => ({ ...f, id: maxId+i+1 }))];
+    });
+    setShowRaster(false);
+  }
+
+  function handleSave(f) {
+    setFelder(prev => prev.some(x => x.id===f.id)
+      ? prev.map(x => x.id===f.id ? f : x)
+      : [...prev, { ...f, id: Date.now() }]
+    );
+    setEditFeld(null);
+  }
+
+  function handleDelete(id) {
+    setFelder(prev => prev
+      .filter(f => f.id !== id)
+      .map(f => ({ ...f, abhaengigkeiten: (f.abhaengigkeiten||[]).filter(x => x !== id) }))
+    );
+    setEditFeld(null);
+  }
+
+  const filtered = filter==="all" ? felder : felder.filter(f => f.status===filter);
+
+  return (
+    <div>
+      {/* Aktionsleiste */}
+      <div style={{ display:"flex", gap:8, marginBottom:16 }}>
+        <button onClick={() => setShowRaster(s => !s)}
+          style={{ flex:1, background: showRaster ? C.gelb : C.bgMid,
+            color: showRaster ? "#1C2027" : C.text, border:`1px solid ${showRaster ? C.gelb : C.bgFaint}`,
+            borderRadius:10, padding:"10px 0", cursor:"pointer", fontWeight:700, fontSize:13 }}>
+          🔲 Raster
+        </button>
+        <button onClick={() => setEditFeld({ name:"", m2:0, geplant:"", dauer_tage:1, bewehrung:"", abhaengigkeiten:[], status:"planned" })}
+          style={{ flex:1, background: C.bgMid, color: C.text, border:`1px solid ${C.bgFaint}`,
+            borderRadius:10, padding:"10px 0", cursor:"pointer", fontWeight:700, fontSize:13 }}>
+          ➕ {cfg.einheitLabel}
+        </button>
+      </div>
+
+      {/* Raster-Generator */}
+      {showRaster && <RasterGenerator onGenerate={handleGenerate} />}
+
+      {/* Filter */}
+      <div style={{ display:"flex", gap:6, marginBottom:12, overflowX:"auto" }}>
+        {[["all","Alle"],["planned","Geplant"],["in_progress","Aktiv"],["done","Fertig"],["blocked","Blockiert"]].map(([v,l]) => (
+          <button key={v} onClick={() => setFilter(v)}
+            style={{ background: filter===v ? C.gelb : C.bgMid, color: filter===v ? "#1C2027" : C.muted,
+              border:"none", borderRadius:20, padding:"5px 12px", cursor:"pointer", fontSize:12,
+              fontWeight: filter===v ? 700 : 400, whiteSpace:"nowrap" }}>
+            {l} {v==="all" ? `(${felder.length})` : `(${felder.filter(f=>f.status===v).length})`}
+          </button>
+        ))}
+      </div>
+
+      {/* Feldliste */}
+      {filtered.length === 0 ? (
+        <div style={{ background: C.bgMid, borderRadius:12, padding:32, textAlign:"center" }}>
+          <div style={{ fontSize:36 }}>🏗️</div>
+          <div style={{ color: C.muted, marginTop:10 }}>Noch keine Felder angelegt.<br/>Raster generieren oder Einzelfeld hinzufügen.</div>
+        </div>
+      ) : filtered.map(f => {
+        const abh = (f.abhaengigkeiten||[]).map(id => felder.find(x=>x.id===id)?.name).filter(Boolean);
+        const abhNichtFertig = (f.abhaengigkeiten||[]).some(id => felder.find(x=>x.id===id)?.status !== "done");
+        return (
+          <div key={f.id} onClick={() => setEditFeld(f)}
+            style={{ background: C.bgMid, borderRadius:11, padding:"13px 15px", marginBottom:9,
+              border:`2px solid ${abhNichtFertig && f.status==="planned" ? C.rost : STATUS_COLOR[f.status]}`,
+              cursor:"pointer" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+              <div style={{ flex:1 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                  <span style={{ color: C.text, fontWeight:700, fontSize:14 }}>{f.name}</span>
+                  <span style={{ background: STATUS_COLOR[f.status], color:"#fff", fontSize:9,
+                    padding:"2px 7px", borderRadius:20 }}>
+                    {STATUS_LABEL[f.status]?.split(" ")[1]}
+                  </span>
+                </div>
+                <div style={{ display:"flex", gap:10, marginTop:5, flexWrap:"wrap" }}>
+                  {f.m2 > 0 && <Chip icon="📐" label={`${f.m2} m²`} />}
+                  {f.geplant && <Chip icon="📅" label={f.geplant} />}
+                  {f.dauer_tage > 1 && <Chip icon="⏱️" label={`${f.dauer_tage} Tage`} />}
+                </div>
+                {f.bewehrung && <div style={{ color: C.muted, fontSize:11, marginTop:5 }}>🔩 {f.bewehrung}</div>}
+                {abh.length > 0 && (
+                  <div style={{ marginTop:6, display:"flex", gap:5, flexWrap:"wrap" }}>
+                    <span style={{ color: C.muted, fontSize:11 }}>🔗</span>
+                    {abh.map((n,i) => (
+                      <span key={i} style={{ background: abhNichtFertig ? "#2E1A1A" : "#1A2E1A",
+                        color: abhNichtFertig ? C.rost : C.gruen,
+                        fontSize:10, padding:"2px 7px", borderRadius:10 }}>{n}</span>
+                    ))}
+                    {abhNichtFertig && <span style={{ color: C.rost, fontSize:10 }}>⚠️ Vorgänger nicht fertig</span>}
+                  </div>
+                )}
+              </div>
+              <div style={{ color: C.muted, fontSize:18, marginLeft:8 }}>›</div>
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Editor Modal */}
+      {editFeld !== null && (
+        <FeldEditor
+          feld={editFeld}
+          allFelder={felder}
+          onSave={handleSave}
+          onDelete={handleDelete}
+          onClose={() => setEditFeld(null)}
+          projektTyp={projektTyp}
+          projSubs={projSubs}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Shared UI Helpers ───────────────────────────────────────────────────────
+function Label({ children }) {
+  return <div style={{ color: C.muted, fontSize:11, marginBottom:4, textTransform:"uppercase", letterSpacing:0.5 }}>{children}</div>;
+}
+function StepBtn({ onClick, children }) {
+  return (
+    <button onClick={onClick} style={{ width:32, height:32, background: C.bgFaint, color: C.text,
+      border:`1px solid ${C.bgLight}`, borderRadius:8, cursor:"pointer", fontSize:18, fontWeight:700,
+      display:"flex", alignItems:"center", justifyContent:"center" }}>{children}</button>
+  );
+}
+function inputStyle() {
+  return { width:"100%", background: C.bgLight, color: C.text, border:`1px solid ${C.bgFaint}`,
+    borderRadius:8, padding:"10px 12px", fontSize:13, boxSizing:"border-box", marginTop:2 };
+}
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// 123ERFASST ZEITERFASSUNG
+// ════════════════════════════════════════════════════════════════════════════
+
+// Proxy-URL — zeigt auf deine Supabase Edge Function
+const ERFASST_PROXY = "https://DEIN-PROJEKT.supabase.co/functions/v1/erfasst-proxy";
+
+async function erfasstQuery(query, variables = {}) {
+  try {
+    const res = await fetch(ERFASST_PROXY, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query, variables }),
+    });
+    const data = await res.json();
+    if (data.errors) throw new Error(data.errors[0]?.message || "GraphQL Fehler");
+    return data.data;
+  } catch (e) {
+    throw e;
+  }
+}
+
+// GraphQL Queries
+const Q_PERSONS = `
+  query {
+    persons(filter: { isDeleted: { eq: false } }) {
+      nodes {
+        ident
+        firstname
+        lastname
+        formattedName
+        employee { staffNumber }
+      }
+    }
+  }
+`;
+
+const Q_TIMES = `
+  query GetTimes($from: DateTime!, $to: DateTime!, $projectIdent: Ident) {
+    hoursBlocks(
+      filter: {
+        date: { gte: $from, lte: $to }
+        projectIdent: { eq: $projectIdent }
+      }
+      orderBy: { date: ASC }
+    ) {
+      nodes {
+        ident
+        date
+        hours
+        minutes
+        person {
+          ident
+          formattedName
+        }
+        project {
+          ident
+          name
+        }
+        activity {
+          name
+          abbreviation
+        }
+        note
+      }
+      totalCount
+    }
+  }
+`;
+
+const Q_PROJECTS = `
+  query {
+    projects(filter: { isDeleted: { eq: false } }) {
+      nodes {
+        ident
+        name
+        number
+        endDate
+      }
+    }
+  }
+`;
+
+function ZeiterfassungView({ projekt }) {
+  const [status,      setStatus]      = useState("idle"); // idle | loading | ok | error | unconfigured
+  const [fehler,      setFehler]      = useState("");
+  const [zeitdaten,   setZeitdaten]   = useState([]);
+  const [personen,    setPersonen]    = useState([]);
+  const [projekte123, setProjekte123] = useState([]);
+  const [linkedId,    setLinkedId]    = useState(projekt?.erfasstIdent || null);
+  const [vonDatum,    setVonDatum]    = useState(() => {
+    const d = new Date(); d.setDate(d.getDate() - 7);
+    return d.toISOString().slice(0,10);
+  });
+  const [bisDatum,    setBisDatum]    = useState(new Date().toISOString().slice(0,10));
+  const [personFilter,setPersonFilter]= useState("alle");
+  const [screen,      setScreen]      = useState("zeiten"); // zeiten | verknuepfen
+
+  const konfiguriert = !ERFASST_PROXY.includes("DEIN-PROJEKT");
+
+  useEffect(() => {
+    if (!konfiguriert) { setStatus("unconfigured"); return; }
+    if (screen === "verknuepfen") ladeProjects();
+    else if (linkedId) ladeZeiten();
+  }, [screen, linkedId, vonDatum, bisDatum]);
+
+  async function ladeZeiten() {
+    setStatus("loading");
+    try {
+      const data = await erfasstQuery(Q_TIMES, {
+        from:         vonDatum + "T00:00:00",
+        to:           bisDatum + "T23:59:59",
+        projectIdent: linkedId,
+      });
+      setZeitdaten(data?.hoursBlocks?.nodes || []);
+      setStatus("ok");
+    } catch(e) {
+      setFehler(e.message); setStatus("error");
+    }
+  }
+
+  async function ladeProjects() {
+    setStatus("loading");
+    try {
+      const data = await erfasstQuery(Q_PROJECTS);
+      setProjekte123(data?.projects?.nodes || []);
+      setStatus("ok");
+    } catch(e) {
+      setFehler(e.message); setStatus("error");
+    }
+  }
+
+  // Stunden summieren
+  function toH(h, m) { return (h||0) + (m||0)/60; }
+  const totalStd = zeitdaten.reduce((s,z) => s + toH(z.hours, z.minutes), 0);
+
+  // Gruppierung nach Person
+  const nachPerson = {};
+  zeitdaten.forEach(z => {
+    const key = z.person?.formattedName || "Unbekannt";
+    if (!nachPerson[key]) nachPerson[key] = { name: key, eintraege: [], total: 0 };
+    nachPerson[key].eintraege.push(z);
+    nachPerson[key].total += toH(z.hours, z.minutes);
+  });
+
+  const gefiltert = personFilter === "alle"
+    ? zeitdaten
+    : zeitdaten.filter(z => z.person?.formattedName === personFilter);
+
+  // ── Unconfigured ──
+  if (status === "unconfigured") return (
+    <div style={{ background: C.bgMid, borderRadius:14, padding:24 }}>
+      <div style={{ fontSize:36, textAlign:"center", marginBottom:12 }}>⏱️</div>
+      <div style={{ color: C.gelb, fontWeight:700, fontSize:16, marginBottom:10 }}>123erfasst Anbindung</div>
+      <div style={{ color: C.muted, fontSize:13, marginBottom:20, lineHeight:1.6 }}>
+        Um Zeiterfassungsdaten zu laden, muss die Supabase Edge Function konfiguriert werden.
+      </div>
+      <div style={{ background: C.bgFaint, borderRadius:10, padding:14, marginBottom:16 }}>
+        <div style={{ color: C.text, fontSize:12, fontWeight:700, marginBottom:8 }}>Setup (einmalig):</div>
+        {[
+          ["1.", "Supabase Edge Function deployen:", "supabase functions deploy erfasst-proxy"],
+          ["2.", "API-Key setzen:", "supabase secrets set ERFASST_API_KEY=<key>"],
+          ["3.", "Server setzen:", "supabase secrets set ERFASST_SERVER=<firma.123erfasst.de>"],
+          ["4.", "Proxy-URL in polier-app.jsx eintragen:", "ERFASST_PROXY = 'https://...'"],
+        ].map(([nr, label, code]) => (
+          <div key={nr} style={{ marginBottom:10 }}>
+            <div style={{ color: C.muted, fontSize:11 }}>{nr} {label}</div>
+            <div style={{ background: C.bgMid, borderRadius:6, padding:"5px 10px", marginTop:3,
+              color: C.gelb, fontSize:11, fontFamily:"monospace" }}>{code}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  return (
+    <div>
+      {/* Header */}
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
+        <div style={{ color: C.text, fontWeight:700, fontSize:15 }}>⏱️ Zeiterfassung</div>
+        <div style={{ display:"flex", gap:8 }}>
+          <button onClick={() => setScreen(s => s==="zeiten" ? "verknuepfen" : "zeiten")}
+            style={{ background: screen==="verknuepfen" ? C.gelb : C.bgFaint,
+              color: screen==="verknuepfen" ? "#1C2027" : C.muted,
+              border:"none", borderRadius:8, padding:"6px 12px", cursor:"pointer", fontSize:12 }}>
+            🔗 Projekt verknüpfen
+          </button>
+          {screen==="zeiten" && linkedId && (
+            <button onClick={ladeZeiten}
+              style={{ background: C.bgFaint, color: C.text, border:"none",
+                borderRadius:8, padding:"6px 12px", cursor:"pointer", fontSize:12 }}>
+              🔄
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Projekt-Verknüpfung */}
+      {screen === "verknuepfen" && (
+        <div>
+          <div style={{ color: C.muted, fontSize:13, marginBottom:14 }}>
+            Wähle das entsprechende Projekt in 123erfasst — Zeitbuchungen werden dann hier angezeigt.
+          </div>
+          {status === "loading" ? (
+            <div style={{ textAlign:"center", color: C.muted, padding:32 }}>⏳ Lade Projekte…</div>
+          ) : status === "error" ? (
+            <div style={{ background:"#2E1A1A", borderRadius:10, padding:14, color: C.rot }}>{fehler}</div>
+          ) : (
+            <div style={{ display:"flex", flexDirection:"column", gap:7 }}>
+              <div onClick={() => { setLinkedId(null); setScreen("zeiten"); }}
+                style={{ background: !linkedId ? C.bgLight : C.bgFaint,
+                  border:`1.5px solid ${!linkedId ? C.gelb : "transparent"}`,
+                  borderRadius:9, padding:"10px 14px", cursor:"pointer" }}>
+                <div style={{ color: C.muted, fontSize:12 }}>Keine Verknüpfung</div>
+              </div>
+              {projekte123.map(p => (
+                <div key={p.ident} onClick={() => { setLinkedId(p.ident); setScreen("zeiten"); }}
+                  style={{ background: linkedId===p.ident ? C.bgLight : C.bgFaint,
+                    border:`1.5px solid ${linkedId===p.ident ? C.gelb : "transparent"}`,
+                    borderRadius:9, padding:"10px 14px", cursor:"pointer" }}>
+                  <div style={{ display:"flex", justifyContent:"space-between" }}>
+                    <div style={{ color: C.text, fontWeight: linkedId===p.ident ? 700 : 400 }}>{p.name}</div>
+                    {linkedId===p.ident && <span style={{ color: C.gelb }}>✓</span>}
+                  </div>
+                  {p.number && <div style={{ color: C.muted, fontSize:11, marginTop:2 }}>Nr. {p.number}</div>}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Zeiterfassung Ansicht */}
+      {screen === "zeiten" && (
+        <>
+          {!linkedId ? (
+            <div style={{ background: C.bgMid, borderRadius:12, padding:28, textAlign:"center" }}>
+              <div style={{ fontSize:32, marginBottom:10 }}>🔗</div>
+              <div style={{ color: C.muted, fontSize:13 }}>
+                Noch kein 123erfasst-Projekt verknüpft.
+              </div>
+              <button onClick={() => setScreen("verknuepfen")}
+                style={{ background: C.gelb, color:"#1C2027", border:"none", borderRadius:10,
+                  padding:"11px 22px", fontWeight:700, cursor:"pointer", marginTop:14 }}>
+                Jetzt verknüpfen
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Datumsfilter */}
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
+                <div>
+                  <Label>Von</Label>
+                  <input type="date" value={vonDatum} onChange={e => setVonDatum(e.target.value)}
+                    style={inputStyle()} />
+                </div>
+                <div>
+                  <Label>Bis</Label>
+                  <input type="date" value={bisDatum} onChange={e => setBisDatum(e.target.value)}
+                    style={inputStyle()} />
+                </div>
+              </div>
+
+              {status === "loading" && (
+                <div style={{ textAlign:"center", color: C.muted, padding:32 }}>⏳ Lade Zeitdaten…</div>
+              )}
+
+              {status === "error" && (
+                <div style={{ background:"#2E1A1A", borderRadius:10, padding:14, color: C.rot, marginBottom:12 }}>
+                  ❌ {fehler}
+                </div>
+              )}
+
+              {status === "ok" && (
+                <>
+                  {/* KPI Leiste */}
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, marginBottom:14 }}>
+                    {[
+                      ["Stunden gesamt", totalStd.toFixed(1)+"h", C.gelb],
+                      ["Einträge",       zeitdaten.length,         C.beton],
+                      ["Mitarbeiter",    Object.keys(nachPerson).length, C.gruen],
+                    ].map(([l,v,col]) => (
+                      <div key={l} style={{ background: C.bgMid, borderRadius:10, padding:"11px 12px",
+                        borderBottom:`3px solid ${col}` }}>
+                        <div style={{ color: C.muted, fontSize:10 }}>{l}</div>
+                        <div style={{ color: C.text, fontWeight:800, fontSize:20 }}>{v}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Personen-Zusammenfassung */}
+                  <div style={{ marginBottom:14 }}>
+                    <div style={{ color: C.muted, fontSize:11, marginBottom:8 }}>NACH MITARBEITER</div>
+                    <div style={{ display:"flex", gap:6, overflowX:"auto", paddingBottom:4 }}>
+                      <FilterBtn active={personFilter==="alle"} onClick={() => setPersonFilter("alle")}>
+                        Alle
+                      </FilterBtn>
+                      {Object.values(nachPerson).map(p => (
+                        <FilterBtn key={p.name} active={personFilter===p.name}
+                          onClick={() => setPersonFilter(p.name)}>
+                          {p.name.split(" ").pop()} · {p.total.toFixed(1)}h
+                        </FilterBtn>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Stunden-Balken pro Person */}
+                  {personFilter === "alle" && Object.values(nachPerson).length > 0 && (
+                    <div style={{ background: C.bgMid, borderRadius:12, padding:14, marginBottom:14 }}>
+                      {Object.values(nachPerson)
+                        .sort((a,b) => b.total - a.total)
+                        .map(p => {
+                          const pct = totalStd > 0 ? (p.total / totalStd) * 100 : 0;
+                          return (
+                            <div key={p.name} style={{ marginBottom:10 }}>
+                              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
+                                <div style={{ color: C.text, fontSize:12 }}>{p.name}</div>
+                                <div style={{ color: C.gelb, fontSize:12, fontWeight:700 }}>{p.total.toFixed(1)}h</div>
+                              </div>
+                              <div style={{ background: C.bgFaint, borderRadius:4, height:6 }}>
+                                <div style={{ background: C.gelb, width:`${pct}%`, height:"100%", borderRadius:4 }} />
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  )}
+
+                  {/* Einzelbuchungen */}
+                  {gefiltert.length === 0 ? (
+                    <div style={{ background: C.bgMid, borderRadius:10, padding:24, textAlign:"center", color: C.muted }}>
+                      Keine Buchungen im gewählten Zeitraum
+                    </div>
+                  ) : gefiltert.map((z, i) => (
+                    <div key={i} style={{ background: C.bgMid, borderRadius:10, padding:"12px 14px",
+                      marginBottom:8, borderLeft:`3px solid ${C.blau}` }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
+                        <div style={{ color: C.text, fontWeight:600, fontSize:13 }}>
+                          {z.person?.formattedName || "—"}
+                        </div>
+                        <div style={{ color: C.gelb, fontWeight:700, fontSize:13 }}>
+                          {z.hours > 0 || z.minutes > 0
+                            ? `${z.hours || 0}h ${z.minutes > 0 ? z.minutes+"min" : ""}`
+                            : "—"}
+                        </div>
+                      </div>
+                      <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+                        <span style={{ color: C.muted, fontSize:11 }}>
+                          📅 {new Date(z.date).toLocaleDateString("de-DE")}
+                        </span>
+                        {z.activity?.name && (
+                          <span style={{ color: C.muted, fontSize:11 }}>🔧 {z.activity.name}</span>
+                        )}
+                      </div>
+                      {z.note && (
+                        <div style={{ color: C.muted, fontSize:11, marginTop:5, fontStyle:"italic" }}>
+                          💬 {z.note}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </>
+              )}
+            </>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// KI-SCANNER – Betonfeld-Karte fotografieren & auslesen
+// ════════════════════════════════════════════════════════════════════════════
+const SCAN_PROMPT = `Du bist ein Spezialist für Bauwesen und liest gedruckte Betonfeld-Karten aus.
+Analysiere das Bild und extrahiere ALLE erkennbaren Informationen.
+
+Antworte NUR mit einem JSON-Objekt, ohne Markdown-Backticks, ohne Erklärungen:
+{
+  "felder": [
+    {
+      "name": "Feldname oder Nummer z.B. A1 oder B2 – Bodenplatte Nord",
+      "m2": 120,
+      "geplant": "2025-06-25",
+      "dauer_tage": 1,
+      "betonsorte": "C25/30 XC2",
+      "bewehrung": "BSt 500, Ø12, 15cm Raster",
+      "bemerkung": "Sonstige Hinweise vom Formular",
+      "status": "planned"
+    }
+  ],
+  "konfidenz": 0.92,
+  "hinweise": "Was war auf dem Formular schwer lesbar oder unklar"
+}
+
+Regeln:
+- Mehrere Felder auf einer Karte → mehrere Einträge im Array
+- Datum immer als YYYY-MM-DD, falls nicht erkennbar: null
+- m2 als Zahl ohne Einheit
+- dauer_tage schätzen aus Fläche falls nicht angegeben (bis 80m²=1, bis 200m²=2, sonst 3)
+- status immer "planned" für neue Karten
+- konfidenz zwischen 0 und 1
+- Falls kein Betonfeld-Formular erkennbar: { "felder": [], "konfidenz": 0, "hinweise": "Kein Betonfeld-Formular erkannt" }`;
+
+async function scanBetonkarte(imageBase64, mediaType) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1000,
+      messages: [{
+        role: "user",
+        content: [
+          { type: "image", source: { type: "base64", media_type: mediaType, data: imageBase64 } },
+          { type: "text",  text: SCAN_PROMPT },
+        ],
+      }],
+    }),
+  });
+  const data = await res.json();
+  const raw = data.content?.find(b => b.type === "text")?.text || "{}";
+  try {
+    return JSON.parse(raw.replace(/```json|```/g, "").trim());
+  } catch {
+    return { felder: [], konfidenz: 0, hinweise: "Antwort konnte nicht geparst werden: " + raw.slice(0,100) };
+  }
+}
+
+function ScannerView({ onFelderImport }) {
+  const fileRef     = useRef(null);
+  const [phase, setPhase]       = useState("idle"); // idle | preview | scanning | result | error
+  const [imgSrc, setImgSrc]     = useState(null);
+  const [imgB64, setImgB64]     = useState(null);
+  const [imgType, setImgType]   = useState(null);
+  const [result, setResult]     = useState(null);
+  const [selected, setSelected] = useState({});
+  const [imported, setImported] = useState(false);
+
+  function handleFile(file) {
+    if (!file) return;
+    setImported(false);
+    setResult(null);
+    const reader = new FileReader();
+    reader.onload = e => {
+      const dataUrl = e.target.result;
+      setImgSrc(dataUrl);
+      setImgType(file.type || "image/jpeg");
+      // Extract base64
+      const b64 = dataUrl.split(",")[1];
+      setImgB64(b64);
+      setPhase("preview");
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function doScan() {
+    setPhase("scanning");
+    try {
+      const res = await scanBetonkarte(imgB64, imgType);
+      setResult(res);
+      // Pre-select all
+      const sel = {};
+      res.felder.forEach((_, i) => sel[i] = true);
+      setSelected(sel);
+      setPhase("result");
+    } catch (e) {
+      setPhase("error");
+    }
+  }
+
+  function doImport() {
+    const toImport = result.felder
+      .filter((_, i) => selected[i])
+      .map((f, i) => ({ ...f, id: Date.now() + i, festigkeit: null, betoniert: null }));
+    onFelderImport(toImport);
+    setImported(true);
+  }
+
+  function reset() {
+    setPhase("idle"); setImgSrc(null); setImgB64(null);
+    setResult(null); setSelected({}); setImported(false);
+  }
+
+  const konfidenzColor = (k) => k >= 0.85 ? C.gruen : k >= 0.6 ? C.gelb : C.rot;
+  const konfidenzLabel = (k) => k >= 0.85 ? "Hoch" : k >= 0.6 ? "Mittel" : "Niedrig";
+
+  return (
+    <div>
+      <div style={{ color: C.text, fontWeight:700, fontSize:16, marginBottom:4 }}>📷 Betonkarten-Scanner</div>
+      <div style={{ color: C.muted, fontSize:13, marginBottom:18 }}>
+        Foto eines gedruckten Betonfeld-Formulars hochladen — KI liest alle Felder automatisch aus.
+      </div>
+
+      {/* IDLE */}
+      {phase === "idle" && (
+        <div>
+          <input ref={fileRef} type="file" accept="image/*" capture="environment"
+            style={{ display:"none" }} onChange={e => handleFile(e.target.files[0])} />
+          <div onClick={() => fileRef.current.click()}
+            style={{ border:`2px dashed ${C.gelb}`, borderRadius:16, padding:"40px 20px",
+              textAlign:"center", cursor:"pointer", background: C.bgMid }}>
+            <div style={{ fontSize:48, marginBottom:12 }}>📷</div>
+            <div style={{ color: C.gelb, fontWeight:700, fontSize:16 }}>Betonfeld-Karte aufnehmen</div>
+            <div style={{ color: C.muted, fontSize:13, marginTop:6 }}>Tippen zum Fotografieren oder Bild hochladen</div>
+          </div>
+          <div style={{ display:"flex", gap:10, marginTop:12 }}>
+            <button onClick={() => fileRef.current.click()}
+              style={{ flex:1, background: C.bgLight, color: C.text, border:`1px solid ${C.bgFaint}`,
+                borderRadius:10, padding:12, cursor:"pointer", fontSize:13 }}>
+              📁 Aus Galerie wählen
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* PREVIEW */}
+      {phase === "preview" && (
+        <div>
+          <img src={imgSrc} alt="Betonkarte" style={{ width:"100%", borderRadius:12, marginBottom:14, maxHeight:320, objectFit:"contain", background: C.bgMid }} />
+          <div style={{ display:"flex", gap:10 }}>
+            <button onClick={reset} style={{ flex:1, background: C.bgFaint, color: C.muted, border:"none", borderRadius:10, padding:13, cursor:"pointer" }}>
+              ✕ Neu
+            </button>
+            <button onClick={doScan} style={{ flex:2, background: C.gelb, color:"#1C2027", border:"none", borderRadius:10, padding:13, fontWeight:700, cursor:"pointer", fontSize:15 }}>
+              🔍 Jetzt auslesen
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* SCANNING */}
+      {phase === "scanning" && (
+        <div style={{ textAlign:"center", padding:"40px 20px" }}>
+          <div style={{ fontSize:48, marginBottom:16 }}>🤖</div>
+          <div style={{ color: C.gelb, fontWeight:700, fontSize:16, marginBottom:8 }}>KI analysiert Betonkarte…</div>
+          <div style={{ color: C.muted, fontSize:13 }}>Feldname, m², Bewehrungsplan und Termine werden erkannt</div>
+          <div style={{ marginTop:24, display:"flex", justifyContent:"center", gap:6 }}>
+            {[0,1,2].map(i => (
+              <div key={i} style={{ width:8, height:8, borderRadius:4, background: C.gelb,
+                animation:`pulse 1.2s ${i*0.3}s infinite`, opacity:0.8 }} />
+            ))}
+          </div>
+          <style>{`@keyframes pulse { 0%,100%{transform:scale(1);opacity:0.4} 50%{transform:scale(1.4);opacity:1} }`}</style>
+        </div>
+      )}
+
+      {/* ERROR */}
+      {phase === "error" && (
+        <div style={{ background:"#2E1A1A", borderRadius:12, padding:24, textAlign:"center" }}>
+          <div style={{ fontSize:40, marginBottom:12 }}>❌</div>
+          <div style={{ color: C.rot, fontWeight:700, marginBottom:8 }}>Scan fehlgeschlagen</div>
+          <div style={{ color: C.muted, fontSize:13, marginBottom:16 }}>Bitte Bild prüfen und nochmals versuchen.</div>
+          <button onClick={reset} style={{ background: C.bgFaint, color: C.text, border:"none", borderRadius:10, padding:"10px 24px", cursor:"pointer" }}>
+            Nochmals versuchen
+          </button>
+        </div>
+      )}
+
+      {/* RESULT */}
+      {phase === "result" && result && (
+        <div>
+          {/* Bild klein */}
+          <img src={imgSrc} alt="Betonkarte" style={{ width:"100%", borderRadius:10, marginBottom:14, maxHeight:160, objectFit:"contain", background: C.bgMid }} />
+
+          {/* Konfidenz */}
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+            background: C.bgMid, borderRadius:10, padding:"10px 14px", marginBottom:12 }}>
+            <div>
+              <div style={{ color: C.muted, fontSize:11 }}>KI-Erkennungssicherheit</div>
+              <div style={{ color: konfidenzColor(result.konfidenz), fontWeight:700, fontSize:15 }}>
+                {konfidenzLabel(result.konfidenz)} · {Math.round(result.konfidenz * 100)}%
+              </div>
+            </div>
+            <div style={{ width:48, height:48, borderRadius:24,
+              background: `conic-gradient(${konfidenzColor(result.konfidenz)} ${result.konfidenz*360}deg, ${C.bgFaint} 0deg)`,
+              display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <div style={{ width:36, height:36, borderRadius:18, background: C.bgMid,
+                display:"flex", alignItems:"center", justifyContent:"center",
+                color: konfidenzColor(result.konfidenz), fontSize:11, fontWeight:700 }}>
+                {Math.round(result.konfidenz*100)}%
+              </div>
+            </div>
+          </div>
+
+          {/* Hinweise */}
+          {result.hinweise && (
+            <div style={{ background:"#2A2A1A", borderRadius:8, padding:"8px 12px", marginBottom:12, color:"#FFD966", fontSize:12 }}>
+              💬 {result.hinweise}
+            </div>
+          )}
+
+          {/* Felder */}
+          {result.felder.length === 0 ? (
+            <div style={{ background: C.bgMid, borderRadius:12, padding:24, textAlign:"center" }}>
+              <div style={{ fontSize:32 }}>🤷</div>
+              <div style={{ color: C.muted, marginTop:8 }}>Kein Betonfeld-Formular erkannt.<br/>Bitte ein klareres Foto versuchen.</div>
+            </div>
+          ) : (
+            <>
+              <div style={{ color: C.text, fontWeight:700, marginBottom:10 }}>
+                {result.felder.length} Feld{result.felder.length > 1 ? "er" : ""} erkannt — auswählen zum Importieren:
+              </div>
+              {result.felder.map((f, i) => (
+                <div key={i} onClick={() => setSelected(p => ({ ...p, [i]: !p[i] }))}
+                  style={{ background: selected[i] ? C.bgLight : C.bgMid,
+                    border:`2px solid ${selected[i] ? C.gelb : C.bgFaint}`,
+                    borderRadius:12, padding:"14px 16px", marginBottom:10, cursor:"pointer" }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+                    <div style={{ flex:1 }}>
+                      <div style={{ color: C.text, fontWeight:700, fontSize:14 }}>{f.name}</div>
+                      <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginTop:8 }}>
+                        {f.m2 && <Chip icon="📐" label={`${f.m2} m²`} />}
+                        {f.geplant && <Chip icon="📅" label={f.geplant} />}
+                        {f.dauer_tage && <Chip icon="⏱️" label={`${f.dauer_tage} Tag(e)`} />}
+                        {f.betonsorte && <Chip icon="🧱" label={f.betonsorte} />}
+                      </div>
+                      {f.bewehrung && (
+                        <div style={{ color: C.muted, fontSize:11, marginTop:8 }}>🔩 {f.bewehrung}</div>
+                      )}
+                      {f.bemerkung && (
+                        <div style={{ color: C.muted, fontSize:11, marginTop:4 }}>📝 {f.bemerkung}</div>
+                      )}
+                    </div>
+                    <div style={{ marginLeft:12, fontSize:22 }}>{selected[i] ? "✅" : "⬜"}</div>
+                  </div>
+                </div>
+              ))}
+
+              {imported ? (
+                <div style={{ background:"#1A3A28", borderRadius:12, padding:16, textAlign:"center" }}>
+                  <div style={{ color: C.gruen, fontWeight:700, fontSize:15 }}>✅ Erfolgreich importiert!</div>
+                  <div style={{ color: C.muted, fontSize:13, marginTop:4 }}>Felder sind jetzt in der Felderliste und im Gantt-Plan sichtbar.</div>
+                  <button onClick={reset} style={{ background: C.bgFaint, color: C.text, border:"none",
+                    borderRadius:10, padding:"10px 20px", marginTop:14, cursor:"pointer" }}>
+                    Weitere Karte scannen
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display:"flex", gap:10, marginTop:4 }}>
+                  <button onClick={reset} style={{ flex:1, background: C.bgFaint, color: C.muted,
+                    border:"none", borderRadius:10, padding:13, cursor:"pointer" }}>
+                    ✕ Verwerfen
+                  </button>
+                  <button onClick={doImport}
+                    disabled={Object.values(selected).every(v => !v)}
+                    style={{ flex:2, background: Object.values(selected).some(v=>v) ? C.gelb : C.bgFaint,
+                      color: Object.values(selected).some(v=>v) ? "#1C2027" : C.muted,
+                      border:"none", borderRadius:10, padding:13, fontWeight:700, cursor:"pointer", fontSize:15 }}>
+                    ✅ {Object.values(selected).filter(Boolean).length} Feld{Object.values(selected).filter(Boolean).length !== 1 ? "er" : ""} importieren
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Chip({ icon, label }) {
+  return (
+    <div style={{ background: C.bgFaint, borderRadius:6, padding:"3px 8px", display:"flex", gap:4, alignItems:"center" }}>
+      <span style={{ fontSize:11 }}>{icon}</span>
+      <span style={{ color: C.betonLight, fontSize:11 }}>{label}</span>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// PROJEKT-VERWALTUNG
+// ════════════════════════════════════════════════════════════════════════════
+
+// ════════════════════════════════════════════════════════════════════════════
+// FIRMEN & SUBUNTERNEHMER
+// ════════════════════════════════════════════════════════════════════════════
+
+// Alle verfügbaren Gewerke (union aus allen Projekttypen)
+const ALLE_GEWERKE = [
+  { key:"rohbau",       label:"Rohbau / Beton",           icon:"🏗️" },
+  { key:"elektro",      label:"Elektroinstallation",       icon:"⚡" },
+  { key:"sanitaer",     label:"Sanitärinstallation",       icon:"🚿" },
+  { key:"heizung",      label:"Heizung / HLKS",            icon:"🔥" },
+  { key:"estrich",      label:"Estrich",                   icon:"🪨" },
+  { key:"innenausbau",  label:"Innenausbau / Trockenbau",  icon:"🪚" },
+  { key:"fliesen",      label:"Fliesen / Beläge",          icon:"🟫" },
+  { key:"tiefbau",      label:"Tiefbau / Straße",          icon:"🛣️" },
+  { key:"dach",         label:"Dach",                      icon:"🏚️" },
+  { key:"pv",           label:"PV-Anlage",                 icon:"☀️" },
+  { key:"maler",        label:"Maler / Putz",              icon:"🖌️" },
+  { key:"schreiner",    label:"Schreiner / Fenster",       icon:"🪟" },
+  { key:"abbruch",      label:"Abbruch / Rückbau",         icon:"⛏️" },
+  { key:"vermessung",   label:"Vermessung",                icon:"📐" },
+  { key:"garten",       label:"Garten / Außenanlagen",     icon:"🌿" },
+];
+
+const MOCK_EIGENE_FIRMA = {
+  name:         "Bauunternehmen Koeven GmbH",
+  strasse:      "Musterstraße 12",
+  plz:          "80331",
+  ort:          "München",
+  telefon:      "+49 89 123456",
+  email:        "info@koeven-bau.de",
+  geschaeftsfuehrer: "Luca Koeven",
+  steuernummer: "123/456/78900",
+  gewerke:      ["rohbau","elektro","sanitaer","heizung","estrich"],
+};
+
+const MOCK_SUBS = [
+  { id:1, name:"Elektro Huber GmbH",     gewerke:["elektro"],          kontakt:"Thomas Huber",   telefon:"+49 89 111222", email:"huber@elektro.de",  status:"aktiv", stundensatz:85 },
+  { id:2, name:"Sanitär Meier KG",       gewerke:["sanitaer","heizung"],kontakt:"Klaus Meier",    telefon:"+49 89 333444", email:"meier@sanitaer.de", status:"aktiv", stundensatz:75 },
+  { id:3, name:"Estrich Schmidt",        gewerke:["estrich"],           kontakt:"Hans Schmidt",   telefon:"+49 89 555666", email:"schmidt@estrich.de",status:"aktiv", stundensatz:55 },
+  { id:4, name:"Dach & Fach Wagner AG",  gewerke:["dach"],              kontakt:"Maria Wagner",   telefon:"+49 89 777888", email:"wagner@dach.de",    status:"inaktiv",stundensatz:90 },
+];
+
+function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs }) {
+  const [screen, setScreen]     = useState("home"); // home | eigene | subs | subEdit
+  const [editSub, setEditSub]   = useState(null);
+  const [editOwn, setEditOwn]   = useState(false);
+  const [tmpFirma, setTmpFirma] = useState(owneFirma);
+
+  return (
+    <div>
+      {/* Home */}
+      {screen === "home" && (
+        <>
+          {/* Eigene Firma Karte */}
+          <div onClick={() => { setTmpFirma({...owneFirma}); setScreen("eigene"); }}
+            style={{ background: C.bgMid, borderRadius:14, padding:"16px 18px", marginBottom:14,
+              border:`2px solid ${C.gelb}`, cursor:"pointer" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <div>
+                <div style={{ color: C.muted, fontSize:11, marginBottom:2 }}>🏢 Eigenes Unternehmen</div>
+                <div style={{ color: C.text, fontWeight:700, fontSize:16 }}>{owneFirma.name || "Firma hinterlegen"}</div>
+                {owneFirma.ort && <div style={{ color: C.muted, fontSize:12, marginTop:2 }}>📍 {owneFirma.plz} {owneFirma.ort}</div>}
+                {owneFirma.gewerke?.length > 0 && (
+                  <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginTop:8 }}>
+                    {owneFirma.gewerke.map(k => {
+                      const g = ALLE_GEWERKE.find(x=>x.key===k);
+                      return g ? <Chip key={k} icon={g.icon} label={g.label} /> : null;
+                    })}
+                  </div>
+                )}
+              </div>
+              <div style={{ color: C.muted, fontSize:22 }}>›</div>
+            </div>
+          </div>
+
+          {/* Subunternehmer */}
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+            <div style={{ color: C.text, fontWeight:700 }}>Subunternehmer ({subs.length})</div>
+            <button onClick={() => { setEditSub({ id:null, name:"", gewerke:[], kontakt:"", telefon:"", email:"", status:"aktiv", stundensatz:0 }); setScreen("subEdit"); }}
+              style={{ background: C.gelb, color:"#1C2027", border:"none", borderRadius:9,
+                padding:"7px 14px", fontWeight:700, cursor:"pointer", fontSize:13 }}>
+              + Sub
+            </button>
+          </div>
+
+          {subs.length === 0 ? (
+            <div style={{ background: C.bgMid, borderRadius:12, padding:24, textAlign:"center" }}>
+              <div style={{ fontSize:32 }}>🏢</div>
+              <div style={{ color: C.muted, marginTop:8 }}>Noch keine Subunternehmer angelegt.</div>
+            </div>
+          ) : subs.map(s => (
+            <div key={s.id} onClick={() => { setEditSub({...s}); setScreen("subEdit"); }}
+              style={{ background: C.bgMid, borderRadius:11, padding:"13px 15px", marginBottom:9,
+                border:`1.5px solid ${s.status==="aktiv" ? C.bgFaint : C.rot}`, cursor:"pointer" }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+                <div style={{ flex:1 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                    <div style={{ color: C.text, fontWeight:700 }}>{s.name}</div>
+                    <div style={{ background: s.status==="aktiv" ? C.gruen : C.rot,
+                      color:"#fff", fontSize:9, padding:"2px 7px", borderRadius:20 }}>
+                      {s.status}
+                    </div>
+                  </div>
+                  <div style={{ color: C.muted, fontSize:12, marginTop:3 }}>👤 {s.kontakt} · 📞 {s.telefon}</div>
+                  <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginTop:7 }}>
+                    {s.gewerke.map(k => {
+                      const g = ALLE_GEWERKE.find(x=>x.key===k);
+                      return g ? <Chip key={k} icon={g.icon} label={g.label} /> : null;
+                    })}
+                  </div>
+                  {s.stundensatz > 0 && (
+                    <div style={{ color: C.muted, fontSize:11, marginTop:5 }}>💶 {s.stundensatz} €/Std.</div>
+                  )}
+                </div>
+                <div style={{ color: C.muted, fontSize:18 }}>›</div>
+              </div>
+            </div>
+          ))}
+        </>
+      )}
+
+      {/* Eigene Firma bearbeiten */}
+      {screen === "eigene" && (
+        <div>
+          <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
+            <button onClick={() => setScreen("home")}
+              style={{ background: C.bgFaint, border:"none", color: C.text, borderRadius:8,
+                padding:"6px 10px", cursor:"pointer", fontSize:16 }}>‹</button>
+            <div style={{ color: C.gelb, fontWeight:700, fontSize:16 }}>🏢 Eigenes Unternehmen</div>
+          </div>
+
+          {[
+            ["Firmenname",          "name",              "Bauunternehmen GmbH"],
+            ["Geschäftsführer",     "geschaeftsfuehrer", "Max Mustermann"],
+            ["Straße + Nr.",        "strasse",           "Musterstraße 12"],
+            ["PLZ",                 "plz",               "80331"],
+            ["Ort",                 "ort",               "München"],
+            ["Telefon",             "telefon",           "+49 89 123456"],
+            ["E-Mail",              "email",             "info@firma.de"],
+            ["Steuernummer",        "steuernummer",      "123/456/78900"],
+          ].map(([label, key, ph]) => (
+            <div key={key} style={{ marginBottom:12 }}>
+              <Label>{label}</Label>
+              <input value={tmpFirma[key]||""} onChange={e => setTmpFirma(p=>({...p,[key]:e.target.value}))}
+                placeholder={ph} style={inputStyle()} />
+            </div>
+          ))}
+
+          {/* Gewerke */}
+          <div style={{ marginBottom:20 }}>
+            <Label>Ausgeführte Gewerke</Label>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6, marginTop:8 }}>
+              {ALLE_GEWERKE.map(g => {
+                const aktiv = (tmpFirma.gewerke||[]).includes(g.key);
+                return (
+                  <div key={g.key} onClick={() => setTmpFirma(p => ({
+                    ...p, gewerke: aktiv
+                      ? p.gewerke.filter(x=>x!==g.key)
+                      : [...(p.gewerke||[]), g.key]
+                  }))}
+                    style={{ background: aktiv ? C.bgLight : C.bgFaint,
+                      border:`2px solid ${aktiv ? C.gelb : "transparent"}`,
+                      borderRadius:9, padding:"8px 10px", cursor:"pointer",
+                      display:"flex", alignItems:"center", gap:7 }}>
+                    <span style={{ fontSize:16 }}>{g.icon}</span>
+                    <span style={{ color: aktiv ? C.text : C.muted, fontSize:11, fontWeight: aktiv ? 700 : 400 }}>{g.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <button onClick={() => { setEigeneFirma(tmpFirma); setScreen("home"); }}
+            style={{ width:"100%", background: C.gelb, color:"#1C2027", border:"none",
+              borderRadius:10, padding:14, fontWeight:700, cursor:"pointer", fontSize:15 }}>
+            💾 Speichern
+          </button>
+        </div>
+      )}
+
+      {/* Sub bearbeiten / anlegen */}
+      {screen === "subEdit" && editSub && (
+        <div>
+          <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
+            <button onClick={() => setScreen("home")}
+              style={{ background: C.bgFaint, border:"none", color: C.text, borderRadius:8,
+                padding:"6px 10px", cursor:"pointer", fontSize:16 }}>‹</button>
+            <div style={{ color: C.gelb, fontWeight:700, fontSize:16 }}>
+              {editSub.id ? "✏️ Subunternehmer" : "➕ Neuer Subunternehmer"}
+            </div>
+          </div>
+
+          {[
+            ["Firmenname *",     "name",     "Elektro Huber GmbH"],
+            ["Ansprechpartner",  "kontakt",  "Max Mustermann"],
+            ["Telefon",          "telefon",  "+49 89 123456"],
+            ["E-Mail",           "email",    "info@firma.de"],
+          ].map(([label, key, ph]) => (
+            <div key={key} style={{ marginBottom:12 }}>
+              <Label>{label}</Label>
+              <input value={editSub[key]||""} onChange={e => setEditSub(p=>({...p,[key]:e.target.value}))}
+                placeholder={ph} style={inputStyle()} />
+            </div>
+          ))}
+
+          <div style={{ marginBottom:12 }}>
+            <Label>Stundensatz (€)</Label>
+            <input type="number" value={editSub.stundensatz||""} onChange={e => setEditSub(p=>({...p,stundensatz:+e.target.value}))}
+              placeholder="85" style={inputStyle()} />
+          </div>
+
+          {/* Status */}
+          <div style={{ marginBottom:16 }}>
+            <Label>Status</Label>
+            <div style={{ display:"flex", gap:8, marginTop:6 }}>
+              {["aktiv","inaktiv","gesperrt"].map(s => (
+                <button key={s} onClick={() => setEditSub(p=>({...p,status:s}))}
+                  style={{ flex:1, background: editSub.status===s ? C.gelb : C.bgFaint,
+                    color: editSub.status===s ? "#1C2027" : C.muted,
+                    border:"none", borderRadius:8, padding:10, cursor:"pointer",
+                    fontWeight: editSub.status===s ? 700 : 400, fontSize:12 }}>
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Gewerke des Subs */}
+          <div style={{ marginBottom:20 }}>
+            <Label>Gewerke dieses Subunternehmers</Label>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6, marginTop:8 }}>
+              {ALLE_GEWERKE.map(g => {
+                const aktiv = (editSub.gewerke||[]).includes(g.key);
+                return (
+                  <div key={g.key} onClick={() => setEditSub(p => ({
+                    ...p, gewerke: aktiv
+                      ? p.gewerke.filter(x=>x!==g.key)
+                      : [...(p.gewerke||[]), g.key]
+                  }))}
+                    style={{ background: aktiv ? C.bgLight : C.bgFaint,
+                      border:`2px solid ${aktiv ? C.blau : "transparent"}`,
+                      borderRadius:9, padding:"8px 10px", cursor:"pointer",
+                      display:"flex", alignItems:"center", gap:7 }}>
+                    <span style={{ fontSize:16 }}>{g.icon}</span>
+                    <span style={{ color: aktiv ? C.text : C.muted, fontSize:11, fontWeight: aktiv ? 700 : 400 }}>{g.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div style={{ display:"flex", gap:10 }}>
+            {editSub.id && (
+              <button onClick={() => { setSubs(prev => prev.filter(s=>s.id!==editSub.id)); setScreen("home"); }}
+                style={{ background:"#2E1A1A", color: C.rot, border:`1px solid ${C.rot}`,
+                  borderRadius:10, padding:"12px 16px", cursor:"pointer" }}>🗑️</button>
+            )}
+            <button onClick={() => setScreen("home")}
+              style={{ flex:1, background: C.bgFaint, color: C.muted, border:"none", borderRadius:10, padding:13, cursor:"pointer" }}>
+              Abbrechen
+            </button>
+            <button disabled={!editSub.name} onClick={() => {
+                if (editSub.id) {
+                  setSubs(prev => prev.map(s => s.id===editSub.id ? editSub : s));
+                } else {
+                  setSubs(prev => [...prev, { ...editSub, id: Date.now() }]);
+                }
+                setScreen("home");
+              }}
+              style={{ flex:2, background: editSub.name ? C.gelb : C.bgFaint,
+                color: editSub.name ? "#1C2027" : C.muted,
+                border:"none", borderRadius:10, padding:13, fontWeight:700, cursor:"pointer", fontSize:15 }}>
+              💾 Speichern
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Sub-Zuweisung pro Projekt ────────────────────────────────────────────────
+function SubZuweisungBadge({ subId, subs }) {
+  const sub = subs.find(s => s.id === subId);
+  if (!sub) return null;
+  return (
+    <div style={{ display:"inline-flex", alignItems:"center", gap:5,
+      background: C.bgFaint, borderRadius:8, padding:"3px 8px", fontSize:11 }}>
+      <span>🏢</span>
+      <span style={{ color: C.blau }}>{sub.name}</span>
+    </div>
+  );
+}
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// PWA – Install Banner + Online/Offline Status + Update Banner
+// ════════════════════════════════════════════════════════════════════════════
+function usePWA() {
+  const [installierbar,  setInstallierbar]  = useState(false);
+  const [installiert,    setInstalliert]    = useState(false);
+  const [updateVerfügbar,setUpdateVerfügbar]= useState(false);
+  const [offline,        setOffline]        = useState(!navigator.onLine);
+
+  useEffect(() => {
+    const onInstallable = () => setInstallierbar(true);
+    const onInstalled   = () => { setInstallierbar(false); setInstalliert(true); };
+    const onUpdate      = () => setUpdateVerfügbar(true);
+    const onOnline      = () => setOffline(false);
+    const onOffline     = () => setOffline(true);
+
+    window.addEventListener("pwa-installable",       onInstallable);
+    window.addEventListener("pwa-installed",         onInstalled);
+    window.addEventListener("pwa-update-available",  onUpdate);
+    window.addEventListener("pwa-online",            onOnline);
+    window.addEventListener("pwa-offline",           onOffline);
+
+    return () => {
+      window.removeEventListener("pwa-installable",      onInstallable);
+      window.removeEventListener("pwa-installed",        onInstalled);
+      window.removeEventListener("pwa-update-available", onUpdate);
+      window.removeEventListener("pwa-online",           onOnline);
+      window.removeEventListener("pwa-offline",          onOffline);
+    };
+  }, []);
+
+  async function installieren() {
+    const ok = await window.pwaInstall?.();
+    if (ok) setInstalliert(true);
+  }
+
+  function updateAnwenden() {
+    window.location.reload();
+  }
+
+  return { installierbar, installiert, updateVerfügbar, offline, installieren, updateAnwenden };
+}
+
+function PWABanner({ pwa }) {
+  if (!pwa.installierbar && !pwa.updateVerfügbar && !pwa.offline) return null;
+  return (
+    <div style={{ position:"fixed", bottom:72, left:8, right:8, zIndex:999,
+      display:"flex", flexDirection:"column", gap:6 }}>
+
+      {/* Offline-Banner */}
+      {pwa.offline && (
+        <div style={{ background:"#2E1A1A", borderRadius:12, padding:"10px 14px",
+          display:"flex", alignItems:"center", gap:10,
+          border:`1px solid ${C.rot}`, boxShadow:"0 4px 20px rgba(0,0,0,0.5)" }}>
+          <span style={{ fontSize:18 }}>📵</span>
+          <div style={{ flex:1 }}>
+            <div style={{ color: C.rot, fontWeight:700, fontSize:13 }}>Offline</div>
+            <div style={{ color: C.muted, fontSize:11 }}>Änderungen werden gespeichert und synchronisiert sobald du wieder online bist.</div>
+          </div>
+        </div>
+      )}
+
+      {/* Update-Banner */}
+      {pwa.updateVerfügbar && (
+        <div style={{ background:"#1A2A1A", borderRadius:12, padding:"10px 14px",
+          display:"flex", alignItems:"center", gap:10,
+          border:`1px solid ${C.gruen}`, boxShadow:"0 4px 20px rgba(0,0,0,0.5)" }}>
+          <span style={{ fontSize:18 }}>🔄</span>
+          <div style={{ flex:1 }}>
+            <div style={{ color: C.gruen, fontWeight:700, fontSize:13 }}>Update verfügbar</div>
+            <div style={{ color: C.muted, fontSize:11 }}>Neue Version von Polier Pro bereit.</div>
+          </div>
+          <button onClick={pwa.updateAnwenden}
+            style={{ background: C.gruen, color:"#fff", border:"none",
+              borderRadius:8, padding:"6px 12px", cursor:"pointer", fontWeight:700, fontSize:12 }}>
+            Jetzt
+          </button>
+        </div>
+      )}
+
+      {/* Install-Banner */}
+      {pwa.installierbar && !pwa.installiert && (
+        <div style={{ background: C.bgMid, borderRadius:12, padding:"12px 14px",
+          display:"flex", alignItems:"center", gap:10,
+          border:`1px solid ${C.gelb}`, boxShadow:"0 4px 20px rgba(0,0,0,0.5)" }}>
+          <span style={{ fontSize:22 }}>⚒️</span>
+          <div style={{ flex:1 }}>
+            <div style={{ color: C.text, fontWeight:700, fontSize:13 }}>Polier Pro installieren</div>
+            <div style={{ color: C.muted, fontSize:11 }}>Zum Homescreen hinzufügen – funktioniert auch offline.</div>
+          </div>
+          <button onClick={pwa.installieren}
+            style={{ background: C.gelb, color:"#1C2027", border:"none",
+              borderRadius:8, padding:"7px 12px", cursor:"pointer", fontWeight:700, fontSize:12 }}>
+            Installieren
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const MOCK_PROJEKTE = [
+  {
+    id: 1,
+    name: "Neubau Wohnanlage Nord",
+    adresse: "Hauptstraße 22, 80331 München",
+    projektnummer: "PRJ-2025-001",
+    bauleiter: "Thomas Huber",
+    auftraggeber: "Stadtbau München GmbH",
+    typ: "hochbau",
+    farbe: "#F5C400",
+    felder: MOCK_FELDER,
+    kolonnen: MOCK_KOLONNEN,
+    berichte: MOCK_BERICHTE,
+  },
+  {
+    id: 2,
+    name: "Tiefgarage Westpark",
+    adresse: "Westparkstraße 8, 81373 München",
+    projektnummer: "PRJ-2025-002",
+    bauleiter: "Maria Schmidt",
+    auftraggeber: "Immobilien AG Bayern",
+    typ: "tiefgarage",
+    farbe: "#4A9EE0",
+    felder: [
+      { id:101, name:"TG-A1 – Rampe",       status:"done",     m2:65,  geplant:"2025-05-20", betoniert:"2025-05-20", dauer_tage:1, festigkeit:100, abhaengigkeiten:[] },
+      { id:102, name:"TG-B1 – Ebene 1",     status:"in_progress", m2:420, geplant:"2025-06-15", betoniert:null, dauer_tage:3, festigkeit:null, abhaengigkeiten:[101] },
+      { id:103, name:"TG-B2 – Ebene 2",     status:"planned",  m2:420, geplant:"2025-07-05", betoniert:null, dauer_tage:3, festigkeit:null, abhaengigkeiten:[102] },
+    ],
+    kolonnen: [
+      { id:11, name:"Kolonne Wagner", vorarbeiter:"Günter Wagner", einsatz:"TG-B1 – Ebene 1", stunden:8, mitarbeiter:[ {id:1101,name:"Günter Wagner",rolle:"Vorarbeiter",erfasstIdent:null},{id:1102,name:"Daniel Klein",rolle:"Facharbeiter",erfasstIdent:null},{id:1103,name:"Emil Roth",rolle:"Facharbeiter",erfasstIdent:null},{id:1104,name:"Niko Braun",rolle:"Facharbeiter",erfasstIdent:null},{id:1105,name:"Sven Wolff",rolle:"Helfer",erfasstIdent:null},{id:1106,name:"Tim Kruse",rolle:"Helfer",erfasstIdent:null} ] },
+      { id:12, name:"Kolonne Bauer", vorarbeiter:"Anna Bauer", einsatz:"Schalung TG-B2", stunden:7, mitarbeiter:[ {id:1201,name:"Anna Bauer",rolle:"Vorarbeiter",erfasstIdent:null},{id:1202,name:"Tom Lehmann",rolle:"Facharbeiter",erfasstIdent:null},{id:1203,name:"Sara Kaya",rolle:"Facharbeiter",erfasstIdent:null},{id:1204,name:"Marc Stein",rolle:"Helfer",erfasstIdent:null} ] },
+    ],
+    berichte: [
+      { id:11, datum:"22.06.2025", wetter:"☀️ 14°C", arbeiter:10, taetigkeit:"Betonage TG-B1 Ebene 1 in vollem Gange. 180m² fertig.", maengel:0 },
+    ],
+  },
+  {
+    id: 3,
+    name: "Brücke B13 Instandsetzung",
+    adresse: "B13, km 42.3, 85221 Dachau",
+    projektnummer: "PRJ-2025-003",
+    bauleiter: "Klaus Weber",
+    auftraggeber: "Staatl. Bauamt Dachau",
+    typ: "hochbau",
+    farbe: "#2EAF6A",
+    felder: [
+      { id:201, name:"Widerlager West",  status:"done",    m2:28, geplant:"2025-06-01", betoniert:"2025-06-01", dauer_tage:1, festigkeit:100, abhaengigkeiten:[] },
+      { id:202, name:"Widerlager Ost",   status:"planned", m2:28, geplant:"2025-06-28", betoniert:null,         dauer_tage:1, festigkeit:null, abhaengigkeiten:[201] },
+      { id:203, name:"Überbau Feld 1",   status:"planned", m2:85, geplant:"2025-07-15", betoniert:null,         dauer_tage:2, festigkeit:null, abhaengigkeiten:[201,202] },
+    ],
+    kolonnen: [
+      { id:21, name:"Kolonne Müller", vorarbeiter:"Karl Müller", einsatz:"Schalung Widerlager Ost", stunden:8, mitarbeiter:[ {id:2101,name:"Karl Müller",rolle:"Vorarbeiter",erfasstIdent:null},{id:2102,name:"Ben Hartmann",rolle:"Facharbeiter",erfasstIdent:null},{id:2103,name:"Joe Lange",rolle:"Facharbeiter",erfasstIdent:null},{id:2104,name:"Nico Franke",rolle:"Facharbeiter",erfasstIdent:null},{id:2105,name:"Paul Werner",rolle:"Helfer",erfasstIdent:null} ] },
+    ],
+    berichte: [],
+  },
+];
+
+function leerProjekt() {
+  return { id: Date.now(), name:"", adresse:"", projektnummer:"", bauleiter:"", auftraggeber:"",
+    typ: "hochbau",
+    farbe: ["#F5C400","#4A9EE0","#2EAF6A","#C45C2A","#9B59B6"][Math.floor(Math.random()*5)],
+    felder:[], kolonnen:[], berichte:[] };
+}
+
+// ─── Projekt-Liste (Startscreen) ─────────────────────────────────────────────
+function ProjektListe({ projekte, onSelect, onNeu }) {
+  return (
+    <div style={{ background: C.bg, minHeight:"100vh", fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
+      {/* Header */}
+      <div style={{ background: C.bgMid, padding:"18px 18px 14px", borderBottom:`2px solid ${C.gelb}` }}>
+        <div style={{ color: C.gelb, fontWeight:800, fontSize:22, letterSpacing:-0.5 }}>⚒ POLIER PRO</div>
+        <div style={{ color: C.muted, fontSize:12, marginTop:2 }}>Baustellenmanagement</div>
+      </div>
+
+      <div style={{ padding:"20px 16px 100px" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+          <div style={{ color: C.text, fontWeight:700, fontSize:16 }}>Meine Baustellen</div>
+          <div style={{ background: C.bgMid, color: C.muted, fontSize:12, padding:"4px 10px", borderRadius:20 }}>
+            {projekte.length} Projekte
+          </div>
+        </div>
+
+        {projekte.map(p => {
+          const done  = p.felder.filter(f=>f.status==="done").length;
+          const total = p.felder.length;
+          const pct   = total > 0 ? Math.round(done/total*100) : 0;
+          const delayed = p.felder.filter(f=>f.status!=="done" && f.geplant && new Date(f.geplant)<new Date()).length;
+          return (
+            <div key={p.id} onClick={() => onSelect(p.id)}
+              style={{ background: C.bgMid, borderRadius:14, padding:"16px 18px", marginBottom:12,
+                border:`2px solid ${C.bgFaint}`, cursor:"pointer",
+                borderLeft:`4px solid ${p.farbe}` }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+                <div style={{ flex:1 }}>
+                  <div style={{ color: C.text, fontWeight:700, fontSize:15 }}>{p.name}</div>
+                  <div style={{ color: C.muted, fontSize:12, marginTop:3 }}>📍 {p.adresse}</div>
+                  <div style={{ display:"flex", gap:10, marginTop:6, flexWrap:"wrap" }}>
+                    <Chip icon={PROJEKTTYPEN[p.typ]?.icon||"🏗️"} label={PROJEKTTYPEN[p.typ]?.label||p.typ} />
+                    <Chip icon="🔢" label={p.projektnummer} />
+                    <Chip icon="👤" label={p.bauleiter} />
+                  </div>
+                </div>
+                <div style={{ color: C.muted, fontSize:22, marginLeft:10 }}>›</div>
+              </div>
+              {/* Progress */}
+              {total > 0 && (
+                <div style={{ marginTop:12 }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
+                    <div style={{ color: C.muted, fontSize:11 }}>{done}/{total} {PROJEKTTYPEN[p.typ]?.fortschrittLabel||"Felder fertig"}</div>
+                    <div style={{ display:"flex", gap:8 }}>
+                      {delayed > 0 && <div style={{ color: C.rot, fontSize:11 }}>⚠️ {delayed} Verzug</div>}
+                      <div style={{ color: p.farbe, fontSize:11, fontWeight:700 }}>{pct}%</div>
+                    </div>
+                  </div>
+                  <div style={{ background: C.bgFaint, borderRadius:4, height:6 }}>
+                    <div style={{ background: p.farbe, width:`${pct}%`, height:"100%", borderRadius:4, transition:"width 0.5s" }} />
+                  </div>
+                </div>
+              )}
+              {total === 0 && (
+                <div style={{ color: C.muted, fontSize:12, marginTop:8 }}>Noch keine Betonfelder angelegt</div>
+              )}
+            </div>
+          );
+        })}
+
+        {/* Neues Projekt */}
+        <div onClick={onNeu}
+          style={{ border:`2px dashed ${C.gelb}`, borderRadius:14, padding:"20px",
+            textAlign:"center", cursor:"pointer", background: C.bgMid, marginTop:4 }}>
+          <div style={{ fontSize:28 }}>➕</div>
+          <div style={{ color: C.gelb, fontWeight:700, marginTop:6 }}>Neue Baustelle anlegen</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Neues Projekt Formular ──────────────────────────────────────────────────
+function ProjektFormular({ initial, onSave, onClose, subs = [] }) {
+  const [p, setP] = useState(initial || leerProjekt());
+  const FARBEN = ["#F5C400","#4A9EE0","#2EAF6A","#C45C2A","#9B59B6","#E84393"];
+  const valid = p.name.trim().length > 0;
+
+  function toggleSub(id) {
+    setP(prev => ({
+      ...prev,
+      subIds: (prev.subIds||[]).includes(id)
+        ? (prev.subIds||[]).filter(x=>x!==id)
+        : [...(prev.subIds||[]), id]
+    }));
+  }
+
+  return (
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:500,
+      display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
+      <div style={{ background: C.bgMid, borderRadius:"16px 16px 0 0", padding:22,
+        width:"100%", maxWidth:520, maxHeight:"92vh", overflowY:"auto" }}>
+
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:18 }}>
+          <div style={{ color: C.gelb, fontWeight:700, fontSize:17 }}>
+            {initial?.name ? "✏️ Baustelle bearbeiten" : "➕ Neue Baustelle"}
+          </div>
+          <button onClick={onClose} style={{ background:"none", border:"none", color: C.muted, fontSize:24, cursor:"pointer" }}>✕</button>
+        </div>
+
+        {/* Projekttyp-Auswahl – zuerst! */}
+        <div style={{ marginBottom:18 }}>
+          <Label>Projekttyp *</Label>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginTop:6 }}>
+            {Object.entries(PROJEKTTYPEN).map(([key, cfg]) => (
+              <div key={key} onClick={() => setP(prev=>({...prev, typ:key}))}
+                style={{ background: p.typ===key ? C.bgLight : C.bgFaint,
+                  border:`2px solid ${p.typ===key ? C.gelb : "transparent"}`,
+                  borderRadius:10, padding:"10px 12px", cursor:"pointer",
+                  display:"flex", alignItems:"center", gap:8 }}>
+                <span style={{ fontSize:20 }}>{cfg.icon}</span>
+                <span style={{ color: p.typ===key ? C.text : C.muted, fontSize:12, fontWeight: p.typ===key ? 700 : 400 }}>
+                  {cfg.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {[
+          ["Projektname *",    "name",          "Neubau Wohnanlage Nord"],
+          ["Adresse",          "adresse",       "Musterstraße 1, 80331 München"],
+          ["Projektnummer",    "projektnummer", "PRJ-2025-001"],
+          ["Bauleiter",        "bauleiter",     "Max Mustermann"],
+          ["Auftraggeber",     "auftraggeber",  "Muster GmbH"],
+        ].map(([label, key, ph]) => (
+          <div key={key} style={{ marginBottom:13 }}>
+            <Label>{label}</Label>
+            <input value={p[key]} onChange={e => setP(prev=>({...prev,[key]:e.target.value}))}
+              placeholder={ph} style={inputStyle()} />
+          </div>
+        ))}
+
+        {/* Farbe */}
+        <div style={{ marginBottom:16 }}>
+          <Label>Projektfarbe</Label>
+          <div style={{ display:"flex", gap:10, marginTop:6 }}>
+            {FARBEN.map(f => (
+              <div key={f} onClick={() => setP(prev=>({...prev,farbe:f}))}
+                style={{ width:32, height:32, borderRadius:16, background:f, cursor:"pointer",
+                  border:`3px solid ${p.farbe===f ? "#fff" : "transparent"}`,
+                  boxShadow: p.farbe===f ? `0 0 0 2px ${f}` : "none" }} />
+            ))}
+          </div>
+        </div>
+
+        {/* Sub-Zuweisung */}
+        {subs.filter(s=>s.status==="aktiv").length > 0 && (
+          <div style={{ marginBottom:20 }}>
+            <Label>Subunternehmer zuweisen</Label>
+            <div style={{ display:"flex", flexDirection:"column", gap:6, marginTop:8 }}>
+              {subs.filter(s=>s.status==="aktiv").map(s => {
+                const aktiv = (p.subIds||[]).includes(s.id);
+                return (
+                  <div key={s.id} onClick={() => toggleSub(s.id)}
+                    style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+                      background: aktiv ? "#1A2040" : C.bgFaint,
+                      border:`1.5px solid ${aktiv ? C.blau : "transparent"}`,
+                      borderRadius:9, padding:"10px 12px", cursor:"pointer" }}>
+                    <div>
+                      <div style={{ color: C.text, fontSize:13, fontWeight: aktiv ? 700 : 400 }}>{s.name}</div>
+                      <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginTop:4 }}>
+                        {s.gewerke.map(k => {
+                          const g = ALLE_GEWERKE.find(x=>x.key===k);
+                          return g ? <span key={k} style={{ color: C.muted, fontSize:10 }}>{g.icon} {g.label}</span> : null;
+                        })}
+                      </div>
+                    </div>
+                    <div style={{ fontSize:18 }}>{aktiv ? "🔵" : "⚪"}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <div style={{ display:"flex", gap:10 }}>
+          <button onClick={onClose}
+            style={{ flex:1, background: C.bgFaint, color: C.muted, border:"none", borderRadius:10, padding:13, cursor:"pointer" }}>
+            Abbrechen
+          </button>
+          <button onClick={() => valid && onSave(p)} disabled={!valid}
+            style={{ flex:2, background: valid ? C.gelb : C.bgFaint,
+              color: valid ? "#1C2027" : C.muted,
+              border:"none", borderRadius:10, padding:13, fontWeight:700, cursor:"pointer", fontSize:15 }}>
+            💾 Speichern
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Projekt-Header (innerhalb einer Baustelle) ──────────────────────────────
+function ProjektHeader({ projekt, onBack, onEdit, sbConnected }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  return (
+    <div style={{ background: C.bgMid, padding:"12px 16px", display:"flex", justifyContent:"space-between",
+      alignItems:"center", borderBottom:`3px solid ${projekt.farbe}`, position:"sticky", top:0, zIndex:50 }}>
+      <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+        <button onClick={onBack}
+          style={{ background: C.bgFaint, border:"none", color: C.text, borderRadius:8,
+            padding:"6px 10px", cursor:"pointer", fontSize:16 }}>‹</button>
+        <div>
+          <div style={{ color: C.text, fontWeight:800, fontSize:14, maxWidth:180,
+            overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{projekt.name}</div>
+          <div style={{ color: C.muted, fontSize:10 }}>{projekt.projektnummer} · {projekt.bauleiter}</div>
+        </div>
+      </div>
+      <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+        <div style={{ background: sbConnected ? C.gruen : C.bgFaint, width:7, height:7, borderRadius:4 }} />
+        <button onClick={() => { setMenuOpen(true); }}
+          style={{ background: C.bgFaint, border:"none", color: C.text, borderRadius:8,
+            padding:"6px 10px", cursor:"pointer", fontSize:16 }}>⋯</button>
+      </div>
+      {menuOpen && (
+        <div style={{ position:"fixed", inset:0, zIndex:600 }} onClick={() => setMenuOpen(false)}>
+          <div style={{ position:"absolute", top:56, right:14, background: C.bgLight,
+            borderRadius:12, padding:8, minWidth:180, border:`1px solid ${C.bgFaint}` }}
+            onClick={e => e.stopPropagation()}>
+            <MenuItem icon="✏️" label="Baustelle bearbeiten" onClick={() => { onEdit(); setMenuOpen(false); }} />
+            <MenuItem icon={PROJEKTTYPEN[projekt.typ]?.icon||"🏗️"} label={PROJEKTTYPEN[projekt.typ]?.label||"Unbekannt"} onClick={() => setMenuOpen(false)} muted />
+            <MenuItem icon="📋" label={`Auftraggeber: ${projekt.auftraggeber}`} onClick={() => setMenuOpen(false)} muted />
+            <MenuItem icon="📍" label={projekt.adresse} onClick={() => setMenuOpen(false)} muted small />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MenuItem({ icon, label, onClick, muted, small }) {
+  return (
+    <div onClick={onClick}
+      style={{ display:"flex", gap:10, alignItems:"center", padding:"10px 12px",
+        borderRadius:8, cursor:"pointer" }}>
+      <span style={{ fontSize:16 }}>{icon}</span>
+      <span style={{ color: muted ? C.muted : C.text, fontSize: small ? 11 : 13 }}>{label}</span>
+    </div>
+  );
+}
+
+// ROOT APP
+// ════════════════════════════════════════════════════════════════════════════
+export default function PolierApp() {
+  const [projekte,      setProjekte]    = useState(MOCK_PROJEKTE);
+  const [aktivId,       setAktivId]     = useState(null);
+  const [tab,           setTab]         = useState("dashboard");
+  const [sbConnected,   setSbConn]      = useState(false);
+  const [neuProjekt,    setNeuProjekt]  = useState(false);
+  const [editProjekt,   setEditProjekt] = useState(false);
+  const [eigeneFirma,   setEigeneFirma] = useState(MOCK_EIGENE_FIRMA);
+  const [subs,          setSubs]        = useState(MOCK_SUBS);
+  const [homeTab,       setHomeTab]     = useState("projekte"); // projekte | firmen
+  const pwa = usePWA();
+
+  const projekt = projekte.find(p => p.id === aktivId) || null;
+
+  // Projekt-Daten updaten
+  function updateProjekt(id, changes) {
+    setProjekte(prev => prev.map(p => p.id===id ? { ...p, ...changes } : p));
+  }
+
+  const felder    = projekt?.felder   || [];
+  const berichte  = projekt?.berichte || [];
+  const kolonnen  = projekt?.kolonnen || [];
+
+  function setFelder(fn)   { updateProjekt(aktivId, { felder:   typeof fn==="function" ? fn(felder)   : fn }); }
+  function setBerichte(fn) { updateProjekt(aktivId, { berichte: typeof fn==="function" ? fn(berichte) : fn }); }
+
+  function handleFelderImport(newFelder) {
+    setFelder(prev => {
+      const maxId = prev.reduce((m,f)=>Math.max(m,f.id),0);
+      return [...prev, ...newFelder.map((f,i)=>({...f, id:maxId+i+1}))];
+    });
+  }
+
+  function handleSaveProjekt(p) {
+    if (projekte.find(x=>x.id===p.id)) {
+      setProjekte(prev => prev.map(x=>x.id===p.id ? p : x));
+    } else {
+      setProjekte(prev => [...prev, p]);
+    }
+    setNeuProjekt(false);
+    setEditProjekt(false);
+    if (!aktivId) setAktivId(p.id);
+  }
+
+  // Supabase
+  useEffect(() => {
+    if (SUPABASE_URL.includes("DEIN")) { setSbConn(false); return; }
+    setSbConn(true);
+  }, []);
+
+  // ── Home Screen (Baustellen + Firmen) ──
+  if (!aktivId) {
+    return (
+      <>
+        <div style={{ background: C.bg, minHeight:"100vh", fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
+          {/* Header */}
+          <div style={{ background: C.bgMid, padding:"16px 18px 0", borderBottom:`2px solid ${C.gelb}` }}>
+            <div style={{ color: C.gelb, fontWeight:800, fontSize:20, letterSpacing:-0.5, marginBottom:12 }}>⚒ POLIER PRO</div>
+            {/* Home Tabs */}
+            <div style={{ display:"flex", gap:0 }}>
+              {[["projekte","🏗️","Baustellen"],["firmen","🏢","Unternehmen"]].map(([id,icon,label]) => (
+                <button key={id} onClick={() => setHomeTab(id)}
+                  style={{ flex:1, background:"none", border:"none", cursor:"pointer", padding:"8px 0 10px",
+                    borderBottom:`3px solid ${homeTab===id ? C.gelb : "transparent"}` }}>
+                  <div style={{ fontSize:18 }}>{icon}</div>
+                  <div style={{ color: homeTab===id ? C.gelb : C.muted, fontSize:11, marginTop:1 }}>{label}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ padding:"16px 14px 100px" }}>
+            {homeTab === "projekte" && (
+              <>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
+                  <div style={{ color: C.text, fontWeight:700, fontSize:15 }}>Meine Baustellen</div>
+                  <div style={{ background: C.bgMid, color: C.muted, fontSize:12, padding:"4px 10px", borderRadius:20 }}>
+                    {projekte.length} Projekte
+                  </div>
+                </div>
+
+                {projekte.map(p => {
+                  const eltern  = p.felder.filter(f=>!f.parentId);
+                  const done    = eltern.filter(f=>f.status==="done").length;
+                  const total   = eltern.length;
+                  const pct     = total > 0 ? Math.round(done/total*100) : 0;
+                  const delayed = eltern.filter(f=>f.status!=="done" && f.geplant && new Date(f.geplant)<new Date()).length;
+                  // Subs für dieses Projekt
+                  const projSubs = subs.filter(s => (p.subIds||[]).includes(s.id));
+                  return (
+                    <div key={p.id} onClick={() => { setAktivId(p.id); setTab("dashboard"); }}
+                      style={{ background: C.bgMid, borderRadius:14, padding:"16px 18px", marginBottom:12,
+                        border:`2px solid ${C.bgFaint}`, cursor:"pointer", borderLeft:`4px solid ${p.farbe}` }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+                        <div style={{ flex:1 }}>
+                          <div style={{ color: C.text, fontWeight:700, fontSize:15 }}>{p.name}</div>
+                          <div style={{ color: C.muted, fontSize:12, marginTop:2 }}>📍 {p.adresse}</div>
+                          <div style={{ display:"flex", gap:8, marginTop:6, flexWrap:"wrap" }}>
+                            <Chip icon={PROJEKTTYPEN[p.typ]?.icon||"🏗️"} label={PROJEKTTYPEN[p.typ]?.label||p.typ} />
+                            <Chip icon="🔢" label={p.projektnummer} />
+                            <Chip icon="👤" label={p.bauleiter} />
+                          </div>
+                          {projSubs.length > 0 && (
+                            <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginTop:6 }}>
+                              {projSubs.map(s => (
+                                <div key={s.id} style={{ background:"#1A2040", color: C.blau,
+                                  fontSize:10, padding:"2px 8px", borderRadius:10, border:`1px solid ${C.blau}44` }}>
+                                  🏢 {s.name}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div style={{ color: C.muted, fontSize:22, marginLeft:8 }}>›</div>
+                      </div>
+                      {total > 0 && (
+                        <div style={{ marginTop:12 }}>
+                          <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
+                            <div style={{ color: C.muted, fontSize:11 }}>{done}/{total} {PROJEKTTYPEN[p.typ]?.fortschrittLabel||"fertig"}</div>
+                            <div style={{ display:"flex", gap:8 }}>
+                              {delayed > 0 && <div style={{ color: C.rot, fontSize:11 }}>⚠️ {delayed} Verzug</div>}
+                              <div style={{ color: p.farbe, fontSize:11, fontWeight:700 }}>{pct}%</div>
+                            </div>
+                          </div>
+                          <div style={{ background: C.bgFaint, borderRadius:4, height:6 }}>
+                            <div style={{ background: p.farbe, width:`${pct}%`, height:"100%", borderRadius:4, transition:"width 0.5s" }} />
+                          </div>
+                        </div>
+                      )}
+                      {total === 0 && <div style={{ color: C.muted, fontSize:12, marginTop:8 }}>Noch keine Felder angelegt</div>}
+                    </div>
+                  );
+                })}
+
+                <div onClick={() => setNeuProjekt(true)}
+                  style={{ border:`2px dashed ${C.gelb}`, borderRadius:14, padding:"20px",
+                    textAlign:"center", cursor:"pointer", background: C.bgMid }}>
+                  <div style={{ fontSize:28 }}>➕</div>
+                  <div style={{ color: C.gelb, fontWeight:700, marginTop:6 }}>Neue Baustelle anlegen</div>
+                </div>
+              </>
+            )}
+
+            {homeTab === "firmen" && (
+              <FirmenView
+                owneFirma={eigeneFirma}
+                setEigeneFirma={setEigeneFirma}
+                subs={subs}
+                setSubs={setSubs}
+              />
+            )}
+          </div>
+        </div>
+
+        {neuProjekt && (
+          <ProjektFormular
+            subs={subs}
+            onSave={handleSaveProjekt}
+            onClose={() => setNeuProjekt(false)}
+          />
+        )}
+      </>
+    );
+  }
+
+  // ── Baustellen-Ansicht ──
+  const TABS = [
+    { id:"dashboard", icon:"📊",  label:"Übersicht" },
+    { id:"felder",    icon:"🏗️", label:"Felder"    },
+    { id:"gantt",     icon:"📅",  label:"Zeitplan"  },
+    { id:"editor",    icon:"✏️",  label:"Editor"    },
+    { id:"scanner",   icon:"📷",  label:"Scanner"   },
+    { id:"wetter",    icon:"🌤️", label:"Wetter"    },
+    { id:"kolonnen",  icon:"👷",  label:"Kolonnen"  },
+    { id:"tagebuch",  icon:"📋",  label:"Tagebuch"  },
+    { id:"zeiten",    icon:"⏱️",  label:"Zeiten"    },
+  ];
+
+  return (
+    <div style={{ background: C.bg, minHeight:"100vh", fontFamily:"'Segoe UI', system-ui, sans-serif", color: C.text }}>
+      <ProjektHeader
+        projekt={projekt}
+        onBack={() => setAktivId(null)}
+        onEdit={() => setEditProjekt(true)}
+        sbConnected={sbConnected}
+      />
+
+      <div style={{ padding:"16px 14px 90px" }}>
+        {tab === "dashboard" && <DashboardView felder={felder} kolonnen={kolonnen} sbConnected={sbConnected} />}
+        {tab === "felder"    && <BetonfelderView felder={felder} setFelder={setFelder} sbConnected={sbConnected} projektTyp={projekt.typ} projSubs={subs.filter(s=>(projekt.subIds||[]).includes(s.id))} />}
+        {tab === "gantt"     && <GanttView felder={felder} />}
+        {tab === "editor"    && <EditorView felder={felder} setFelder={setFelder} projektTyp={projekt.typ} />}
+        {tab === "scanner"   && <ScannerView onFelderImport={handleFelderImport} projektTyp={projekt.typ} />}
+        {tab === "wetter"    && <WeatherView />}
+        {tab === "kolonnen"  && <KolonnenView kolonnen={kolonnen} projekt={projekt} />}
+        {tab === "tagebuch"  && <TagesbuchView berichte={berichte} setBerichte={setBerichte} sbConnected={sbConnected} />}
+        {tab === "zeiten"    && <ZeiterfassungView projekt={projekt} />}
+      </div>
+
+      <div style={{ position:"fixed", bottom:0, left:0, right:0, background: C.bgMid,
+        borderTop:`1px solid ${C.bgFaint}`, display:"flex", zIndex:50 }}>
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            style={{ flex:1, padding:"8px 0 10px", background:"none", border:"none", cursor:"pointer",
+              borderTop:`3px solid ${tab===t.id ? projekt.farbe : "transparent"}` }}>
+            <div style={{ fontSize:18 }}>{t.icon}</div>
+            <div style={{ color: tab===t.id ? projekt.farbe : C.muted, fontSize:9, marginTop:1 }}>{t.label}</div>
+          </button>
+        ))}
+      </div>
+
+      {editProjekt && (
+        <ProjektFormular
+          initial={projekt}
+          subs={subs}
+          onSave={handleSaveProjekt}
+          onClose={() => setEditProjekt(false)}
+        />
+      )}
+      <PWABanner pwa={pwa} />
+    </div>
+  );
+}

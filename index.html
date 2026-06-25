@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+  <!-- PWA Meta -->
+  <meta name="application-name"    content="Polier Pro" />
+  <meta name="apple-mobile-web-app-capable"          content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title"            content="Polier Pro" />
+  <meta name="mobile-web-app-capable"                content="yes" />
+  <meta name="theme-color"                           content="#F5C400" />
+  <meta name="msapplication-TileColor"               content="#1C2027" />
+
+  <!-- SEO / Description -->
+  <meta name="description" content="Baustellenmanagement für Poliere – Betonfelder, Kolonnen, Tagesberichte, Zeiterfassung" />
+
+  <!-- Manifest -->
+  <link rel="manifest" href="/manifest.json" />
+
+  <!-- Icons -->
+  <link rel="icon"             type="image/png" sizes="32x32"  href="/icons/icon-96.png" />
+  <link rel="apple-touch-icon" type="image/png" sizes="180x180" href="/icons/icon-192.png" />
+
+  <!-- iOS Splash Screens (optional, für vollbild-Start) -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+
+  <title>Polier Pro</title>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- PWA Service Worker Registration -->
+  <script src="/pwa-register.js"></script>
+
+  <!-- Vite Entry -->
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+</html>
