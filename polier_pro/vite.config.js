@@ -2,35 +2,42 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
-// Verwende vite-plugin-pwa für automatische SW-Generierung
-// npm install -D vite-plugin-pwa
-
 export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      // Eigenen SW nutzen statt auto-generieren
-      strategies: "injectManifest",
-      srcDir:     "public",
-      filename:   "sw.js",
-      registerType: "prompt", // User entscheidet über Updates
+      // generateSW: Workbox generiert den SW automatisch — kein manueller sw.js nötig
+      strategies: "generateSW",
+      registerType: "prompt",
 
-      // Assets die der SW precachen soll
-      injectManifest: {
+      workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
-        globIgnores:  ["**/node_modules/**", "**/sw.js"],
+        // APIs nie cachen
+        navigateFallback: "/index.html",
+        navigateFallbackDenylist: [/^\/api/, /\/supabase/, /\/functions/],
+        runtimeCaching: [
+          {
+            // Open-Meteo Wetter: 10 Minuten Cache
+            urlPattern: /^https:\/\/api\.open-meteo\.com\//,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "wetter-cache",
+              expiration: { maxEntries: 10, maxAgeSeconds: 600 },
+            },
+          },
+        ],
       },
 
-      manifest: false, // Wir nutzen unsere eigene manifest.json in /public
-      
+      // manifest.json aus public/ verwenden
+      manifest: false,
+
       devOptions: {
-        enabled: true, // SW auch im Dev-Modus aktiv (zum Testen)
-        type:    "module",
+        enabled: false,
       },
     }),
   ],
   build: {
-    outDir:    "dist",
+    outDir: "dist",
     sourcemap: false,
     rollupOptions: {
       output: {
@@ -42,6 +49,5 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    https: false, // In Produktion via nginx/SSL
   },
 });
