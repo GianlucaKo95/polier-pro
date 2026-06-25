@@ -1,8 +1,33 @@
+# Dependencies
 node_modules/
+
+# Build Output
 dist/
+
+# Environment
 .env
 .env.local
 .env.*.local
+
+# Logs
 *.log
+npm-debug.log*
+
+# OS
 .DS_Store
+Thumbs.db
+
+# IDE – Visual Studio / VS Code
+.vs/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Vite
 .vite/
+
+# Temp
+*.tmp
+*.temp
