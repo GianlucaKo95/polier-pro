@@ -8,7 +8,6 @@ arch:
   - amd64
   - armhf
   - armv7
-  - i386
 startup: application
 boot: auto
 ports:
@@ -22,4 +21,9 @@ homeassistant_api: false
 hassio_api: false
 options: {}
 schema: {}
-image: "ghcr.io/GianlucaKo95/polier-pro-addon/{arch}"
+build_from:
+  aarch64: "ghcr.io/home-assistant/aarch64-base:latest"
+  amd64: "ghcr.io/home-assistant/amd64-base:latest"
+  armhf: "ghcr.io/home-assistant/armhf-base:latest"
+  armv7: "ghcr.io/home-assistant/armv7-base:latest"
+image: "ghcr.io/gianlucako95/polier-pro-addon/{arch}"
