@@ -24,6 +24,8 @@ jobs:
             platform: linux/arm64
           - arch: amd64
             platform: linux/amd64
+          - arch: armv7
+            platform: linux/arm/v7
 
     steps:
       - name: Checkout
@@ -36,15 +38,23 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Read version from config.yaml
+        id: version
+        run: |
+          VERSION=$(grep '^version:' polier_pro/config.yaml | sed 's/version: *//' | tr -d '"')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Detected version: $VERSION"
+
       - name: Docker Meta
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.IMAGE }}/${{ matrix.arch }}
           tags: |
-            type=ref,event=branch
+            type=raw,value=latest
+            type=raw,value=${{ steps.version.outputs.version }}
             type=semver,pattern={{version}}
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=ref,event=branch
 
       - name: QEMU
         uses: docker/setup-qemu-action@v3
@@ -58,7 +68,7 @@ jobs:
           context: polier_pro
           file: polier_pro/Dockerfile
           platforms: ${{ matrix.platform }}
-          push: ${{ github.event_name != 'pull_request' }}
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.arch }}
