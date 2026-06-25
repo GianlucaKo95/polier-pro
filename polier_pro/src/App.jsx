@@ -759,7 +759,7 @@ function FeldKarte({ f, unterfelder, selected, onSelect, onEdit, onSchnell, onSt
 }
 
 // ─── Detailpanel für ausgewähltes Feld ───────────────────────────────────────
-function FeldDetail({ selected, felder, onEdit, onStatusChange, onSchnell, projSubs=[], onSaveFeld }) {
+function FeldDetail({ selected, felder, onEdit, onStatusChange, onSchnell, projSubs=[], onSaveFeld, projekt, eigeneFirma, wetter }) {
   const istUnterfeld = !!selected.parentId;
   const eltern = istUnterfeld ? felder.find(f => f.id === selected.parentId) : null;
   const unterfelder = felder.filter(f => f.parentId === selected.id);
@@ -807,6 +807,7 @@ function FeldDetail({ selected, felder, onEdit, onStatusChange, onSchnell, projS
               borderRadius:8, padding:"5px 12px", cursor:"pointer", fontSize:12 }}>
             ✏️ Bearbeiten
           </button>
+          <PDFExportButton feld={selected} projekt={projekt} eigeneFirma={eigeneFirma} wetter={wetter} typ="betonprotokoll" />
         </div>
       </div>
 
@@ -891,7 +892,7 @@ function FeldDetail({ selected, felder, onEdit, onStatusChange, onSchnell, projS
 }
 
 // ─── Haupt-BetonfelderView ────────────────────────────────────────────────────
-function BetonfelderView({ felder, setFelder, sbConnected, projektTyp, projSubs=[] }) {
+function BetonfelderView({ felder, setFelder, sbConnected, projektTyp, projSubs=[], projekt, eigeneFirma, wetter }) {
   const cfg = typConfig(projektTyp);
   const [selected,     setSelected]     = useState(null);
   const [editFeld,     setEditFeld]     = useState(null);
@@ -1028,6 +1029,9 @@ function BetonfelderView({ felder, setFelder, sbConnected, projektTyp, projSubs=
               onSchnell={setSchnellParent}
               projSubs={projSubs}
               onSaveFeld={handleSave}
+              projekt={projekt}
+              eigeneFirma={eigeneFirma}
+              wetter={wetter}
             />
           )}
         </>
@@ -1533,13 +1537,690 @@ function DiktierFeld({ label, value, rows = 3, onChange }) {
 // ════════════════════════════════════════════════════════════════════════════
 // TAGEBUCH (mit Supabase + Foto-Upload + Diktat)
 // ════════════════════════════════════════════════════════════════════════════
-function TagesbuchView({ berichte, setBerichte, sbConnected }) {
+
+// ════════════════════════════════════════════════════════════════════════════
+// PDF EXPORT – Bautagebuch + Betonierprotokoll (via HTML→Print)
+// ════════════════════════════════════════════════════════════════════════════
+
+function buildBerichtHTML(bericht, projekt, eigeneFirma, wetter) {
+  const datum = bericht.datum || new Date().toLocaleDateString("de-DE");
+  const fotos = bericht.bilder || [];
+  const logo  = eigeneFirma?.logo || null;
+
+  return `<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: Arial, sans-serif; font-size: 11pt; color: #1a1a1a; }
+  .page { width:210mm; min-height:297mm; padding:15mm 18mm; }
+  .header { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2.5px solid #F5C400; padding-bottom:10px; margin-bottom:16px; }
+  .logo { width:60px; height:60px; object-fit:contain; }
+  .logo-placeholder { width:60px; height:60px; background:#F5C400; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:24px; }
+  .firma-name { font-size:16pt; font-weight:bold; color:#1C2027; }
+  .firma-sub { font-size:9pt; color:#666; margin-top:2px; }
+  .doc-title { text-align:right; }
+  .doc-title h1 { font-size:14pt; font-weight:bold; color:#1C2027; }
+  .doc-title .datum { font-size:10pt; color:#666; margin-top:4px; }
+  .section { margin-bottom:16px; }
+  .section-title { font-size:10pt; font-weight:bold; color:#F5C400; text-transform:uppercase; letter-spacing:0.5px; border-left:3px solid #F5C400; padding-left:8px; margin-bottom:8px; }
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+  .field { background:#f8f8f8; border-radius:6px; padding:8px 10px; }
+  .field-label { font-size:8pt; color:#888; text-transform:uppercase; letter-spacing:0.3px; }
+  .field-value { font-size:11pt; font-weight:bold; margin-top:2px; }
+  .wetter-ok { color:#2EAF6A; }
+  .wetter-warn { color:#D94040; }
+  .text-block { background:#f8f8f8; border-radius:6px; padding:10px 12px; font-size:11pt; line-height:1.6; min-height:40px; }
+  .foto-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-top:8px; }
+  .foto-item img { width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:6px; }
+  .foto-caption { font-size:8pt; color:#888; margin-top:3px; text-align:center; }
+  .kolonne-row { display:flex; justify-content:space-between; padding:6px 10px; background:#f8f8f8; border-radius:5px; margin-bottom:4px; }
+  .sig-box { border:1.5px solid #ccc; border-radius:6px; height:60px; margin-top:6px; position:relative; }
+  .sig-label { position:absolute; bottom:6px; left:10px; font-size:8pt; color:#888; }
+  .sig-date { position:absolute; bottom:6px; right:10px; font-size:8pt; color:#888; }
+  .footer { border-top:1px solid #ddd; margin-top:20px; padding-top:8px; font-size:8pt; color:#aaa; display:flex; justify-content:space-between; }
+  @media print { .page { padding:10mm 14mm; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- KOPFZEILE -->
+  <div class="header">
+    <div style="display:flex;gap:14px;align-items:center;">
+      ${logo
+        ? `<img class="logo" src="${logo}" alt="Logo"/>`
+        : `<div class="logo-placeholder">⚒</div>`}
+      <div>
+        <div class="firma-name">${eigeneFirma?.name || "Polier Pro"}</div>
+        <div class="firma-sub">${eigeneFirma?.strasse || ""} · ${eigeneFirma?.plz || ""} ${eigeneFirma?.ort || ""}</div>
+        <div class="firma-sub">${eigeneFirma?.telefon || ""} · ${eigeneFirma?.email || ""}</div>
+      </div>
+    </div>
+    <div class="doc-title">
+      <h1>Bautagebuch</h1>
+      <div class="datum">${datum}</div>
+      <div class="datum" style="margin-top:2px;font-weight:bold;">${projekt?.name || ""}</div>
+      <div class="datum">${projekt?.projektnummer || ""}</div>
+    </div>
+  </div>
+
+  <!-- STAMMDATEN -->
+  <div class="section">
+    <div class="section-title">Baustellendaten</div>
+    <div class="grid-3">
+      <div class="field"><div class="field-label">Baustelle</div><div class="field-value">${projekt?.name || "—"}</div></div>
+      <div class="field"><div class="field-label">Bauleiter</div><div class="field-value">${projekt?.bauleiter || "—"}</div></div>
+      <div class="field"><div class="field-label">Auftraggeber</div><div class="field-value">${projekt?.auftraggeber || "—"}</div></div>
+    </div>
+  </div>
+
+  <!-- WETTER -->
+  ${wetter ? `
+  <div class="section">
+    <div class="section-title">Witterungsverhältnisse</div>
+    <div class="grid-3">
+      <div class="field"><div class="field-label">Temperatur</div><div class="field-value">${wetter.temp}°C</div></div>
+      <div class="field"><div class="field-label">Wind</div><div class="field-value">${wetter.wind} km/h</div></div>
+      <div class="field"><div class="field-label">Niederschlag</div><div class="field-value">${wetter.rain} mm</div></div>
+      <div class="field"><div class="field-label">Luftfeuchte</div><div class="field-value">${wetter.humidity}%</div></div>
+      <div class="field"><div class="field-label">Betonierbarkeit</div>
+        <div class="field-value ${wetter.temp >= 5 && wetter.wind <= 40 && wetter.rain <= 5 ? "wetter-ok" : "wetter-warn"}">
+          ${wetter.temp >= 5 && wetter.wind <= 40 && wetter.rain <= 5 ? "✓ Möglich" : "⚠ Eingeschränkt"}
+        </div>
+      </div>
+    </div>
+  </div>` : ""}
+
+  <!-- TÄTIGKEITEN -->
+  <div class="section">
+    <div class="section-title">Tätigkeiten</div>
+    <div class="text-block">${bericht.taetigkeit || "—"}</div>
+  </div>
+
+  ${bericht.besonderheiten ? `
+  <div class="section">
+    <div class="section-title">Besonderheiten / Mängel</div>
+    <div class="text-block">${bericht.besonderheiten}</div>
+  </div>` : ""}
+
+  ${bericht.material ? `
+  <div class="section">
+    <div class="section-title">Materiallieferungen</div>
+    <div class="text-block">${bericht.material}</div>
+  </div>` : ""}
+
+  <!-- KOLONNEN & STUNDEN -->
+  ${bericht.kolonnen && bericht.kolonnen.length > 0 ? `
+  <div class="section">
+    <div class="section-title">Personal &amp; Stunden</div>
+    ${bericht.kolonnen.map(k => `
+      <div class="kolonne-row">
+        <span style="font-weight:bold;">${k.name}</span>
+        <span>${k.mitarbeiter?.length || 0} Personen</span>
+        <span style="font-weight:bold;">${k.stunden ? k.stunden.toFixed(1) + " h" : "—"}</span>
+      </div>`).join("")}
+    <div class="kolonne-row" style="background:#F5C400;margin-top:4px;">
+      <span style="font-weight:bold;">Gesamt</span>
+      <span>${bericht.arbeiter || 0} Personen</span>
+      <span style="font-weight:bold;">${bericht.kolonnen.reduce((s,k) => s + (k.stunden || 0), 0).toFixed(1)} h</span>
+    </div>
+  </div>` : `
+  <div class="section">
+    <div class="section-title">Personal</div>
+    <div class="grid-2">
+      <div class="field"><div class="field-label">Arbeiter gesamt</div><div class="field-value">${bericht.arbeiter || 0}</div></div>
+      <div class="field"><div class="field-label">Mängel</div><div class="field-value ${bericht.maengel > 0 ? "wetter-warn" : ""}">${bericht.maengel || 0}</div></div>
+    </div>
+  </div>`}
+
+  <!-- FOTOS -->
+  ${fotos.length > 0 ? `
+  <div class="section">
+    <div class="section-title">Fotodokumentation (${fotos.length} Fotos)</div>
+    <div class="foto-grid">
+      ${fotos.slice(0, 9).map((url, i) => `
+        <div class="foto-item">
+          <img src="${url}" alt="Foto ${i+1}"/>
+          <div class="foto-caption">Foto ${i+1} · ${datum}</div>
+        </div>`).join("")}
+    </div>
+  </div>` : ""}
+
+  <!-- UNTERSCHRIFTEN -->
+  <div class="section" style="margin-top:auto;page-break-inside:avoid;">
+    <div class="section-title">Unterschriften</div>
+    <div class="grid-2">
+      <div>
+        <div style="font-size:9pt;color:#666;margin-bottom:4px;">Polier</div>
+        <div class="sig-box"><div class="sig-label">${eigeneFirma?.geschaeftsfuehrer || "Polier"}</div><div class="sig-date">${datum}</div></div>
+      </div>
+      <div>
+        <div style="font-size:9pt;color:#666;margin-bottom:4px;">Bauleiter</div>
+        <div class="sig-box"><div class="sig-label">${projekt?.bauleiter || "Bauleiter"}</div><div class="sig-date">${datum}</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>Erstellt mit Polier Pro · ${new Date().toLocaleString("de-DE")}</span>
+    <span>${eigeneFirma?.name || ""} · ${projekt?.projektnummer || ""}</span>
+  </div>
+</div>
+</body></html>`;
+}
+
+function buildBetonprotokollHTML(feld, projekt, eigeneFirma, wetter) {
+  const heute = new Date().toLocaleDateString("de-DE");
+  const logo  = eigeneFirma?.logo || null;
+  return `<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: Arial, sans-serif; font-size:11pt; color:#1a1a1a; }
+  .page { width:210mm; min-height:297mm; padding:15mm 18mm; }
+  .header { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2.5px solid #F5C400; padding-bottom:10px; margin-bottom:16px; }
+  .logo { width:55px; height:55px; object-fit:contain; }
+  .logo-placeholder { width:55px; height:55px; background:#F5C400; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px; }
+  .firma-name { font-size:14pt; font-weight:bold; }
+  .section-title { font-size:10pt; font-weight:bold; color:#F5C400; text-transform:uppercase; letter-spacing:0.5px; border-left:3px solid #F5C400; padding-left:8px; margin:14px 0 8px; }
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
+  .grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:8px; }
+  .field { background:#f8f8f8; border-radius:5px; padding:8px 10px; }
+  .field-label { font-size:8pt; color:#888; text-transform:uppercase; }
+  .field-value { font-size:12pt; font-weight:bold; margin-top:2px; }
+  .timeline { border-left:3px solid #F5C400; padding-left:14px; margin:8px 0; }
+  .timeline-item { margin-bottom:10px; }
+  .timeline-time { font-size:9pt; color:#666; }
+  .timeline-text { font-size:11pt; }
+  .check-row { display:flex; align-items:center; gap:8px; padding:6px 10px; border-bottom:1px solid #f0f0f0; }
+  .check-box { width:16px; height:16px; border:1.5px solid #ccc; border-radius:3px; flex-shrink:0; }
+  .sig-box { border:1.5px solid #ccc; border-radius:6px; height:55px; position:relative; margin-top:6px; }
+  .sig-label { position:absolute; bottom:5px; left:8px; font-size:8pt; color:#888; }
+  .ok { color:#2EAF6A; font-weight:bold; }
+  .warn { color:#D94040; font-weight:bold; }
+  .footer { border-top:1px solid #ddd; margin-top:16px; padding-top:6px; font-size:8pt; color:#aaa; display:flex; justify-content:space-between; }
+  @media print { .page { padding:10mm 14mm; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <div style="display:flex;gap:12px;align-items:center;">
+      ${logo ? `<img class="logo" src="${logo}" alt="Logo"/>` : `<div class="logo-placeholder">⚒</div>`}
+      <div>
+        <div class="firma-name">${eigeneFirma?.name || "Polier Pro"}</div>
+        <div style="font-size:9pt;color:#666;">${eigeneFirma?.strasse || ""} · ${eigeneFirma?.ort || ""}</div>
+      </div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:14pt;font-weight:bold;">Betonierprotokoll</div>
+      <div style="font-size:9pt;color:#666;margin-top:3px;">${heute}</div>
+      <div style="font-size:9pt;font-weight:bold;">${projekt?.name || ""}</div>
+    </div>
+  </div>
+
+  <div class="section-title">Betonfeld</div>
+  <div class="grid-3">
+    <div class="field"><div class="field-label">Feldbezeichnung</div><div class="field-value">${feld.name}</div></div>
+    <div class="field"><div class="field-label">Fläche</div><div class="field-value">${feld.m2} m²</div></div>
+    <div class="field"><div class="field-label">Status</div><div class="field-value">${feld.status}</div></div>
+    <div class="field"><div class="field-label">Betonsorte</div><div class="field-value">${feld.betonsorte || "—"}</div></div>
+    <div class="field"><div class="field-label">Bewehrung</div><div class="field-value" style="font-size:10pt;">${feld.bewehrung || "—"}</div></div>
+    <div class="field"><div class="field-label">Festigkeit</div><div class="field-value ${(feld.festigkeit || 0) >= 95 ? "ok" : ""}">${feld.festigkeit ? feld.festigkeit + "%" : "Ausstehend"}</div></div>
+  </div>
+
+  ${wetter ? `
+  <div class="section-title">Witterung bei Betonage</div>
+  <div class="grid-3">
+    <div class="field"><div class="field-label">Temperatur</div><div class="field-value">${wetter.temp}°C</div></div>
+    <div class="field"><div class="field-label">Wind</div><div class="field-value">${wetter.wind} km/h</div></div>
+    <div class="field"><div class="field-label">Niederschlag</div><div class="field-value">${wetter.rain} mm</div></div>
+  </div>` : ""}
+
+  <div class="section-title">Betonierablauf</div>
+  <div class="timeline">
+    ${["Beginn Betonage", "Lieferschein-Nr.", "Einbautemperatur", "Verdichtung", "Nachbehandlung begonnen", "Ende Betonage"].map(item => `
+    <div class="timeline-item">
+      <div class="timeline-time">___:___ Uhr</div>
+      <div class="timeline-text">${item}: ___________________________</div>
+    </div>`).join("")}
+  </div>
+
+  <div class="section-title">Freigabe-Checkliste</div>
+  ${["Bewehrungsabnahme erfolgt", "Schalung geprüft und freigegeben", "Betonierplan genehmigt", "Wetterbedingungen geprüft", "Lieferschein vorhanden", "Verdichtungsprotokoll erstellt"].map(item => `
+  <div class="check-row"><div class="check-box"></div><span>${item}</span></div>`).join("")}
+
+  <div class="section-title">Unterschriften</div>
+  <div class="grid-2">
+    <div><div style="font-size:9pt;color:#666;margin-bottom:4px;">Polier / Verantwortlich</div>
+    <div class="sig-box"><div class="sig-label">${eigeneFirma?.geschaeftsfuehrer || "Polier"} · ${heute}</div></div></div>
+    <div><div style="font-size:9pt;color:#666;margin-bottom:4px;">Bauleiter / Freigabe</div>
+    <div class="sig-box"><div class="sig-label">${projekt?.bauleiter || "Bauleiter"} · ${heute}</div></div></div>
+  </div>
+
+  <div class="footer">
+    <span>Betonierprotokoll · Polier Pro · ${new Date().toLocaleString("de-DE")}</span>
+    <span>${projekt?.projektnummer || ""}</span>
+  </div>
+</div>
+</body></html>`;
+}
+
+function druckePDF(htmlContent, dateiname) {
+  const win = window.open("", "_blank", "width=900,height=700");
+  if (!win) { alert("Popup-Blocker aktiv — bitte Popups für diese Seite erlauben."); return; }
+  win.document.write(htmlContent);
+  win.document.close();
+  win.onload = () => {
+    win.focus();
+    win.print();
+  };
+}
+
+function PDFExportButton({ bericht, feld, projekt, eigeneFirma, wetter, kolonnen, typ = "bericht" }) {
+  function handleExport() {
+    if (typ === "bericht") {
+      const b = { ...bericht, kolonnen: kolonnen || [] };
+      druckePDF(buildBerichtHTML(b, projekt, eigeneFirma, wetter), `Bautagebuch_${bericht.datum}.pdf`);
+    } else {
+      druckePDF(buildBetonprotokollHTML(feld, projekt, eigeneFirma, wetter), `Betonierprotokoll_${feld?.name}.pdf`);
+    }
+  }
+  return (
+    <button onClick={handleExport}
+      style={{ background: C.rot, color:"#fff", border:"none", borderRadius:8,
+        padding:"6px 14px", fontWeight:700, cursor:"pointer", fontSize:13,
+        display:"flex", alignItems:"center", gap:6 }}>
+      📄 PDF
+    </button>
+  );
+}
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// KI-TAGESBERICHT GENERATOR
+// ════════════════════════════════════════════════════════════════════════════
+async function generiereBerichtKI(diktat, projekt, kolonnen, wetter) {
+  const kolonnenInfo = (kolonnen || []).map(k =>
+    `${k.name}: ${k.mitarbeiter?.length || 0} Mann, Einsatz: ${k.einsatz}`
+  ).join("\n");
+
+  const wetterInfo = wetter
+    ? `Temperatur: ${wetter.temp}°C, Wind: ${wetter.wind}km/h, Niederschlag: ${wetter.rain}mm`
+    : "keine Wetterdaten";
+
+  const prompt = `Du bist ein erfahrener Polier und schreibst einen professionellen Bautagesbericht.
+
+Projekt: ${projekt?.name || ""}
+Adresse: ${projekt?.adresse || ""}
+Datum: ${new Date().toLocaleDateString("de-DE")}
+Wetter: ${wetterInfo}
+Kolonnen heute:
+${kolonnenInfo || "keine Kolonnen eingetragen"}
+
+Diktat des Poliers:
+"${diktat}"
+
+Erstelle daraus einen vollständigen, professionellen Bautagesbericht. Antworte NUR mit einem JSON-Objekt ohne Markdown:
+{
+  "taetigkeit": "Ausführliche Beschreibung der Tätigkeiten (3-5 Sätze, fachlich korrekt)",
+  "besonderheiten": "Besonderheiten, Mängel, Vorkommnisse (oder leer wenn keine)",
+  "material": "Materiallieferungen falls erwähnt (oder leer)",
+  "fazit": "Kurzes Fazit zum Tagesfortschritt"
+}`;
+
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1000,
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
+  const data = await res.json();
+  const text = data.content?.find(b => b.type === "text")?.text || "{}";
+  try {
+    return JSON.parse(text.replace(/```json|```/g, "").trim());
+  } catch {
+    return { taetigkeit: diktat, besonderheiten: "", material: "", fazit: "" };
+  }
+}
+
+function KIBerichtButton({ onGenerated, projekt, kolonnen, wetter }) {
+  const [offen, setOffen]   = useState(false);
+  const [diktat, setDiktat] = useState("");
+  const [laden, setLaden]   = useState(false);
+  const diktierRef = useRef(null);
+  const [aufnahme, setAufnahme] = useState(false);
+
+  function startDiktat() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { alert("Diktat nicht unterstützt auf diesem Gerät."); return; }
+    if (!diktierRef.current) {
+      const er = new SR();
+      er.lang = "de-DE"; er.continuous = true; er.interimResults = false;
+      er.onresult = e => {
+        const t = Array.from(e.results).map(r => r[0].transcript).join(" ");
+        setDiktat(t);
+      };
+      er.onend = () => setAufnahme(false);
+      diktierRef.current = er;
+    }
+    if (aufnahme) { diktierRef.current.stop(); setAufnahme(false); }
+    else { diktierRef.current.start(); setAufnahme(true); }
+  }
+
+  async function generieren() {
+    if (!diktat.trim()) return;
+    setLaden(true);
+    try {
+      const result = await generiereBerichtKI(diktat, projekt, kolonnen, wetter);
+      onGenerated(result);
+      setOffen(false);
+      setDiktat("");
+    } catch(e) {
+      alert("KI-Generierung fehlgeschlagen. Bitte erneut versuchen.");
+    }
+    setLaden(false);
+  }
+
+  return (
+    <>
+      <button onClick={() => setOffen(true)}
+        style={{ background: C.blau, color:"#fff", border:"none", borderRadius:8,
+          padding:"6px 14px", fontWeight:700, cursor:"pointer", fontSize:13,
+          display:"flex", alignItems:"center", gap:6 }}>
+        🤖 KI-Bericht
+      </button>
+
+      {offen && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:500,
+          display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
+          <div style={{ background: C.bgMid, borderRadius:"16px 16px 0 0", padding:22,
+            width:"100%", maxWidth:520 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
+              <div style={{ color: C.gelb, fontWeight:700, fontSize:16 }}>🤖 KI-Tagesbericht</div>
+              <button onClick={() => setOffen(false)}
+                style={{ background:"none", border:"none", color: C.muted, fontSize:22, cursor:"pointer" }}>✕</button>
+            </div>
+            <div style={{ color: C.muted, fontSize:13, marginBottom:12 }}>
+              Beschreibe kurz was heute auf der Baustelle passiert ist — die KI erstellt daraus einen vollständigen, professionellen Bericht.
+            </div>
+
+            {/* Diktat-Bereich */}
+            <div style={{ position:"relative", marginBottom:14 }}>
+              <textarea rows={5} value={diktat}
+                onChange={e => setDiktat(e.target.value)}
+                placeholder="z.B. Heute haben wir die Bodenplatte B1 fertig betoniert. Kolonne Huber war mit 4 Mann da. Nachmittags kam Regen, haben aufgehört. Bewehrung für C1 läuft gut..."
+                style={{ width:"100%", background: aufnahme ? "#1A1A2E" : C.bgLight,
+                  color: C.text, border:`1px solid ${aufnahme ? C.rot : C.bgFaint}`,
+                  borderRadius:8, padding:"10px 12px", fontSize:13, resize:"none",
+                  boxSizing:"border-box" }} />
+              <button onClick={startDiktat}
+                style={{ position:"absolute", bottom:10, right:10,
+                  background: aufnahme ? C.rot : C.bgFaint, color: aufnahme ? "#fff" : C.muted,
+                  border:"none", borderRadius:20, padding:"4px 12px", cursor:"pointer", fontSize:12 }}>
+                {aufnahme ? "⏹ Stopp" : "🎤 Diktieren"}
+              </button>
+            </div>
+
+            <div style={{ display:"flex", gap:10 }}>
+              <button onClick={() => setOffen(false)}
+                style={{ flex:1, background: C.bgFaint, color: C.muted, border:"none",
+                  borderRadius:10, padding:13, cursor:"pointer" }}>Abbrechen</button>
+              <button onClick={generieren} disabled={!diktat.trim() || laden}
+                style={{ flex:2, background: diktat.trim() && !laden ? C.gelb : C.bgFaint,
+                  color: diktat.trim() && !laden ? "#1C2027" : C.muted,
+                  border:"none", borderRadius:10, padding:13, fontWeight:700, cursor:"pointer", fontSize:15 }}>
+                {laden ? "⏳ KI schreibt…" : "✨ Bericht generieren"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// PUSH NOTIFICATIONS
+// ════════════════════════════════════════════════════════════════════════════
+const PUSH_VAPID_PUBLIC = "BEl62iUYgUivxIkv69yViEuiBIa40Hi-GJVabpPADEaLJCO1a6-FqZ3mnpBcRjMsYCU7HoEaRLqMkqFbFfBRE";
+
+async function pushBerechtigung() {
+  if (!("Notification" in window) || !("serviceWorker" in navigator)) return false;
+  const result = await Notification.requestPermission();
+  return result === "granted";
+}
+
+async function pushAbonnieren() {
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: PUSH_VAPID_PUBLIC,
+    });
+    console.log("[Push] Abonniert:", sub.endpoint);
+    return sub;
+  } catch(e) {
+    console.warn("[Push] Fehler:", e);
+    return null;
+  }
+}
+
+function lokaleNotification(titel, text, tag) {
+  if (Notification.permission !== "granted") return;
+  new Notification(titel, {
+    body:  text,
+    icon:  "/icons/icon-192.png",
+    badge: "/icons/icon-96.png",
+    tag:   tag || "polier-pro",
+    vibrate: [200, 100, 200],
+  });
+}
+
+function usePushNotifications(projekte, eigeneFirma) {
+  const [erlaubt, setErlaubt] = useState(Notification.permission === "granted");
+
+  useEffect(() => {
+    if (!erlaubt) return;
+    const now = new Date();
+    const stunde = now.getHours();
+
+    // Morgens 6:30: Wetterbriefing
+    if (stunde === 6) {
+      const heute = projekte.filter(p => p.felder?.some(f => f.status === "in_progress"));
+      if (heute.length > 0) {
+        lokaleNotification("☀️ Guten Morgen!", `${heute.length} aktive Baustelle${heute.length > 1 ? "n" : ""} — Wetter checken!`, "morgen-wetter");
+      }
+    }
+
+    // Prüfe verzögerte Felder
+    const verzug = projekte.flatMap(p =>
+      (p.felder || []).filter(f => f.status !== "done" && f.geplant && new Date(f.geplant) < now)
+    );
+    if (verzug.length > 0 && stunde === 7) {
+      lokaleNotification("⚠️ Felder in Verzug", `${verzug.length} Feld${verzug.length > 1 ? "er" : ""} hinter dem Zeitplan!`, "verzug");
+    }
+
+    // Abends 17:00: Tagesbericht-Erinnerung
+    if (stunde === 17) {
+      const heute = new Date().toLocaleDateString("de-DE");
+      const heuteBericht = projekte.some(p =>
+        (p.berichte || []).some(b => b.datum === heute)
+      );
+      if (!heuteBericht) {
+        lokaleNotification("📋 Tagesbericht fehlt", "Bitte noch den Tagesbericht für heute erfassen.", "tagesbericht");
+      }
+    }
+  }, [erlaubt, projekte]);
+
+  async function berechtigung() {
+    const ok = await pushBerechtigung();
+    setErlaubt(ok);
+    if (ok) lokaleNotification("✅ Polier Pro", "Push-Benachrichtigungen aktiv!", "setup");
+  }
+
+  return { erlaubt, berechtigung };
+}
+
+function PushBanner({ erlaubt, berechtigung }) {
+  if (erlaubt) return null;
+  return (
+    <div style={{ background:"#1A2040", borderRadius:10, padding:"10px 14px", marginBottom:12,
+      border:`1px solid ${C.blau}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+      <div>
+        <div style={{ color: C.text, fontSize:13, fontWeight:700 }}>🔔 Benachrichtigungen aktivieren</div>
+        <div style={{ color: C.muted, fontSize:11 }}>Wetterwarnung, Verzug & Tagesbericht-Erinnerung</div>
+      </div>
+      <button onClick={berechtigung}
+        style={{ background: C.blau, color:"#fff", border:"none", borderRadius:8,
+          padding:"6px 12px", cursor:"pointer", fontWeight:700, fontSize:12 }}>
+        Aktivieren
+      </button>
+    </div>
+  );
+}
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// OFFLINE SYNC – IndexedDB Queue
+// ════════════════════════════════════════════════════════════════════════════
+const IDB_NAME    = "polier-pro-offline";
+const IDB_STORE   = "sync-queue";
+const IDB_VERSION = 1;
+
+function idbOpen() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(IDB_NAME, IDB_VERSION);
+    req.onupgradeneeded = e => e.target.result.createObjectStore(IDB_STORE, { autoIncrement: true });
+    req.onsuccess = e => resolve(e.target.result);
+    req.onerror   = e => reject(e.target.error);
+  });
+}
+
+async function idbQueue(action, data) {
+  const db    = await idbOpen();
+  const tx    = db.transaction(IDB_STORE, "readwrite");
+  const store = tx.objectStore(IDB_STORE);
+  store.add({ action, data, ts: Date.now() });
+  return new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = rej; });
+}
+
+async function idbDrainQueue() {
+  const db    = await idbOpen();
+  const tx    = db.transaction(IDB_STORE, "readwrite");
+  const store = tx.objectStore(IDB_STORE);
+  const all   = await new Promise((res, rej) => {
+    const req = store.getAll(); req.onsuccess = () => res(req.result); req.onerror = rej;
+  });
+  const keys = await new Promise((res, rej) => {
+    const req = store.getAllKeys(); req.onsuccess = () => res(req.result); req.onerror = rej;
+  });
+
+  let synced = 0;
+  for (let i = 0; i < all.length; i++) {
+    const item = all[i];
+    try {
+      if (item.action === "save-bericht") {
+        await sbFetch("tagesberichte", { method:"POST", body: JSON.stringify(item.data) });
+      } else if (item.action === "update-feld") {
+        await sbFetch(`betonfelder?id=eq.${item.data.id}`, { method:"PATCH", body: JSON.stringify(item.data) });
+      }
+      store.delete(keys[i]);
+      synced++;
+    } catch(e) {
+      console.warn("[Offline Sync] Fehler:", e);
+    }
+  }
+  return synced;
+}
+
+function useOfflineSync(online, sbConnected) {
+  const [pending, setPending] = useState(0);
+  const [syncing, setSyncing] = useState(false);
+
+  useEffect(() => {
+    idbOpen().then(db => {
+      const tx    = db.transaction(IDB_STORE, "readonly");
+      const store = tx.objectStore(IDB_STORE);
+      const req   = store.count();
+      req.onsuccess = () => setPending(req.result);
+    }).catch(() => {});
+  }, [online]);
+
+  useEffect(() => {
+    if (online && sbConnected && pending > 0) {
+      setSyncing(true);
+      idbDrainQueue().then(n => {
+        setPending(p => Math.max(0, p - n));
+        setSyncing(false);
+        if (n > 0) lokaleNotification("✅ Synchronisiert", `${n} Eintrag${n > 1 ? "e" : ""} mit Supabase synchronisiert.`, "sync");
+      });
+    }
+  }, [online, sbConnected]);
+
+  async function speichereOffline(action, data) {
+    await idbQueue(action, data);
+    setPending(p => p + 1);
+  }
+
+  return { pending, syncing, speichereOffline };
+}
+
+function OfflineSyncBanner({ pending, syncing, online }) {
+  if (online && pending === 0 && !syncing) return null;
+  return (
+    <div style={{ background: syncing ? "#1A3A28" : pending > 0 ? "#2A2010" : C.bgFaint,
+      borderRadius:10, padding:"8px 14px", marginBottom:10,
+      border:`1px solid ${syncing ? C.gruen : pending > 0 ? C.gelb : C.bgLight}`,
+      display:"flex", alignItems:"center", gap:10 }}>
+      <span style={{ fontSize:16 }}>{syncing ? "🔄" : pending > 0 ? "📴" : "✅"}</span>
+      <div>
+        <div style={{ color: syncing ? C.gruen : pending > 0 ? C.gelb : C.text, fontWeight:700, fontSize:12 }}>
+          {syncing ? "Synchronisiere…" : pending > 0 ? `${pending} Einträge offline gespeichert` : "Alles synchronisiert"}
+        </div>
+        {pending > 0 && !syncing && (
+          <div style={{ color: C.muted, fontSize:10 }}>Werden synchronisiert sobald wieder online</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eigeneFirma, kolonnen, offlineSpeichern }) {
   const [open,       setOpen]       = useState(false);
-  const [detail,     setDetail]     = useState(null); // Bericht-Detailansicht
+  const [detail,     setDetail]     = useState(null);
   const [form,       setForm]       = useState({ taetigkeit:"", besonderheiten:"", material:"", arbeiter:0, maengel:0 });
-  const [bilder,     setBilder]     = useState([]); // [{ dataUrl, name, typ }]
+  const [bilder,     setBilder]     = useState([]);
   const [uploading,  setUploading]  = useState(false);
+  const [wetter,     setWetter]     = useState(null);
   const fileRef = useRef(null);
+
+  // Wetter für PDF laden
+  useEffect(() => {
+    fetch("https://api.open-meteo.com/v1/forecast?latitude=48.137&longitude=11.576&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m&timezone=Europe%2FBerlin")
+      .then(r => r.json()).then(d => {
+        const c = d.current;
+        setWetter({ temp: Math.round(c.temperature_2m), wind: Math.round(c.wind_speed_10m), rain: c.precipitation, humidity: c.relative_humidity_2m });
+      }).catch(() => {});
+  }, []);
+
+  function handleKIGenerated(result) {
+    setForm(p => ({ ...p,
+      taetigkeit:    result.taetigkeit    || p.taetigkeit,
+      besonderheiten:result.besonderheiten|| p.besonderheiten,
+      material:      result.material      || p.material,
+    }));
+    setOpen(true);
+  }
 
   function handleBilderWahl(e) {
     const files = Array.from(e.target.files);
@@ -1588,35 +2269,29 @@ function TagesbuchView({ berichte, setBerichte, sbConnected }) {
   async function saveBericht() {
     setUploading(bilder.length > 0);
     const berichtId = Date.now();
-
-    // Bilder hochladen (oder lokal behalten)
-    const bildUrls = await Promise.all(
-      bilder.map(b => uploadBildSupabase(b, berichtId))
-    );
+    const bildUrls = await Promise.all(bilder.map(b => uploadBildSupabase(b, berichtId)));
+    const wetterStr = wetter ? `${wetter.temp}°C · ${wetter.wind}km/h Wind · ${wetter.rain}mm Regen` : "—";
 
     const nb = {
-      id:           berichtId,
-      datum:        new Date().toLocaleDateString("de-DE"),
-      datumRaw:     new Date().toISOString().slice(0,10),
-      wetter:       "—",
-      arbeiter:     Number(form.arbeiter) || 0,
-      taetigkeit:   form.taetigkeit,
+      id:             berichtId,
+      datum:          new Date().toLocaleDateString("de-DE"),
+      datumRaw:       new Date().toISOString().slice(0,10),
+      wetter:         wetterStr,
+      wetterData:     wetter,
+      arbeiter:       Number(form.arbeiter) || 0,
+      taetigkeit:     form.taetigkeit,
       besonderheiten: form.besonderheiten,
-      material:     form.material,
-      maengel:      Number(form.maengel) || 0,
-      bilder:       bildUrls,
+      material:       form.material,
+      maengel:        Number(form.maengel) || 0,
+      bilder:         bildUrls,
     };
     setBerichte(prev => [nb, ...prev]);
 
+    const berichtData = { ...form, datum: new Date().toISOString().slice(0,10), bilder: JSON.stringify(bildUrls), wetter: wetterStr };
     if (sbConnected) {
-      await sbFetch("tagesberichte", {
-        method: "POST",
-        body:   JSON.stringify({
-          ...form,
-          datum:   new Date().toISOString().slice(0,10),
-          bilder:  JSON.stringify(bildUrls),
-        }),
-      });
+      await sbFetch("tagesberichte", { method:"POST", body: JSON.stringify(berichtData) });
+    } else if (offlineSpeichern) {
+      await offlineSpeichern("save-bericht", berichtData);
     }
     setUploading(false);
     setOpen(false);
@@ -1635,11 +2310,14 @@ function TagesbuchView({ berichte, setBerichte, sbConnected }) {
       <SupabaseStatus connected={sbConnected} />
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
         <div style={{ color: C.text, fontWeight:700 }}>Bautagebuch</div>
-        <button onClick={() => setOpen(true)}
-          style={{ background: C.gelb, color:"#1C2027", border:"none",
-            borderRadius:8, padding:"6px 14px", fontWeight:700, cursor:"pointer", fontSize:13 }}>
-          + Neuer Bericht
-        </button>
+        <div style={{ display:"flex", gap:8 }}>
+          <KIBerichtButton onGenerated={handleKIGenerated} projekt={projekt} kolonnen={kolonnen} wetter={wetter} />
+          <button onClick={() => setOpen(true)}
+            style={{ background: C.gelb, color:"#1C2027", border:"none",
+              borderRadius:8, padding:"6px 14px", fontWeight:700, cursor:"pointer", fontSize:13 }}>
+            + Bericht
+          </button>
+        </div>
       </div>
 
       {/* Berichtsliste */}
@@ -1647,34 +2325,27 @@ function TagesbuchView({ berichte, setBerichte, sbConnected }) {
         <div key={i} onClick={() => setDetail(b)}
           style={{ background: C.bgMid, borderRadius:10, padding:"14px 16px", marginBottom:10,
             borderLeft:`3px solid ${C.gelb}`, cursor:"pointer" }}>
-          <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6, alignItems:"flex-start" }}>
             <div style={{ color: C.text, fontWeight:600 }}>{b.datum}</div>
-            <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-              {(b.bilder?.length > 0) && (
-                <div style={{ background: C.blau+"33", color: C.blau,
-                  fontSize:10, padding:"2px 7px", borderRadius:10 }}>
+            <div style={{ display:"flex", gap:6, alignItems:"center" }} onClick={e => e.stopPropagation()}>
+              <PDFExportButton bericht={b} projekt={projekt} eigeneFirma={eigeneFirma} wetter={b.wetterData || wetter} kolonnen={kolonnen} typ="bericht" />
+              {b.bilder?.length > 0 && (
+                <div style={{ background: C.blau+"33", color: C.blau, fontSize:10, padding:"2px 7px", borderRadius:10 }}>
                   📷 {b.bilder.length}
                 </div>
               )}
-              <div style={{ color: C.muted, fontSize:12 }}>{b.wetter} · {b.arbeiter} Arbeiter</div>
             </div>
           </div>
+          <div style={{ color: C.muted, fontSize:11, marginBottom:4 }}>{b.wetter} · {b.arbeiter} Arbeiter</div>
           <div style={{ color: C.betonLight, fontSize:13 }}>{b.taetigkeit}</div>
-          {b.maengel > 0 && (
-            <div style={{ color: C.rost, fontSize:12, marginTop:6 }}>⚠️ {b.maengel} Mängel</div>
-          )}
-          {/* Bildvorschau Thumbnails */}
+          {b.maengel > 0 && <div style={{ color: C.rost, fontSize:12, marginTop:6 }}>⚠️ {b.maengel} Mängel</div>}
           {b.bilder?.length > 0 && (
             <div style={{ display:"flex", gap:6, marginTop:10, flexWrap:"wrap" }}>
               {b.bilder.slice(0,4).map((url, j) => (
-                <img key={j} src={url} alt=""
-                  style={{ width:56, height:56, borderRadius:6, objectFit:"cover",
-                    border:`1px solid ${C.bgFaint}` }} />
+                <img key={j} src={url} alt="" style={{ width:56, height:56, borderRadius:6, objectFit:"cover", border:`1px solid ${C.bgFaint}` }} />
               ))}
               {b.bilder.length > 4 && (
-                <div style={{ width:56, height:56, borderRadius:6, background: C.bgFaint,
-                  display:"flex", alignItems:"center", justifyContent:"center",
-                  color: C.muted, fontSize:12, fontWeight:700 }}>
+                <div style={{ width:56, height:56, borderRadius:6, background: C.bgFaint, display:"flex", alignItems:"center", justifyContent:"center", color: C.muted, fontSize:12, fontWeight:700 }}>
                   +{b.bilder.length - 4}
                 </div>
               )}
@@ -1874,6 +2545,8 @@ function DashboardView({ felder, kolonnen, sbConnected }) {
   return (
     <div>
       <WeatherView compact />
+      <PushBanner erlaubt={push?.erlaubt} berechtigung={push?.berechtigung} />
+      <OfflineSyncBanner pending={offline?.pending} syncing={offline?.syncing} online={!pwa?.offline} />
       <SupabaseStatus connected={sbConnected} />
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:16 }}>
         {[
@@ -3301,7 +3974,7 @@ const MOCK_SUBS = [
   { id:4, name:"Dach & Fach Wagner AG",  gewerke:["dach"],              kontakt:"Maria Wagner",   telefon:"+49 89 777888", email:"wagner@dach.de",    status:"inaktiv",stundensatz:90 },
 ];
 
-function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs }) {
+function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboardingReset }) {
   const [screen, setScreen]     = useState("home"); // home | eigene | subs | subEdit
   const [editSub, setEditSub]   = useState(null);
   const [editOwn, setEditOwn]   = useState(false);
@@ -3377,6 +4050,23 @@ function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs }) {
               </div>
             </div>
           ))}
+
+          {/* Onboarding zurücksetzen */}
+          {onOnboardingReset && (
+            <div style={{ marginTop:24, borderTop:`1px solid ${C.bgFaint}`, paddingTop:16 }}>
+              <button onClick={() => {
+                  if (window.confirm("Onboarding zurücksetzen? Die App startet beim nächsten Laden neu mit dem Einrichtungsassistenten.")) {
+                    localStorage.removeItem(ONBOARDING_KEY);
+                    onOnboardingReset();
+                  }
+                }}
+                style={{ width:"100%", background: C.bgFaint, color: C.muted,
+                  border:`1px solid ${C.bgFaint}`, borderRadius:10, padding:12,
+                  cursor:"pointer", fontSize:13 }}>
+                🔄 Einrichtungsassistent erneut starten
+              </button>
+            </div>
+          )}
         </>
       )}
 
@@ -3557,7 +4247,300 @@ function SubZuweisungBadge({ subId, subs }) {
 // ════════════════════════════════════════════════════════════════════════════
 // PWA – Install Banner + Online/Offline Status + Update Banner
 // ════════════════════════════════════════════════════════════════════════════
-function usePWA() {
+// ════════════════════════════════════════════════════════════════════════════
+// ONBOARDING
+// ════════════════════════════════════════════════════════════════════════════
+const ONBOARDING_KEY = "polier_pro_onboarding_done";
+
+function OnboardingFlow({ onComplete }) {
+  const [schritt, setSchritt] = useState(0); // 0=Willkommen 1=Firma 2=Gewerke 3=Polier 4=Fertig
+  const [firma, setFirma] = useState({
+    name:"", strasse:"", plz:"", ort:"", telefon:"", email:"",
+    geschaeftsfuehrer:"", steuernummer:"", gewerke:[], logo:null,
+  });
+  const [ersterPolier, setErsterPolier] = useState({ name:"", telefon:"", email:"" });
+  const logoRef = useRef(null);
+
+  const SCHRITTE = ["Willkommen","Firma","Gewerke","Polier","Fertig"];
+  const gesamt   = SCHRITTE.length;
+
+  function handleLogoWahl(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => setFirma(p => ({ ...p, logo: ev.target.result }));
+    reader.readAsDataURL(file);
+  }
+
+  function toggleGewerk(key) {
+    setFirma(p => ({
+      ...p,
+      gewerke: p.gewerke.includes(key)
+        ? p.gewerke.filter(x => x !== key)
+        : [...p.gewerke, key],
+    }));
+  }
+
+  function abschliessen() {
+    localStorage.setItem(ONBOARDING_KEY, "1");
+    onComplete(firma, ersterPolier);
+  }
+
+  const weiterOk = [
+    true,                          // Willkommen immer OK
+    firma.name.trim().length > 0,  // Firma: Name Pflicht
+    firma.gewerke.length > 0,      // Gewerke: mind. 1
+    true,                          // Polier: optional
+    true,                          // Fertig
+  ][schritt];
+
+  return (
+    <div style={{ background: C.bg, minHeight:"100vh", fontFamily:"'Segoe UI', system-ui, sans-serif",
+      display:"flex", flexDirection:"column" }}>
+
+      {/* Progress Header */}
+      <div style={{ background: C.bgMid, padding:"16px 20px", borderBottom:`2px solid ${C.gelb}` }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+          <div style={{ color: C.gelb, fontWeight:800, fontSize:18 }}>⚒ POLIER PRO</div>
+          <div style={{ color: C.muted, fontSize:12 }}>Schritt {schritt+1} von {gesamt}</div>
+        </div>
+        {/* Progress Bar */}
+        <div style={{ background: C.bgFaint, borderRadius:4, height:6 }}>
+          <div style={{ background: C.gelb, height:"100%", borderRadius:4,
+            width:`${((schritt+1)/gesamt)*100}%`, transition:"width 0.4s" }} />
+        </div>
+        <div style={{ display:"flex", justifyContent:"space-between", marginTop:6 }}>
+          {SCHRITTE.map((s,i) => (
+            <div key={s} style={{ color: i <= schritt ? C.gelb : C.muted, fontSize:10,
+              fontWeight: i === schritt ? 700 : 400 }}>{s}</div>
+          ))}
+        </div>
+      </div>
+
+      {/* Content */}
+      <div style={{ flex:1, overflowY:"auto", padding:"24px 20px 120px" }}>
+
+        {/* ── Schritt 0: Willkommen ── */}
+        {schritt === 0 && (
+          <div style={{ textAlign:"center", paddingTop:40 }}>
+            <div style={{ fontSize:72, marginBottom:20 }}>⚒️</div>
+            <div style={{ color: C.text, fontWeight:800, fontSize:26, marginBottom:12 }}>
+              Willkommen bei Polier Pro
+            </div>
+            <div style={{ color: C.muted, fontSize:15, lineHeight:1.7, maxWidth:340, margin:"0 auto 32px" }}>
+              Die Baustellenmanagement-App für Poliere im Hoch- und Tiefbau.
+              Wir richten die App jetzt in wenigen Schritten für dich ein.
+            </div>
+            <div style={{ display:"flex", flexDirection:"column", gap:12, maxWidth:300, margin:"0 auto" }}>
+              {[
+                ["🏗️", "Betonfelder & Rasterplanung"],
+                ["👷", "Kolonnen & Mitarbeiter"],
+                ["📋", "Bautagebuch mit Fotos"],
+                ["⏱️", "123erfasst Zeiterfassung"],
+                ["🌤️", "Wetterbasierter Betoncheck"],
+              ].map(([icon, text]) => (
+                <div key={text} style={{ display:"flex", alignItems:"center", gap:12,
+                  background: C.bgMid, borderRadius:10, padding:"12px 16px" }}>
+                  <span style={{ fontSize:22 }}>{icon}</span>
+                  <span style={{ color: C.betonLight, fontSize:14 }}>{text}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Schritt 1: Firma ── */}
+        {schritt === 1 && (
+          <div>
+            <div style={{ color: C.gelb, fontWeight:700, fontSize:20, marginBottom:4 }}>🏢 Dein Unternehmen</div>
+            <div style={{ color: C.muted, fontSize:13, marginBottom:24 }}>
+              Diese Daten erscheinen auf Ausdrucken und im Bautagebuch.
+            </div>
+
+            {/* Logo Upload */}
+            <div style={{ marginBottom:20, textAlign:"center" }}>
+              <input ref={logoRef} type="file" accept="image/*" style={{ display:"none" }}
+                onChange={handleLogoWahl} />
+              <div onClick={() => logoRef.current.click()}
+                style={{ width:100, height:100, borderRadius:50, margin:"0 auto 10px",
+                  background: C.bgMid, border:`2px dashed ${C.gelb}`,
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                  cursor:"pointer", overflow:"hidden" }}>
+                {firma.logo
+                  ? <img src={firma.logo} alt="Logo" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+                  : <span style={{ fontSize:32 }}>🏢</span>}
+              </div>
+              <div style={{ color: C.muted, fontSize:12 }}>Logo hochladen (optional)</div>
+            </div>
+
+            {[
+              ["Firmenname *",      "name",              "Bauunternehmen Koeven GmbH"],
+              ["Geschäftsführer",   "geschaeftsfuehrer", "Max Mustermann"],
+              ["Straße + Nr.",      "strasse",           "Musterstraße 12"],
+              ["PLZ",              "plz",               "80331"],
+              ["Ort",              "ort",               "München"],
+              ["Telefon",          "telefon",           "+49 89 123456"],
+              ["E-Mail",           "email",             "info@firma.de"],
+              ["Steuernummer",     "steuernummer",      "123/456/78900"],
+            ].map(([label, key, ph]) => (
+              <div key={key} style={{ marginBottom:13 }}>
+                <Label>{label}</Label>
+                <input value={firma[key]||""} onChange={e => setFirma(p=>({...p,[key]:e.target.value}))}
+                  placeholder={ph} style={inputStyle()} />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── Schritt 2: Gewerke ── */}
+        {schritt === 2 && (
+          <div>
+            <div style={{ color: C.gelb, fontWeight:700, fontSize:20, marginBottom:4 }}>🔧 Eure Gewerke</div>
+            <div style={{ color: C.muted, fontSize:13, marginBottom:20 }}>
+              Welche Gewerke führt dein Unternehmen aus? Das bestimmt später die verfügbaren Felder und Checklisten.
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+              {ALLE_GEWERKE.map(g => {
+                const aktiv = firma.gewerke.includes(g.key);
+                return (
+                  <div key={g.key} onClick={() => toggleGewerk(g.key)}
+                    style={{ background: aktiv ? C.bgLight : C.bgMid,
+                      border:`2px solid ${aktiv ? C.gelb : C.bgFaint}`,
+                      borderRadius:12, padding:"14px 12px", cursor:"pointer",
+                      display:"flex", alignItems:"center", gap:10,
+                      transition:"all 0.15s" }}>
+                    <span style={{ fontSize:22 }}>{g.icon}</span>
+                    <div style={{ flex:1 }}>
+                      <div style={{ color: aktiv ? C.text : C.muted, fontSize:12,
+                        fontWeight: aktiv ? 700 : 400 }}>{g.label}</div>
+                    </div>
+                    {aktiv && <span style={{ color: C.gelb, fontSize:16 }}>✓</span>}
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ color: C.muted, fontSize:12, textAlign:"center", marginTop:14 }}>
+              {firma.gewerke.length} Gewerk{firma.gewerke.length !== 1 ? "e" : ""} ausgewählt
+            </div>
+          </div>
+        )}
+
+        {/* ── Schritt 3: Erster Polier ── */}
+        {schritt === 3 && (
+          <div>
+            <div style={{ color: C.gelb, fontWeight:700, fontSize:20, marginBottom:4 }}>👷 Erster Polier</div>
+            <div style={{ color: C.muted, fontSize:13, marginBottom:24 }}>
+              Wer ist der erste Polier der die App nutzt? Kann später erweitert werden.
+            </div>
+            <div style={{ background: C.bgMid, borderRadius:14, padding:20, marginBottom:16 }}>
+              {[
+                ["Name *",   "name",     "Thomas Huber"],
+                ["Telefon",  "telefon",  "+49 89 123456"],
+                ["E-Mail",   "email",    "huber@firma.de"],
+              ].map(([label, key, ph]) => (
+                <div key={key} style={{ marginBottom:13 }}>
+                  <Label>{label}</Label>
+                  <input value={ersterPolier[key]||""} onChange={e => setErsterPolier(p=>({...p,[key]:e.target.value}))}
+                    placeholder={ph} style={inputStyle()} />
+                </div>
+              ))}
+            </div>
+            <div style={{ background: C.bgFaint, borderRadius:10, padding:"10px 14px",
+              display:"flex", gap:10, alignItems:"center" }}>
+              <span style={{ fontSize:18 }}>ℹ️</span>
+              <span style={{ color: C.muted, fontSize:12 }}>
+                Du kannst diesen Schritt auch überspringen und Poliere später unter Unternehmen hinzufügen.
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* ── Schritt 4: Fertig ── */}
+        {schritt === 4 && (
+          <div style={{ textAlign:"center", paddingTop:40 }}>
+            <div style={{ fontSize:72, marginBottom:16 }}>🎉</div>
+            <div style={{ color: C.gruen, fontWeight:800, fontSize:24, marginBottom:12 }}>
+              Alles bereit!
+            </div>
+            <div style={{ color: C.muted, fontSize:14, lineHeight:1.7, maxWidth:320, margin:"0 auto 32px" }}>
+              Polier Pro ist eingerichtet. Du kannst jetzt deine erste Baustelle anlegen.
+            </div>
+
+            {/* Zusammenfassung */}
+            <div style={{ background: C.bgMid, borderRadius:14, padding:18, textAlign:"left", marginBottom:20 }}>
+              <div style={{ color: C.text, fontWeight:700, marginBottom:12 }}>Deine Einstellungen</div>
+              <div style={{ display:"flex", gap:12, alignItems:"center", marginBottom:10 }}>
+                {firma.logo
+                  ? <img src={firma.logo} style={{ width:44, height:44, borderRadius:22, objectFit:"cover" }} />
+                  : <div style={{ width:44, height:44, borderRadius:22, background: C.bgFaint,
+                      display:"flex", alignItems:"center", justifyContent:"center", fontSize:22 }}>🏢</div>}
+                <div>
+                  <div style={{ color: C.text, fontWeight:700 }}>{firma.name}</div>
+                  <div style={{ color: C.muted, fontSize:12 }}>{firma.ort}</div>
+                </div>
+              </div>
+              {firma.gewerke.length > 0 && (
+                <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+                  {firma.gewerke.map(k => {
+                    const g = ALLE_GEWERKE.find(x=>x.key===k);
+                    return g ? (
+                      <div key={k} style={{ background: C.bgFaint, borderRadius:8,
+                        padding:"4px 10px", fontSize:11, color: C.betonLight }}>
+                        {g.icon} {g.label}
+                      </div>
+                    ) : null;
+                  })}
+                </div>
+              )}
+              {ersterPolier.name && (
+                <div style={{ marginTop:10, color: C.muted, fontSize:12 }}>
+                  👷 {ersterPolier.name}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Footer Navigation */}
+      <div style={{ position:"fixed", bottom:0, left:0, right:0, background: C.bgMid,
+        padding:"14px 20px", borderTop:`1px solid ${C.bgFaint}`,
+        display:"flex", gap:10 }}>
+        {schritt > 0 && schritt < 4 && (
+          <button onClick={() => setSchritt(s => s-1)}
+            style={{ flex:1, background: C.bgFaint, color: C.muted, border:"none",
+              borderRadius:10, padding:14, cursor:"pointer", fontSize:14 }}>
+            ← Zurück
+          </button>
+        )}
+        {schritt === 3 && (
+          <button onClick={() => setSchritt(4)}
+            style={{ flex:1, background: C.bgFaint, color: C.muted, border:"none",
+              borderRadius:10, padding:14, cursor:"pointer", fontSize:13 }}>
+            Überspringen
+          </button>
+        )}
+        {schritt < 4 ? (
+          <button onClick={() => setSchritt(s => s+1)} disabled={!weiterOk}
+            style={{ flex:2, background: weiterOk ? C.gelb : C.bgFaint,
+              color: weiterOk ? "#1C2027" : C.muted,
+              border:"none", borderRadius:10, padding:14, fontWeight:700,
+              cursor: weiterOk ? "pointer" : "default", fontSize:15 }}>
+            {schritt === 0 ? "Los geht's →" : "Weiter →"}
+          </button>
+        ) : (
+          <button onClick={abschliessen}
+            style={{ flex:1, background: C.gruen, color:"#fff", border:"none",
+              borderRadius:10, padding:14, fontWeight:700, cursor:"pointer", fontSize:15 }}>
+            🚀 Erste Baustelle anlegen
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
   const [installierbar,  setInstallierbar]  = useState(false);
   const [installiert,    setInstalliert]    = useState(false);
   const [updateVerfügbar,setUpdateVerfügbar]= useState(false);
@@ -3974,8 +4957,31 @@ export default function PolierApp() {
   const [editProjekt,   setEditProjekt] = useState(false);
   const [eigeneFirma,   setEigeneFirma] = useState(MOCK_EIGENE_FIRMA);
   const [subs,          setSubs]        = useState(MOCK_SUBS);
-  const [homeTab,       setHomeTab]     = useState("projekte"); // projekte | firmen
-  const pwa = usePWA();
+  const [homeTab,       setHomeTab]     = useState("projekte");
+  const pwa  = usePWA();
+  const push = usePushNotifications(projekte, eigeneFirma);
+  const offline = useOfflineSync(pwa.online === false ? false : true, sbConnected);
+
+  // Onboarding: einmalig beim ersten Start
+  const [onboardingDone, setOnboardingDone] = useState(
+    () => !!localStorage.getItem(ONBOARDING_KEY)
+  );
+
+  function handleOnboardingComplete(firma, ersterPolier) {
+    // Firma-Daten übernehmen
+    setEigeneFirma(prev => ({ ...prev, ...firma }));
+    // Erster Polier als Vorarbeiter in eine neue Kolonne
+    if (ersterPolier.name) {
+      // Wird beim Anlegen der ersten Baustelle verfügbar
+    }
+    setOnboardingDone(true);
+    setNeuProjekt(true); // Direkt zur Baustellen-Anlage springen
+  }
+
+  // Onboarding anzeigen wenn noch nicht abgeschlossen
+  if (!onboardingDone) {
+    return <OnboardingFlow onComplete={handleOnboardingComplete} />;
+  }
 
   const projekt = projekte.find(p => p.id === aktivId) || null;
 
@@ -4114,6 +5120,7 @@ export default function PolierApp() {
                 setEigeneFirma={setEigeneFirma}
                 subs={subs}
                 setSubs={setSubs}
+                onOnboardingReset={() => setOnboardingDone(false)}
               />
             )}
           </div>
@@ -4154,13 +5161,17 @@ export default function PolierApp() {
 
       <div style={{ padding:"16px 14px 90px" }}>
         {tab === "dashboard" && <DashboardView felder={felder} kolonnen={kolonnen} sbConnected={sbConnected} />}
-        {tab === "felder"    && <BetonfelderView felder={felder} setFelder={setFelder} sbConnected={sbConnected} projektTyp={projekt.typ} projSubs={subs.filter(s=>(projekt.subIds||[]).includes(s.id))} />}
+        {tab === "felder"    && <BetonfelderView felder={felder} setFelder={setFelder} sbConnected={sbConnected} projektTyp={projekt.typ} projSubs={subs.filter(s=>(projekt.subIds||[]).includes(s.id))} projekt={projekt} eigeneFirma={eigeneFirma} wetter={null} />}
         {tab === "gantt"     && <GanttView felder={felder} />}
         {tab === "editor"    && <EditorView felder={felder} setFelder={setFelder} projektTyp={projekt.typ} />}
         {tab === "scanner"   && <ScannerView onFelderImport={handleFelderImport} projektTyp={projekt.typ} />}
         {tab === "wetter"    && <WeatherView />}
         {tab === "kolonnen"  && <KolonnenView kolonnen={kolonnen} projekt={projekt} />}
-        {tab === "tagebuch"  && <TagesbuchView berichte={berichte} setBerichte={setBerichte} sbConnected={sbConnected} />}
+        {tab === "tagebuch"  && <TagesbuchView
+            berichte={berichte} setBerichte={setBerichte} sbConnected={sbConnected}
+            projekt={projekt} eigeneFirma={eigeneFirma} kolonnen={kolonnen}
+            offlineSpeichern={offline.speichereOffline}
+          />}
         {tab === "zeiten"    && <ZeiterfassungView projekt={projekt} />}
       </div>
 
