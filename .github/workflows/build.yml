@@ -24,8 +24,6 @@ jobs:
             platform: linux/arm64
           - arch: amd64
             platform: linux/amd64
-          - arch: armv7
-            platform: linux/arm/v7
 
     steps:
       - name: Checkout
@@ -53,7 +51,6 @@ jobs:
           tags: |
             type=raw,value=latest
             type=raw,value=${{ steps.version.outputs.version }}
-            type=semver,pattern={{version}}
             type=ref,event=branch
 
       - name: QEMU
