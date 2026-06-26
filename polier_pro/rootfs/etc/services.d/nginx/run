@@ -1,4 +1,13 @@
 #!/usr/bin/with-contenv bashio
-bashio::log.info "Starting nginx on port 3000..."
-nginx -t && bashio::log.info "nginx config OK" || bashio::log.error "nginx config FAILED"
-exec nginx -g "daemon off;" 2>&1
+bashio::log.info "Starting nginx on port 8099..."
+
+# Check if web files exist
+if [ -f /var/www/html/index.html ]; then
+    bashio::log.info "index.html found OK"
+else
+    bashio::log.error "index.html NOT FOUND in /var/www/html"
+    ls -la /var/www/html/ || true
+fi
+
+nginx -t 2>&1 && bashio::log.info "nginx config OK" || bashio::log.error "nginx config FAILED"
+exec nginx -g "daemon off;"

@@ -2,19 +2,33 @@ import { useState, useEffect, useRef } from "react";
 
 // ─── Design Tokens ───────────────────────────────────────────────────────────
 const C = {
-  bg:           "#1C2027",
-  bgMid:        "#252B35",
-  bgLight:      "#2E3541",
-  bgFaint:      "#3A3F4A",
+  // Hintergründe – hell & sauber
+  bg:           "#F4F5F7",
+  bgMid:        "#FFFFFF",
+  bgLight:      "#EEF0F3",
+  bgFaint:      "#E2E5EA",
+
+  // Primär – Sicherheitsgelb (Wiedererkennungsmerkmal)
   gelb:         "#F5C400",
-  beton:        "#8A8F99",
-  betonLight:   "#BEC3CC",
-  gruen:        "#2EAF6A",
-  rot:          "#D94040",
-  rost:         "#C45C2A",
-  blau:         "#4A9EE0",
-  text:         "#E8EBF0",
-  muted:        "#9AA0AE",
+  gelbDark:     "#D4A800",
+  gelbLight:    "#FFF3CC",
+
+  // Status
+  gruen:        "#16A34A",
+  gruenLight:   "#DCFCE7",
+  rot:          "#DC2626",
+  rotLight:     "#FEE2E2",
+  rost:         "#EA580C",
+  rostLight:    "#FFEDD5",
+  blau:         "#2563EB",
+  blauLight:    "#DBEAFE",
+
+  // Text – hoher Kontrast für Sonnenlicht
+  text:         "#0F172A",
+  textMed:      "#334155",
+  muted:        "#64748B",
+  betonLight:   "#475569",
+  beton:        "#94A3B8",
 };
 
 // ─── Supabase Config ─────────────────────────────────────────────────────────
@@ -123,7 +137,8 @@ function fmt(dateStr) {
 }
 
 // ─── Status Helpers ───────────────────────────────────────────────────────────
-const STATUS_COLOR = { done:"#2EAF6A", in_progress:"#F5C400", planned:"#8A8F99", blocked:"#D94040" };
+const STATUS_COLOR = { done:"#16A34A", in_progress:"#F5C400", planned:"#64748B", blocked:"#DC2626" };
+const STATUS_BG    = { done:"#DCFCE7",  in_progress:"#FFF3CC",  planned:"#F1F5F9",   blocked:"#FEE2E2" };
 const STATUS_LABEL = { done:"✅ Fertig", in_progress:"🔄 Läuft", planned:"📅 Geplant", blocked:"🚫 Blockiert" };
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -203,8 +218,9 @@ function WeatherView({ compact = false }) {
       )}
       <div style={{ display:"flex", gap:6, marginTop:10, overflowX:"auto" }}>
         {weather.forecast.map((f,i) => (
-          <div key={i} style={{ minWidth:46, background: C.bgLight, borderRadius:8, padding:"6px 4px", textAlign:"center",
-            border: betonCheck({temp:f.max,wind:0,rain:f.rain,humidity:70}).length > 0 ? `1px solid ${C.rost}` : "none" }}>
+          <div key={i} style={{ minWidth:52, background: C.bgLight, borderRadius:12, padding:"8px 4px", textAlign:"center",
+            border: betonCheck({temp:f.max,wind:0,rain:f.rain,humidity:70}).length > 0
+              ? `2px solid ${C.rot}` : `1px solid ${C.bgFaint}` }}>
             <div style={{ color: C.muted, fontSize:10 }}>{f.day}</div>
             <div style={{ fontSize:16 }}>{f.icon}</div>
             <div style={{ color: C.text, fontSize:11, fontWeight:600 }}>{f.max}°</div>
@@ -331,12 +347,12 @@ function GanttView({ felder }) {
       </div>
 
       {/* Scrollable Gantt */}
-      <div style={{ background: C.bgMid, borderRadius:12, overflow:"hidden" }}>
+      <div style={{ background:"#FFFFFF", borderRadius:16, overflow:"hidden", boxShadow:"0 2px 12px rgba(0,0,0,0.06)", border:`1px solid ${C.bgFaint}` }}>
         <div ref={scrollRef} style={{ overflowX:"auto" }}>
           <div style={{ minWidth: (totalDays + 1) * DAY_W + 130 }}>
 
             {/* Header row */}
-            <div style={{ display:"flex", borderBottom:`1px solid ${C.bgFaint}` }}>
+            <div style={{ display:"flex", borderBottom:`2px solid ${C.bgFaint}`, background: C.bgLight }}>
               <div style={{ width:130, minWidth:130, padding:"8px 10px", color: C.muted, fontSize:11, borderRight:`1px solid ${C.bgFaint}` }}>Feld</div>
               {days.map((d,i) => {
                 const isToday = d.toDateString() === heute.toDateString();
@@ -433,8 +449,8 @@ function GanttView({ felder }) {
 // ════════════════════════════════════════════════════════════════════════════
 function SupabaseStatus({ connected }) {
   return (
-    <div style={{ background: connected ? "#1A3A28" : C.bgLight, borderRadius:8, padding:"8px 14px",
-      border:`1px solid ${connected ? C.gruen : C.bgFaint}`, marginBottom:14,
+    <div style={{ background: connected ? C.gruenLight : C.bgLight, borderRadius:10, padding:"10px 14px",
+      border:`1.5px solid ${connected ? C.gruen : C.bgFaint}`, marginBottom:14,
       display:"flex", justifyContent:"space-between", alignItems:"center" }}>
       <div>
         <div style={{ color: connected ? C.gruen : C.muted, fontWeight:700, fontSize:12 }}>
@@ -1063,10 +1079,12 @@ function BetonfelderView({ felder, setFelder, sbConnected, projektTyp, projSubs=
 function FilterBtn({ active, onClick, children }) {
   return (
     <button onClick={onClick}
-      style={{ background: active ? C.gelb : C.bgFaint,
+      style={{ background: active ? C.gelb : "#FFFFFF",
         color: active ? "#1C2027" : C.muted,
-        border:"none", borderRadius:20, padding:"5px 12px", cursor:"pointer",
-        fontSize:11, fontWeight: active ? 700 : 400, whiteSpace:"nowrap" }}>
+        border:`1.5px solid ${active ? C.gelb : C.bgFaint}`,
+        borderRadius:20, padding:"8px 16px", cursor:"pointer",
+        fontSize:13, fontWeight: active ? 700 : 500, whiteSpace:"nowrap",
+        boxShadow: active ? "0 2px 8px rgba(245,196,0,0.3)" : "0 1px 3px rgba(0,0,0,0.06)" }}>
       {children}
     </button>
   );
@@ -2074,8 +2092,8 @@ function usePushNotifications(projekte, eigeneFirma) {
 function PushBanner({ erlaubt, berechtigung }) {
   if (erlaubt) return null;
   return (
-    <div style={{ background:"#1A2040", borderRadius:10, padding:"10px 14px", marginBottom:12,
-      border:`1px solid ${C.blau}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+    <div style={{ background: C.blauLight, borderRadius:12, padding:"12px 16px", marginBottom:12,
+      border:`1.5px solid ${C.blau}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
       <div>
         <div style={{ color: C.text, fontSize:13, fontWeight:700 }}>🔔 Benachrichtigungen aktivieren</div>
         <div style={{ color: C.muted, fontSize:11 }}>Wetterwarnung, Verzug & Tagesbericht-Erinnerung</div>
@@ -2178,7 +2196,7 @@ function useOfflineSync(online, sbConnected) {
 function OfflineSyncBanner({ pending, syncing, online }) {
   if (online && pending === 0 && !syncing) return null;
   return (
-    <div style={{ background: syncing ? "#1A3A28" : pending > 0 ? "#2A2010" : C.bgFaint,
+    <div style={{ background: syncing ? C.gruenLight : pending > 0 ? "#FFF3CC" : C.bgLight,
       borderRadius:10, padding:"8px 14px", marginBottom:10,
       border:`1px solid ${syncing ? C.gruen : pending > 0 ? C.gelb : C.bgLight}`,
       display:"flex", alignItems:"center", gap:10 }}>
@@ -2323,8 +2341,9 @@ function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eigeneFirm
       {/* Berichtsliste */}
       {berichte.map((b, i) => (
         <div key={i} onClick={() => setDetail(b)}
-          style={{ background: C.bgMid, borderRadius:10, padding:"14px 16px", marginBottom:10,
-            borderLeft:`3px solid ${C.gelb}`, cursor:"pointer" }}>
+          style={{ background:"#FFFFFF", borderRadius:14, padding:"16px 18px", marginBottom:12,
+            borderLeft:`4px solid ${C.gelb}`, cursor:"pointer",
+            boxShadow:"0 2px 8px rgba(0,0,0,0.05)" }}>
           <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6, alignItems:"flex-start" }}>
             <div style={{ color: C.text, fontWeight:600 }}>{b.datum}</div>
             <div style={{ display:"flex", gap:6, alignItems:"center" }} onClick={e => e.stopPropagation()}>
@@ -2914,7 +2933,7 @@ function FeldEditor({ feld, allFelder, onSave, onDelete, onClose, projektTyp, pr
   }
 
   return (
-    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.8)", zIndex:300,
+    <div style={{ position:"fixed", inset:0, background:"rgba(15,23,42,0.6)", backdropFilter:"blur(4px)", zIndex:300,
       display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
       <div style={{ background: C.bgMid, borderRadius:"16px 16px 0 0", padding:20,
         width:"100%", maxWidth:520, maxHeight:"90vh", overflowY:"auto" }}>
@@ -3243,18 +3262,21 @@ function EditorView({ felder, setFelder, projektTyp }) {
 
 // ─── Shared UI Helpers ───────────────────────────────────────────────────────
 function Label({ children }) {
-  return <div style={{ color: C.muted, fontSize:11, marginBottom:4, textTransform:"uppercase", letterSpacing:0.5 }}>{children}</div>;
+  return <div style={{ color: C.muted, fontSize:12, marginBottom:5, fontWeight:600, letterSpacing:0.3 }}>{children}</div>;
 }
 function StepBtn({ onClick, children }) {
   return (
-    <button onClick={onClick} style={{ width:32, height:32, background: C.bgFaint, color: C.text,
-      border:`1px solid ${C.bgLight}`, borderRadius:8, cursor:"pointer", fontSize:18, fontWeight:700,
-      display:"flex", alignItems:"center", justifyContent:"center" }}>{children}</button>
+    <button onClick={onClick} style={{ width:44, height:44, background: C.bgLight, color: C.text,
+      border:`1.5px solid ${C.bgFaint}`, borderRadius:10, cursor:"pointer", fontSize:20, fontWeight:700,
+      display:"flex", alignItems:"center", justifyContent:"center",
+      boxShadow:"0 1px 3px rgba(0,0,0,0.08)" }}>{children}</button>
   );
 }
 function inputStyle() {
-  return { width:"100%", background: C.bgLight, color: C.text, border:`1px solid ${C.bgFaint}`,
-    borderRadius:8, padding:"10px 12px", fontSize:13, boxSizing:"border-box", marginTop:2 };
+  return { width:"100%", background: "#FFFFFF", color: C.text,
+    border:`1.5px solid ${C.bgFaint}`, borderRadius:10,
+    padding:"13px 14px", fontSize:15, boxSizing:"border-box", marginTop:4,
+    boxShadow:"0 1px 3px rgba(0,0,0,0.06)" };
 }
 
 
@@ -3758,8 +3780,9 @@ function ScannerView({ onFelderImport }) {
           <input ref={fileRef} type="file" accept="image/*" capture="environment"
             style={{ display:"none" }} onChange={e => handleFile(e.target.files[0])} />
           <div onClick={() => fileRef.current.click()}
-            style={{ border:`2px dashed ${C.gelb}`, borderRadius:16, padding:"40px 20px",
-              textAlign:"center", cursor:"pointer", background: C.bgMid }}>
+            style={{ border:`2px dashed ${C.gelb}`, borderRadius:20, padding:"48px 20px",
+              textAlign:"center", cursor:"pointer", background:"#FFFBEB",
+              boxShadow:"inset 0 2px 8px rgba(245,196,0,0.1)" }}>
             <div style={{ fontSize:48, marginBottom:12 }}>📷</div>
             <div style={{ color: C.gelb, fontWeight:700, fontSize:16 }}>Betonfeld-Karte aufnehmen</div>
             <div style={{ color: C.muted, fontSize:13, marginTop:6 }}>Tippen zum Fotografieren oder Bild hochladen</div>
@@ -3921,9 +3944,10 @@ function ScannerView({ onFelderImport }) {
 
 function Chip({ icon, label }) {
   return (
-    <div style={{ background: C.bgFaint, borderRadius:6, padding:"3px 8px", display:"flex", gap:4, alignItems:"center" }}>
-      <span style={{ fontSize:11 }}>{icon}</span>
-      <span style={{ color: C.betonLight, fontSize:11 }}>{label}</span>
+    <div style={{ background: C.bgLight, borderRadius:20, padding:"5px 10px", display:"flex", gap:5, alignItems:"center",
+      border:`1px solid ${C.bgFaint}` }}>
+      <span style={{ fontSize:12 }}>{icon}</span>
+      <span style={{ color: C.textMed, fontSize:12, fontWeight:500 }}>{label}</span>
     </div>
   );
 }
@@ -4295,11 +4319,12 @@ function OnboardingFlow({ onComplete }) {
   ][schritt];
 
   return (
-    <div style={{ background: C.bg, minHeight:"100vh", fontFamily:"'Segoe UI', system-ui, sans-serif",
+    <div style={{ background:"#F4F5F7", minHeight:"100vh", fontFamily:"'Segoe UI', system-ui, sans-serif",
       display:"flex", flexDirection:"column" }}>
 
       {/* Progress Header */}
-      <div style={{ background: C.bgMid, padding:"16px 20px", borderBottom:`2px solid ${C.gelb}` }}>
+      <div style={{ background:"#FFFFFF", padding:"16px 20px", borderBottom:`2px solid ${C.gelb}`,
+        boxShadow:"0 2px 8px rgba(0,0,0,0.06)" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
           <div style={{ color: C.gelb, fontWeight:800, fontSize:18 }}>⚒ POLIER PRO</div>
           <div style={{ color: C.muted, fontSize:12 }}>Schritt {schritt+1} von {gesamt}</div>
@@ -4906,8 +4931,9 @@ function ProjektHeader({ projekt, onBack, onEdit, sbConnected }) {
       alignItems:"center", borderBottom:`3px solid ${projekt.farbe}`, position:"sticky", top:0, zIndex:50 }}>
       <div style={{ display:"flex", alignItems:"center", gap:12 }}>
         <button onClick={onBack}
-          style={{ background: C.bgFaint, border:"none", color: C.text, borderRadius:8,
-            padding:"6px 10px", cursor:"pointer", fontSize:16 }}>‹</button>
+          style={{ background: C.bgLight, border:`1.5px solid ${C.bgFaint}`, color: C.text, borderRadius:10,
+            padding:"8px 14px", cursor:"pointer", fontSize:18, fontWeight:700,
+            boxShadow:"0 1px 4px rgba(0,0,0,0.08)" }}>‹</button>
         <div>
           <div style={{ color: C.text, fontWeight:800, fontSize:14, maxWidth:180,
             overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{projekt.name}</div>
@@ -5034,10 +5060,11 @@ export default function PolierApp() {
             <div style={{ display:"flex", gap:0 }}>
               {[["projekte","🏗️","Baustellen"],["firmen","🏢","Unternehmen"]].map(([id,icon,label]) => (
                 <button key={id} onClick={() => setHomeTab(id)}
-                  style={{ flex:1, background:"none", border:"none", cursor:"pointer", padding:"8px 0 10px",
+                  style={{ flex:1, background:"none", border:"none", cursor:"pointer", padding:"10px 0 12px",
                     borderBottom:`3px solid ${homeTab===id ? C.gelb : "transparent"}` }}>
-                  <div style={{ fontSize:18 }}>{icon}</div>
-                  <div style={{ color: homeTab===id ? C.gelb : C.muted, fontSize:11, marginTop:1 }}>{label}</div>
+                  <div style={{ fontSize:22 }}>{icon}</div>
+                  <div style={{ color: homeTab===id ? "#0F172A" : C.muted, fontSize:12, marginTop:2,
+                    fontWeight: homeTab===id ? 700 : 400 }}>{label}</div>
                 </button>
               ))}
             </div>
@@ -5063,8 +5090,10 @@ export default function PolierApp() {
                   const projSubs = subs.filter(s => (p.subIds||[]).includes(s.id));
                   return (
                     <div key={p.id} onClick={() => { setAktivId(p.id); setTab("dashboard"); }}
-                      style={{ background: C.bgMid, borderRadius:14, padding:"16px 18px", marginBottom:12,
-                        border:`2px solid ${C.bgFaint}`, cursor:"pointer", borderLeft:`4px solid ${p.farbe}` }}>
+                      style={{ background:"#FFFFFF", borderRadius:16, padding:"18px 20px", marginBottom:14,
+                        border:`1px solid ${C.bgFaint}`, cursor:"pointer",
+                        borderLeft:`5px solid ${p.farbe}`,
+                        boxShadow:"0 2px 12px rgba(0,0,0,0.06)" }}>
                       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
                         <div style={{ flex:1 }}>
                           <div style={{ color: C.text, fontWeight:700, fontSize:15 }}>{p.name}</div>
@@ -5107,10 +5136,11 @@ export default function PolierApp() {
                 })}
 
                 <div onClick={() => setNeuProjekt(true)}
-                  style={{ border:`2px dashed ${C.gelb}`, borderRadius:14, padding:"20px",
-                    textAlign:"center", cursor:"pointer", background: C.bgMid }}>
-                  <div style={{ fontSize:28 }}>➕</div>
-                  <div style={{ color: C.gelb, fontWeight:700, marginTop:6 }}>Neue Baustelle anlegen</div>
+                  style={{ border:`2px dashed ${C.gelb}`, borderRadius:16, padding:"24px",
+                    textAlign:"center", cursor:"pointer", background: C.gelbLight,
+                    boxShadow:"0 2px 8px rgba(245,196,0,0.15)" }}>
+                  <div style={{ fontSize:32 }}>➕</div>
+                  <div style={{ color: C.gelbDark, fontWeight:700, marginTop:8, fontSize:15 }}>Neue Baustelle anlegen</div>
                 </div>
               </>
             )}
@@ -5160,7 +5190,7 @@ export default function PolierApp() {
         sbConnected={sbConnected}
       />
 
-      <div style={{ padding:"16px 14px 90px" }}>
+      <div style={{ padding:"20px 16px 100px", background: C.bg, minHeight:"100vh" }}>
         {tab === "dashboard" && <DashboardView felder={felder} kolonnen={kolonnen} sbConnected={sbConnected} />}
         {tab === "felder"    && <BetonfelderView felder={felder} setFelder={setFelder} sbConnected={sbConnected} projektTyp={projekt.typ} projSubs={subs.filter(s=>(projekt.subIds||[]).includes(s.id))} projekt={projekt} eigeneFirma={eigeneFirma} wetter={null} />}
         {tab === "gantt"     && <GanttView felder={felder} />}
@@ -5176,14 +5206,18 @@ export default function PolierApp() {
         {tab === "zeiten"    && <ZeiterfassungView projekt={projekt} />}
       </div>
 
-      <div style={{ position:"fixed", bottom:0, left:0, right:0, background: C.bgMid,
-        borderTop:`1px solid ${C.bgFaint}`, display:"flex", zIndex:50 }}>
+      <div style={{ position:"fixed", bottom:0, left:0, right:0, background:"#FFFFFF",
+        borderTop:`1px solid ${C.bgFaint}`, display:"flex", zIndex:50,
+        boxShadow:"0 -2px 12px rgba(0,0,0,0.08)",
+        paddingBottom:"env(safe-area-inset-bottom)" }}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            style={{ flex:1, padding:"8px 0 10px", background:"none", border:"none", cursor:"pointer",
-              borderTop:`3px solid ${tab===t.id ? projekt.farbe : "transparent"}` }}>
-            <div style={{ fontSize:18 }}>{t.icon}</div>
-            <div style={{ color: tab===t.id ? projekt.farbe : C.muted, fontSize:9, marginTop:1 }}>{t.label}</div>
+            style={{ flex:1, padding:"10px 0 12px", background:"none", border:"none", cursor:"pointer",
+              borderTop:`3px solid ${tab===t.id ? projekt.farbe : "transparent"}`,
+              transition:"all 0.15s" }}>
+            <div style={{ fontSize:22 }}>{t.icon}</div>
+            <div style={{ color: tab===t.id ? projekt.farbe : C.muted, fontSize:10, marginTop:2,
+              fontWeight: tab===t.id ? 700 : 400 }}>{t.label}</div>
           </button>
         ))}
       </div>
