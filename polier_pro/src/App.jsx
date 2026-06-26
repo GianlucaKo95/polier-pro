@@ -6877,6 +6877,7 @@ export default function PolierApp() {
         {tab === "stempeln"  && <StempeluhrView profil={aktiveProfil} projekte={projekte} session={auth.session} />}
         {tab === "nutzer"    && <NutzerVerwaltungView session={auth.session} />}
       </div>
+      </PlanGuard>
 
       {/* ── BOTTOM NAV ── */}
       <div style={{ position:"fixed", bottom:0, left:0, right:0,
