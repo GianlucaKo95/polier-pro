@@ -1,6 +1,6 @@
 name: "Polier Pro"
-description: "Baustellenmanagement für Poliere – Betonfelder, Kolonnen, Tagesberichte"
-version: "1.0.0"
+description: "Baustellenmanagement fuer Poliere"
+version: "1.0.3"
 slug: "polier_pro"
 init: false
 arch:
@@ -9,7 +9,7 @@ arch:
 startup: application
 boot: auto
 ports:
-  3000/tcp: 3000
+  3000/tcp: 3001
 ports_description:
   3000/tcp: "Polier Pro Web-Interface"
 panel_icon: "mdi:hard-hat"
