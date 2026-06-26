@@ -1,2 +1,4 @@
 #!/usr/bin/with-contenv bashio
-exec nginx -g "daemon off;"
+bashio::log.info "Starting nginx on port 3000..."
+nginx -t && bashio::log.info "nginx config OK" || bashio::log.error "nginx config FAILED"
+exec nginx -g "daemon off;" 2>&1
