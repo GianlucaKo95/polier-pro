@@ -4329,6 +4329,586 @@ function SubZuweisungBadge({ subId, subs }) {
 // PWA – Install Banner + Online/Offline Status + Update Banner
 // ════════════════════════════════════════════════════════════════════════════
 
+
+// ════════════════════════════════════════════════════════════════════════════
+// SAAS – Registrierung, Einladung, Plan-Guard
+// ════════════════════════════════════════════════════════════════════════════
+
+const PLAN_CONFIG = {
+  trial:   { label:"Testversion",  preis:"kostenlos · 14 Tage", farbe:"#64748B", icon:"⏱️" },
+  starter: { label:"Starter",      preis:"49 € / Monat",        farbe:"#2563EB", icon:"🚀" },
+  pro:     { label:"Pro",          preis:"99 € / Monat",        farbe:"#F5C400", icon:"⚡" },
+};
+
+// ─── Registrierungs-Screen ────────────────────────────────────────────────
+function RegistrierungScreen({ auth, onZurueck }) {
+  const [schritt,     setSchritt]     = useState(0); // 0=Konto 1=Firma 2=Fertig
+  const [email,       setEmail]       = useState("");
+  const [password,    setPassword]    = useState("");
+  const [firmaName,   setFirmaName]   = useState("");
+  const [laden,       setLaden]       = useState(false);
+  const [fehler,      setFehler]      = useState("");
+
+  async function kontoAnlegen() {
+    if (!email || !password || password.length < 8) {
+      setFehler("Passwort muss mindestens 8 Zeichen haben."); return;
+    }
+    setLaden(true); setFehler("");
+    // Supabase Sign Up
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+      method: "POST",
+      headers: { "apikey": SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    if (data.error) { setFehler(data.error.message || data.msg); setLaden(false); return; }
+    setSchritt(1);
+    setLaden(false);
+  }
+
+  async function firmaAnlegen() {
+    if (!firmaName.trim()) { setFehler("Firmenname ist Pflicht."); return; }
+    setLaden(true); setFehler("");
+
+    // Erst einloggen
+    const loginRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      method: "POST",
+      headers: { "apikey": SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const session = await loginRes.json();
+    if (!session.access_token) { setFehler("Login fehlgeschlagen."); setLaden(false); return; }
+
+    // Firma registrieren via RPC
+    const rpcRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/firma_registrieren`, {
+      method: "POST",
+      headers: {
+        "apikey":        SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${session.access_token}`,
+        "Content-Type":  "application/json",
+      },
+      body: JSON.stringify({
+        p_user_id:    session.user?.id,
+        p_firma_name: firmaName,
+        p_email:      email,
+      }),
+    });
+
+    if (rpcRes.ok) {
+      localStorage.setItem("polaris-session", JSON.stringify(session));
+      setSchritt(2);
+    } else {
+      setFehler("Firma konnte nicht angelegt werden.");
+    }
+    setLaden(false);
+  }
+
+  return (
+    <div style={{ background:"var(--bg)", minHeight:"100vh",
+      display:"flex", flexDirection:"column", alignItems:"center",
+      justifyContent:"center", padding:"24px 20px",
+      fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
+
+      {/* Logo */}
+      <div style={{ textAlign:"center", marginBottom:32 }}>
+        <div style={{ fontWeight:900, fontSize:28, letterSpacing:-1.5,
+          color:"var(--text)" }}>
+          <span style={{ color:"var(--yellow)" }}>★</span> POLARIS
+        </div>
+        <div style={{ fontSize:10, color:"var(--muted)", fontWeight:600,
+          letterSpacing:3, textTransform:"uppercase", marginTop:2 }}>
+          Baustellenmanagement
+        </div>
+      </div>
+
+      {/* Fortschritt */}
+      <div style={{ display:"flex", gap:8, marginBottom:24, alignItems:"center" }}>
+        {["Konto", "Firma", "Fertig"].map((s, i) => (
+          <div key={s} style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <div style={{ width:28, height:28, borderRadius:14,
+              background: i < schritt ? "var(--green)"
+                : i === schritt ? "var(--yellow)" : "var(--surface2)",
+              border: `2px solid ${i <= schritt ? (i < schritt ? "var(--green)" : "var(--yellow)") : "var(--border)"}`,
+              display:"flex", alignItems:"center", justifyContent:"center",
+              fontSize:12, fontWeight:700,
+              color: i < schritt ? "#fff" : i === schritt ? "#1a1200" : "var(--muted)" }}>
+              {i < schritt ? "✓" : i + 1}
+            </div>
+            <span style={{ fontSize:12, color: i === schritt ? "var(--text)" : "var(--muted)",
+              fontWeight: i === schritt ? 700 : 400 }}>{s}</span>
+            {i < 2 && <div style={{ width:24, height:1, background:"var(--border)" }} />}
+          </div>
+        ))}
+      </div>
+
+      <div style={{ background:"var(--surface)", borderRadius:20, padding:28,
+        width:"100%", maxWidth:400, border:"1.5px solid var(--border)" }}>
+
+        {fehler && (
+          <div style={{ background:"var(--rbg)", color:"var(--red)",
+            borderRadius:10, padding:"10px 14px", marginBottom:16,
+            fontSize:13, border:"1px solid var(--red)" }}>
+            ❌ {fehler}
+          </div>
+        )}
+
+        {/* Schritt 0: Konto */}
+        {schritt === 0 && (
+          <div>
+            <div style={{ fontWeight:800, fontSize:18, color:"var(--text)",
+              marginBottom:4 }}>Konto erstellen</div>
+            <div style={{ color:"var(--muted)", fontSize:13, marginBottom:20 }}>
+              14 Tage kostenlos testen — keine Kreditkarte nötig.
+            </div>
+            <div style={{ marginBottom:14 }}>
+              <Label>E-Mail</Label>
+              <input type="email" value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="chef@bauunternehmen.de"
+                style={inputStyle()} />
+            </div>
+            <div style={{ marginBottom:20 }}>
+              <Label>Passwort (min. 8 Zeichen)</Label>
+              <input type="password" value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••"
+                style={inputStyle()} />
+            </div>
+            <button onClick={kontoAnlegen} disabled={laden}
+              style={{ width:"100%", background:"var(--yellow)", color:"#1a1200",
+                border:"none", borderRadius:12, padding:15, fontWeight:800,
+                fontSize:15, cursor:"pointer", fontFamily:"inherit" }}>
+              {laden ? "⏳ Wird angelegt…" : "Konto erstellen →"}
+            </button>
+            <div style={{ textAlign:"center", marginTop:16 }}>
+              <span style={{ color:"var(--muted)", fontSize:13 }}>
+                Bereits registriert?{" "}
+              </span>
+              <button onClick={onZurueck}
+                style={{ background:"none", border:"none", color:"var(--blue)",
+                  cursor:"pointer", fontSize:13, fontWeight:600,
+                  fontFamily:"inherit" }}>
+                Anmelden
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Schritt 1: Firma */}
+        {schritt === 1 && (
+          <div>
+            <div style={{ fontWeight:800, fontSize:18, color:"var(--text)",
+              marginBottom:4 }}>Dein Unternehmen</div>
+            <div style={{ color:"var(--muted)", fontSize:13, marginBottom:20 }}>
+              Wie heißt dein Bauunternehmen?
+            </div>
+            <div style={{ marginBottom:20 }}>
+              <Label>Firmenname *</Label>
+              <input value={firmaName}
+                onChange={e => setFirmaName(e.target.value)}
+                placeholder="Koeven Bau GmbH"
+                style={inputStyle()} />
+            </div>
+
+            {/* Plan Auswahl */}
+            <Label>Plan (nach Testphase)</Label>
+            <div style={{ display:"flex", flexDirection:"column", gap:8,
+              marginTop:6, marginBottom:20 }}>
+              {Object.entries(PLAN_CONFIG).map(([key, p]) => (
+                <div key={key} style={{ background:"var(--surface2)",
+                  borderRadius:12, padding:"12px 16px",
+                  border:`1.5px solid ${key === "starter" ? "var(--blue)" : "var(--border)"}`,
+                  display:"flex", justifyContent:"space-between",
+                  alignItems:"center" }}>
+                  <div>
+                    <div style={{ color:"var(--text)", fontWeight:700,
+                      fontSize:13 }}>{p.icon} {p.label}</div>
+                    <div style={{ color:"var(--muted)", fontSize:11 }}>
+                      {key === "trial" ? "Automatisch aktiv" : p.preis}
+                    </div>
+                  </div>
+                  {key === "starter" && (
+                    <div style={{ background:"var(--bbg)", color:"var(--blue)",
+                      borderRadius:20, padding:"2px 8px", fontSize:10,
+                      fontWeight:700 }}>Empfohlen</div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <button onClick={firmaAnlegen} disabled={laden || !firmaName.trim()}
+              style={{ width:"100%",
+                background: firmaName.trim() ? "var(--yellow)" : "var(--surface2)",
+                color: firmaName.trim() ? "#1a1200" : "var(--muted)",
+                border:"none", borderRadius:12, padding:15, fontWeight:800,
+                fontSize:15, cursor: firmaName.trim() ? "pointer" : "default",
+                fontFamily:"inherit" }}>
+              {laden ? "⏳ Wird eingerichtet…" : "Polaris einrichten 🚀"}
+            </button>
+          </div>
+        )}
+
+        {/* Schritt 2: Fertig */}
+        {schritt === 2 && (
+          <div style={{ textAlign:"center" }}>
+            <div style={{ fontSize:56, marginBottom:12 }}>🎉</div>
+            <div style={{ fontWeight:800, fontSize:20, color:"var(--green)",
+              marginBottom:8 }}>Willkommen bei Polaris!</div>
+            <div style={{ color:"var(--text2)", fontSize:14, lineHeight:1.6,
+              marginBottom:24 }}>
+              Dein Unternehmen <strong>{firmaName}</strong> wurde eingerichtet.
+              Du hast 14 Tage kostenlos zum Testen.
+            </div>
+            <button onClick={() => window.location.reload()}
+              style={{ width:"100%", background:"var(--yellow)", color:"#1a1200",
+                border:"none", borderRadius:12, padding:15, fontWeight:800,
+                fontSize:15, cursor:"pointer", fontFamily:"inherit" }}>
+              Los geht's →
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Einladungs-Screen ────────────────────────────────────────────────────
+function EinladungScreen({ token, onErfolg }) {
+  const [einladung,  setEinladung]  = useState(null);
+  const [email,      setEmail]      = useState("");
+  const [password,   setPassword]   = useState("");
+  const [laden,      setLaden]      = useState(true);
+  const [fehler,     setFehler]     = useState("");
+  const [schritt,    setSchritt]    = useState(0); // 0=laden 1=registrieren 2=fertig
+
+  useEffect(() => { pruefeToken(); }, [token]);
+
+  async function pruefeToken() {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/einladungen?token=eq.${token}&select=*,firmen(name,logo_url)`,
+      { headers: { "apikey": SUPABASE_ANON_KEY } }
+    );
+    const data = await res.json();
+    if (data?.[0]) {
+      setEinladung(data[0]);
+      setEmail(data[0].email || "");
+      setSchritt(1);
+    } else {
+      setFehler("Diese Einladung ist ungültig oder abgelaufen.");
+    }
+    setLaden(false);
+  }
+
+  async function registrierenUndEinloesen() {
+    if (!email || !password || password.length < 6) {
+      setFehler("Bitte E-Mail und Passwort eingeben (min. 6 Zeichen)."); return;
+    }
+    setLaden(true); setFehler("");
+
+    // Registrieren
+    const signRes = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+      method: "POST",
+      headers: { "apikey": SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const signData = await signRes.json();
+
+    // Falls schon registriert: einloggen
+    const loginRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      method: "POST",
+      headers: { "apikey": SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const session = await loginRes.json();
+    if (!session.access_token) {
+      setFehler("Anmeldung fehlgeschlagen. Passwort korrekt?");
+      setLaden(false); return;
+    }
+
+    // Einladung einlösen
+    const rpcRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/einladung_einloesen`, {
+      method: "POST",
+      headers: {
+        "apikey":        SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${session.access_token}`,
+        "Content-Type":  "application/json",
+      },
+      body: JSON.stringify({ p_token: token, p_user_id: session.user?.id }),
+    });
+    const result = await rpcRes.json();
+
+    if (result.ok) {
+      localStorage.setItem("polaris-session", JSON.stringify(session));
+      setSchritt(2);
+      setTimeout(() => onErfolg?.(), 2000);
+    } else {
+      setFehler(result.fehler || "Einladung konnte nicht eingelöst werden.");
+    }
+    setLaden(false);
+  }
+
+  if (laden && schritt === 0) return (
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"center",
+      minHeight:"100vh", background:"var(--bg)", color:"var(--muted)",
+      fontFamily:"inherit" }}>
+      ⏳ Einladung wird geprüft…
+    </div>
+  );
+
+  return (
+    <div style={{ background:"var(--bg)", minHeight:"100vh",
+      display:"flex", flexDirection:"column", alignItems:"center",
+      justifyContent:"center", padding:"24px 20px",
+      fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
+
+      <div style={{ fontWeight:900, fontSize:24, letterSpacing:-1,
+        color:"var(--text)", marginBottom:24, textAlign:"center" }}>
+        <span style={{ color:"var(--yellow)" }}>★</span> POLARIS
+      </div>
+
+      <div style={{ background:"var(--surface)", borderRadius:20, padding:28,
+        width:"100%", maxWidth:400, border:"1.5px solid var(--border)" }}>
+
+        {fehler && (
+          <div style={{ background:"var(--rbg)", color:"var(--red)",
+            borderRadius:10, padding:"10px 14px", marginBottom:16,
+            fontSize:13, border:"1px solid var(--red)" }}>
+            ❌ {fehler}
+          </div>
+        )}
+
+        {schritt === 1 && einladung && (
+          <div>
+            <div style={{ textAlign:"center", marginBottom:20 }}>
+              <div style={{ fontSize:40, marginBottom:8 }}>👋</div>
+              <div style={{ fontWeight:800, fontSize:18, color:"var(--text)" }}>
+                Du wurdest eingeladen!
+              </div>
+              <div style={{ color:"var(--text2)", fontSize:13, marginTop:6 }}>
+                Tritt <strong>{einladung.firmen?.name}</strong> als{" "}
+                <strong>{ROLLEN[einladung.rolle]?.label}</strong> bei.
+              </div>
+            </div>
+
+            <div style={{ marginBottom:14 }}>
+              <Label>E-Mail</Label>
+              <input type="email" value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="deine@email.de" style={inputStyle()} />
+            </div>
+            <div style={{ marginBottom:20 }}>
+              <Label>Passwort wählen</Label>
+              <input type="password" value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••" style={inputStyle()} />
+            </div>
+            <button onClick={registrierenUndEinloesen} disabled={laden}
+              style={{ width:"100%", background:"var(--yellow)", color:"#1a1200",
+                border:"none", borderRadius:12, padding:15, fontWeight:800,
+                fontSize:15, cursor:"pointer", fontFamily:"inherit" }}>
+              {laden ? "⏳…" : "Einladung annehmen →"}
+            </button>
+          </div>
+        )}
+
+        {schritt === 2 && (
+          <div style={{ textAlign:"center" }}>
+            <div style={{ fontSize:48, marginBottom:12 }}>✅</div>
+            <div style={{ fontWeight:800, fontSize:18, color:"var(--green)" }}>
+              Willkommen im Team!
+            </div>
+            <div style={{ color:"var(--muted)", fontSize:13, marginTop:8 }}>
+              Du wirst weitergeleitet…
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Einladungs-Generator (für Admins) ───────────────────────────────────
+function EinladungGenerieren({ session, firmaId, kolonnen }) {
+  const [rolle,      setRolle]      = useState("facharbeiter");
+  const [kolonneId,  setKolonneId]  = useState("");
+  const [email,      setEmail]      = useState("");
+  const [tage,       setTage]       = useState(7);
+  const [link,       setLink]       = useState("");
+  const [laden,      setLaden]      = useState(false);
+
+  async function generieren() {
+    setLaden(true);
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/einladungen`, {
+      method: "POST",
+      headers: {
+        "apikey":        SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${session?.access_token}`,
+        "Content-Type":  "application/json",
+        "Prefer":        "return=representation",
+      },
+      body: JSON.stringify({
+        firma_id:     firmaId,
+        rolle,
+        kolonne_id:   kolonneId || null,
+        email:        email || null,
+        läuft_ab_at:  new Date(Date.now() + tage * 86400000).toISOString(),
+        max_nutzungen: 1,
+      }),
+    });
+    const data = await res.json();
+    if (data?.[0]?.token) {
+      const baseUrl = window.location.origin;
+      setLink(`${baseUrl}?einladung=${data[0].token}`);
+    }
+    setLaden(false);
+  }
+
+  function kopieren() {
+    navigator.clipboard.writeText(link);
+  }
+
+  return (
+    <div style={{ background:"var(--surface)", borderRadius:16, padding:20,
+      border:"1.5px solid var(--border)", marginBottom:16 }}>
+      <div style={{ fontWeight:700, fontSize:14, color:"var(--text)",
+        marginBottom:16 }}>👥 Mitarbeiter einladen</div>
+
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10,
+        marginBottom:14 }}>
+        <div>
+          <Label>Rolle</Label>
+          <select value={rolle} onChange={e => setRolle(e.target.value)}
+            style={{ ...inputStyle(), padding:"10px 12px" }}>
+            {Object.entries(ROLLEN).map(([k,r]) => (
+              <option key={k} value={k}>{r.icon} {r.label}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <Label>Gültig (Tage)</Label>
+          <select value={tage} onChange={e => setTage(Number(e.target.value))}
+            style={{ ...inputStyle(), padding:"10px 12px" }}>
+            {[1,3,7,14,30].map(d => (
+              <option key={d} value={d}>{d} Tage</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {kolonnen?.length > 0 && (rolle === "vorarbeiter" || rolle === "facharbeiter") && (
+        <div style={{ marginBottom:14 }}>
+          <Label>Kolonne (optional)</Label>
+          <select value={kolonneId} onChange={e => setKolonneId(e.target.value)}
+            style={{ ...inputStyle(), padding:"10px 12px" }}>
+            <option value="">Keine Zuordnung</option>
+            {kolonnen.map(k => (
+              <option key={k.id} value={k.id}>{k.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      <div style={{ marginBottom:14 }}>
+        <Label>E-Mail vorausfüllen (optional)</Label>
+        <input type="email" value={email}
+          onChange={e => setEmail(e.target.value)}
+          placeholder="mitarbeiter@firma.de" style={inputStyle()} />
+      </div>
+
+      <button onClick={generieren} disabled={laden}
+        style={{ width:"100%", background:"var(--yellow)", color:"#1a1200",
+          border:"none", borderRadius:10, padding:12, fontWeight:700,
+          cursor:"pointer", fontFamily:"inherit", fontSize:14 }}>
+        {laden ? "⏳…" : "🔗 Einladungslink generieren"}
+      </button>
+
+      {link && (
+        <div style={{ marginTop:14 }}>
+          <Label>Einladungslink</Label>
+          <div style={{ display:"flex", gap:8, marginTop:6 }}>
+            <div style={{ flex:1, background:"var(--surface2)",
+              borderRadius:10, padding:"10px 12px", fontSize:11,
+              color:"var(--text2)", wordBreak:"break-all",
+              border:"1px solid var(--border)" }}>
+              {link}
+            </div>
+            <button onClick={kopieren}
+              style={{ background:"var(--green)", color:"#fff", border:"none",
+                borderRadius:10, padding:"0 14px", cursor:"pointer",
+                fontSize:16, flexShrink:0 }}>
+              📋
+            </button>
+          </div>
+          <div style={{ color:"var(--muted)", fontSize:11, marginTop:6 }}>
+            Link per WhatsApp, E-Mail oder QR-Code teilen.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Plan Guard – zeigt Upgrade-Screen wenn Limit erreicht ───────────────
+function PlanGuard({ firma, kinder, ressource }) {
+  if (!firma) return kinder;
+
+  const trial_abgelaufen = firma.plan === "trial" &&
+    firma.trial_ends_at && new Date(firma.trial_ends_at) < new Date();
+  const abo_inaktiv = firma.plan_status === "cancelled" ||
+    firma.plan_status === "expired";
+
+  if (!trial_abgelaufen && !abo_inaktiv) return kinder;
+
+  return (
+    <div style={{ background:"var(--bg)", minHeight:"100vh",
+      display:"flex", flexDirection:"column", alignItems:"center",
+      justifyContent:"center", padding:24,
+      fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
+      <div style={{ fontSize:48, marginBottom:16 }}>🔒</div>
+      <div style={{ fontWeight:800, fontSize:22, color:"var(--text)",
+        marginBottom:8, textAlign:"center" }}>
+        {trial_abgelaufen ? "Testphase abgelaufen" : "Abo inaktiv"}
+      </div>
+      <div style={{ color:"var(--text2)", fontSize:14, textAlign:"center",
+        maxWidth:320, marginBottom:28, lineHeight:1.6 }}>
+        {trial_abgelaufen
+          ? "Deine 14-tägige Testphase ist beendet. Wähle einen Plan um weiterzumachen."
+          : "Dein Abo ist nicht mehr aktiv. Bitte erneuere dein Abonnement."}
+      </div>
+      <div style={{ display:"flex", flexDirection:"column", gap:10,
+        width:"100%", maxWidth:340 }}>
+        {[
+          { key:"starter", label:"Starter",  preis:"49 €/Monat", features:"5 Projekte, 10 Nutzer" },
+          { key:"pro",     label:"Pro",       preis:"99 €/Monat", features:"20 Projekte, 50 Nutzer, API" },
+        ].map(p => (
+          <div key={p.key} style={{ background:"var(--surface)", borderRadius:14,
+            padding:"16px 20px", border:`2px solid ${p.key === "pro" ? "var(--yellow)" : "var(--border)"}` }}>
+            <div style={{ display:"flex", justifyContent:"space-between",
+              alignItems:"center", marginBottom:6 }}>
+              <div style={{ fontWeight:800, fontSize:16, color:"var(--text)" }}>
+                {p.label}
+              </div>
+              <div style={{ fontWeight:700, color:"var(--yellow)" }}>{p.preis}</div>
+            </div>
+            <div style={{ color:"var(--muted)", fontSize:12, marginBottom:12 }}>
+              {p.features}
+            </div>
+            <button
+              onClick={() => window.open("https://polaris.app/billing", "_blank")}
+              style={{ width:"100%",
+                background: p.key === "pro" ? "var(--yellow)" : "var(--surface2)",
+                color: p.key === "pro" ? "#1a1200" : "var(--text)",
+                border:"none", borderRadius:10, padding:12, fontWeight:700,
+                cursor:"pointer", fontFamily:"inherit" }}>
+              {p.key === "pro" ? "⚡ Pro wählen" : "Starter wählen"}
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ════════════════════════════════════════════════════════════════════════════
 // THEME – Dark/Light Mode
 // ════════════════════════════════════════════════════════════════════════════
@@ -5267,7 +5847,7 @@ function useAuth() {
 }
 
 // ─── Login Screen ─────────────────────────────────────────────────────────
-function LoginScreen({ auth, onDemoLogin }) {
+function LoginScreen({ auth, onDemoLogin, onRegistrieren }) {
   const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
   const [showPw,   setShowPw]   = useState(false);
@@ -5766,12 +6346,8 @@ function NutzerVerwaltungView({ session }) {
     <div>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
         <div style={{ color:"var(--text)", fontWeight:700, fontSize:15 }}>Nutzerverwaltung</div>
-        <button onClick={() => window.open(`${SUPABASE_URL.replace("supabase.co", "supabase.com")}/auth/users`, "_blank")}
-          style={{ background:"var(--yellow)", color:"#1a1200", border:"none",
-            borderRadius:10, padding:"8px 14px", fontWeight:700, cursor:"pointer", fontSize:12 }}>
-          + Supabase Dashboard
-        </button>
       </div>
+      <EinladungGenerieren session={session} firmaId={null} kolonnen={[]} />
 
       {laden ? (
         <div style={{ textAlign:"center", color:"var(--muted)", padding:32 }}>⏳ Laden…</div>
@@ -6223,6 +6799,24 @@ export default function PolierApp() {
     () => !!localStorage.getItem(ONBOARDING_KEY)
   );
 
+  const [zeigeRegistrierung, setZeigeRegistrierung] = useState(false);
+  const [firma,              setFirma]              = useState(null);
+
+  // Einladungs-Token aus URL erkennen
+  const einladungsToken = new URLSearchParams(window.location.search).get("einladung");
+
+  // Firma laden wenn eingeloggt
+  useEffect(() => {
+    if (auth.profil?.firma_id && auth.session?.access_token) {
+      fetch(`${SUPABASE_URL}/rest/v1/firmen?id=eq.${auth.profil.firma_id}&select=*`, {
+        headers: {
+          "apikey":        SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${auth.session.access_token}`,
+        },
+      }).then(r => r.json()).then(d => { if (d?.[0]) setFirma(d[0]); });
+    }
+  }, [auth.profil?.firma_id]);
+
   // ── Demo-Rolle (ohne Supabase) ──
   const demoRolle = localStorage.getItem("polaris-demo-rolle");
   const aktiveProfil = auth.profil || (demoRolle ? {
@@ -6233,12 +6827,35 @@ export default function PolierApp() {
   const aktiveRolle  = aktiveProfil?.rolle || null;
   const rolleConfig  = aktiveRolle ? ROLLEN[aktiveRolle] : null;
 
+  // ── Einladungs-Screen ──
+  if (einladungsToken && !aktiveProfil) {
+    return <EinladungScreen
+      token={einladungsToken}
+      onErfolg={() => {
+        window.history.replaceState({}, "", window.location.pathname);
+        window.location.reload();
+      }}
+    />;
+  }
+
+  // ── Registrierungs-Screen ──
+  if (zeigeRegistrierung) {
+    return <RegistrierungScreen
+      auth={auth}
+      onZurueck={() => setZeigeRegistrierung(false)}
+    />;
+  }
+
   // ── Login Screen ──
   if (!aktiveProfil) {
-    return <LoginScreen auth={auth} onDemoLogin={rolle => {
-      localStorage.setItem("polaris-demo-rolle", rolle);
-      window.location.reload();
-    }} />;
+    return <LoginScreen
+      auth={auth}
+      onDemoLogin={rolle => {
+        localStorage.setItem("polaris-demo-rolle", rolle);
+        window.location.reload();
+      }}
+      onRegistrieren={() => setZeigeRegistrierung(true)}
+    />;
   }
 
   function abmelden() {
@@ -6518,6 +7135,7 @@ export default function PolierApp() {
       <ProjektInfoStrip projekt={projekt} />
 
       {/* ── CONTENT ── */}
+      <PlanGuard firma={firma} ressource="app">
       <div style={{ padding:"16px 14px 100px", background:"var(--bg)", minHeight:"100vh" }}>
         {tab === "dashboard" && <DashboardView felder={felder} kolonnen={kolonnen} sbConnected={sbConnected} />}
         {tab === "felder"    && <BetonfelderView felder={felder} setFelder={setFelder} sbConnected={sbConnected} projektTyp={projekt.typ} projSubs={subs.filter(s=>(projekt.subIds||[]).includes(s.id))} projekt={projekt} eigeneFirma={eigeneFirma} wetter={null} />}
