@@ -39,7 +39,8 @@ jobs:
       - name: Read version from config.yaml
         id: version
         run: |
-          VERSION=$(grep '^version:' polier_pro/config.yaml | sed 's/version: *//' | tr -d '"')
+          cat polier_pro/config.yaml
+          VERSION=$(python3 -c "import re; txt=open('polier_pro/config.yaml').read(); print(re.search(r'version:\s*["\']?([\d.]+)["\']?', txt).group(1))")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Detected version: $VERSION"
 
