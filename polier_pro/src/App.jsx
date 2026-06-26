@@ -1,34 +1,91 @@
 import { useState, useEffect, useRef } from "react";
 
 // ─── Design Tokens ───────────────────────────────────────────────────────────
+// ─── Design Tokens ───────────────────────────────────────────────────────────
+// Automatischer Dark/Light Mode via CSS-Variablen
+// Injiziere :root Styles in den DOM
+(function injectTheme() {
+  if (document.getElementById("polaris-theme")) return;
+  const style = document.createElement("style");
+  style.id = "polaris-theme";
+  style.textContent = `
+    :root {
+      --bg:      #DDE1E8;
+      --surface: #FFFFFF;
+      --surface2:#EEF1F6;
+      --border:  rgba(0,0,0,0.10);
+      --border2: rgba(0,0,0,0.16);
+      --text:    #0B1120;
+      --text2:   #3A4560;
+      --muted:   #7A8499;
+      --yellow:  #F5C400;
+      --ydark:   #A07800;
+      --ybg:     #FFF8DC;
+      --green:   #15803D;
+      --gbg:     #DCFCE7;
+      --red:     #B91C1C;
+      --rbg:     #FEE2E2;
+      --blue:    #1D4ED8;
+      --bbg:     #DBEAFE;
+      --orange:  #C2410C;
+      --obg:     #FFEDD5;
+      --radius:  14px;
+      --radius-sm: 10px;
+      --radius-lg: 20px;
+    }
+    [data-theme="dark"] {
+      --bg:      #0B1120;
+      --surface: #161F30;
+      --surface2:#1E2A3F;
+      --border:  rgba(255,255,255,0.08);
+      --border2: rgba(255,255,255,0.14);
+      --text:    #F0F4FF;
+      --text2:   #8B9EC8;
+      --muted:   #4A5878;
+      --ydark:   #F5C400;
+      --ybg:     #1A1500;
+      --gbg:     #052e16;
+      --rbg:     #450a0a;
+      --bbg:     #0f1f4a;
+      --obg:     #2a1200;
+    }
+    * { box-sizing: border-box; }
+    body {
+      background: var(--bg) !important;
+      color: var(--text) !important;
+      transition: background 0.25s, color 0.25s;
+    }
+  `;
+  document.head.appendChild(style);
+})();
+
+// Token-Shorthand für inline styles
 const C = {
-  // Hintergründe – hell & sauber
-  bg:           "#F4F5F7",
-  bgMid:        "#FFFFFF",
-  bgLight:      "#EEF0F3",
-  bgFaint:      "#E2E5EA",
-
-  // Primär – Sicherheitsgelb (Wiedererkennungsmerkmal)
-  gelb:         "#F5C400",
-  gelbDark:     "#D4A800",
-  gelbLight:    "#FFF3CC",
-
-  // Status
-  gruen:        "#16A34A",
-  gruenLight:   "#DCFCE7",
-  rot:          "#DC2626",
-  rotLight:     "#FEE2E2",
-  rost:         "#EA580C",
-  rostLight:    "#FFEDD5",
-  blau:         "#2563EB",
-  blauLight:    "#DBEAFE",
-
-  // Text – hoher Kontrast für Sonnenlicht
-  text:         "#0F172A",
-  textMed:      "#334155",
-  muted:        "#64748B",
-  betonLight:   "#475569",
-  beton:        "#94A3B8",
+  bg:         "var(--bg)",
+  bgMid:      "var(--surface)",
+  bgLight:    "var(--surface2)",
+  bgFaint:    "var(--border)",
+  gelb:       "var(--yellow)",
+  gelbDark:   "var(--ydark)",
+  gelbLight:  "var(--ybg)",
+  gruen:      "var(--green)",
+  gruenLight: "var(--gbg)",
+  rot:        "var(--red)",
+  rotLight:   "var(--rbg)",
+  rost:       "var(--orange)",
+  rostLight:  "var(--obg)",
+  blau:       "var(--blue)",
+  blauLight:  "var(--bbg)",
+  text:       "var(--text)",
+  textMed:    "var(--text2)",
+  muted:      "var(--muted)",
+  betonLight: "var(--text2)",
+  beton:      "var(--muted)",
+  // Raw hex für spezifische Einsatzzwecke
+  _yellow:    "#F5C400",
+  _green:     "#15803D",
+  _red:       "#B91C1C",
+  _blue:      "#1D4ED8",
 };
 
 // ─── Supabase Config ─────────────────────────────────────────────────────────
@@ -1612,7 +1669,7 @@ function buildBerichtHTML(bericht, projekt, eigeneFirma, wetter) {
         ? `<img class="logo" src="${logo}" alt="Logo"/>`
         : `<div class="logo-placeholder">⚒</div>`}
       <div>
-        <div class="firma-name">${eigeneFirma?.name || "Polier Pro"}</div>
+        <div class="firma-name">${eigeneFirma?.name || "Polaris"}</div>
         <div class="firma-sub">${eigeneFirma?.strasse || ""} · ${eigeneFirma?.plz || ""} ${eigeneFirma?.ort || ""}</div>
         <div class="firma-sub">${eigeneFirma?.telefon || ""} · ${eigeneFirma?.email || ""}</div>
       </div>
@@ -1723,7 +1780,7 @@ function buildBerichtHTML(bericht, projekt, eigeneFirma, wetter) {
   </div>
 
   <div class="footer">
-    <span>Erstellt mit Polier Pro · ${new Date().toLocaleString("de-DE")}</span>
+    <span>Erstellt mit Polaris · ${new Date().toLocaleString("de-DE")}</span>
     <span>${eigeneFirma?.name || ""} · ${projekt?.projektnummer || ""}</span>
   </div>
 </div>
@@ -1771,7 +1828,7 @@ function buildBetonprotokollHTML(feld, projekt, eigeneFirma, wetter) {
     <div style="display:flex;gap:12px;align-items:center;">
       ${logo ? `<img class="logo" src="${logo}" alt="Logo"/>` : `<div class="logo-placeholder">⚒</div>`}
       <div>
-        <div class="firma-name">${eigeneFirma?.name || "Polier Pro"}</div>
+        <div class="firma-name">${eigeneFirma?.name || "Polaris"}</div>
         <div style="font-size:9pt;color:#666;">${eigeneFirma?.strasse || ""} · ${eigeneFirma?.ort || ""}</div>
       </div>
     </div>
@@ -1822,7 +1879,7 @@ function buildBetonprotokollHTML(feld, projekt, eigeneFirma, wetter) {
   </div>
 
   <div class="footer">
-    <span>Betonierprotokoll · Polier Pro · ${new Date().toLocaleString("de-DE")}</span>
+    <span>Betonierprotokoll · Polaris · ${new Date().toLocaleString("de-DE")}</span>
     <span>${projekt?.projektnummer || ""}</span>
   </div>
 </div>
@@ -2083,7 +2140,7 @@ function usePushNotifications(projekte, eigeneFirma) {
   async function berechtigung() {
     const ok = await pushBerechtigung();
     setErlaubt(ok);
-    if (ok) lokaleNotification("✅ Polier Pro", "Push-Benachrichtigungen aktiv!", "setup");
+    if (ok) lokaleNotification("✅ Polaris", "Push-Benachrichtigungen aktiv!", "setup");
   }
 
   return { erlaubt, berechtigung };
@@ -4271,6 +4328,35 @@ function SubZuweisungBadge({ subId, subs }) {
 // ════════════════════════════════════════════════════════════════════════════
 // PWA – Install Banner + Online/Offline Status + Update Banner
 // ════════════════════════════════════════════════════════════════════════════
+
+// ════════════════════════════════════════════════════════════════════════════
+// THEME – Dark/Light Mode
+// ════════════════════════════════════════════════════════════════════════════
+function useTheme() {
+  const [dark, setDark] = useState(() =>
+    localStorage.getItem("polaris-theme") === "dark" ||
+    (!localStorage.getItem("polaris-theme") && window.matchMedia("(prefers-color-scheme: dark)").matches)
+  );
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = dark ? "dark" : "";
+    localStorage.setItem("polaris-theme", dark ? "dark" : "light");
+  }, [dark]);
+
+  return { dark, toggle: () => setDark(d => !d) };
+}
+
+function ThemeToggle({ dark, toggle }) {
+  return (
+    <button onClick={toggle} title={dark ? "Hellmodus" : "Dunkelmodus"}
+      style={{ width:36, height:36, borderRadius:10, background:"var(--surface2)",
+        border:"1.5px solid var(--border2)", cursor:"pointer", fontSize:17,
+        display:"flex", alignItems:"center", justifyContent:"center" }}>
+      {dark ? "☀️" : "🌙"}
+    </button>
+  );
+}
+
 // ════════════════════════════════════════════════════════════════════════════
 // ONBOARDING
 // ════════════════════════════════════════════════════════════════════════════
@@ -4319,14 +4405,13 @@ function OnboardingFlow({ onComplete }) {
   ][schritt];
 
   return (
-    <div style={{ background:"#F4F5F7", minHeight:"100vh", fontFamily:"'Segoe UI', system-ui, sans-serif",
+    <div style={{ background:"var(--bg)", minHeight:"100vh", fontFamily:"'Segoe UI', system-ui, sans-serif",
       display:"flex", flexDirection:"column" }}>
 
       {/* Progress Header */}
-      <div style={{ background:"#FFFFFF", padding:"16px 20px", borderBottom:`2px solid ${C.gelb}`,
-        boxShadow:"0 2px 8px rgba(0,0,0,0.06)" }}>
+      <div style={{ background:"var(--surface)", padding:"16px 20px", borderBottom:"2px solid var(--yellow)", boxShadow:"0 2px 8px rgba(0,0,0,0.06)" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-          <div style={{ color: C.gelb, fontWeight:800, fontSize:18 }}>⚒ POLIER PRO</div>
+          <div style={{ color: C.gelb, fontWeight:800, fontSize:18 }}>★ POLARIS</div>
           <div style={{ color: C.muted, fontSize:12 }}>Schritt {schritt+1} von {gesamt}</div>
         </div>
         {/* Progress Bar */}
@@ -4350,7 +4435,7 @@ function OnboardingFlow({ onComplete }) {
           <div style={{ textAlign:"center", paddingTop:40 }}>
             <div style={{ fontSize:72, marginBottom:20 }}>⚒️</div>
             <div style={{ color: C.text, fontWeight:800, fontSize:26, marginBottom:12 }}>
-              Willkommen bei Polier Pro
+              Willkommen bei Polaris
             </div>
             <div style={{ color: C.muted, fontSize:15, lineHeight:1.7, maxWidth:340, margin:"0 auto 32px" }}>
               Die Baustellenmanagement-App für Poliere im Hoch- und Tiefbau.
@@ -4488,7 +4573,7 @@ function OnboardingFlow({ onComplete }) {
               Alles bereit!
             </div>
             <div style={{ color: C.muted, fontSize:14, lineHeight:1.7, maxWidth:320, margin:"0 auto 32px" }}>
-              Polier Pro ist eingerichtet. Du kannst jetzt deine erste Baustelle anlegen.
+              Polaris ist eingerichtet. Du kannst jetzt deine erste Baustelle anlegen.
             </div>
 
             {/* Zusammenfassung */}
@@ -4633,7 +4718,7 @@ function PWABanner({ pwa }) {
           <span style={{ fontSize:18 }}>🔄</span>
           <div style={{ flex:1 }}>
             <div style={{ color: C.gruen, fontWeight:700, fontSize:13 }}>Update verfügbar</div>
-            <div style={{ color: C.muted, fontSize:11 }}>Neue Version von Polier Pro bereit.</div>
+            <div style={{ color: C.muted, fontSize:11 }}>Neue Version von Polaris bereit.</div>
           </div>
           <button onClick={pwa.updateAnwenden}
             style={{ background: C.gruen, color:"#fff", border:"none",
@@ -4650,7 +4735,7 @@ function PWABanner({ pwa }) {
           border:`1px solid ${C.gelb}`, boxShadow:"0 4px 20px rgba(0,0,0,0.5)" }}>
           <span style={{ fontSize:22 }}>⚒️</span>
           <div style={{ flex:1 }}>
-            <div style={{ color: C.text, fontWeight:700, fontSize:13 }}>Polier Pro installieren</div>
+            <div style={{ color: C.text, fontWeight:700, fontSize:13 }}>Polaris installieren</div>
             <div style={{ color: C.muted, fontSize:11 }}>Zum Homescreen hinzufügen – funktioniert auch offline.</div>
           </div>
           <button onClick={pwa.installieren}
@@ -4660,6 +4745,93 @@ function PWABanner({ pwa }) {
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// AKTENREGISTER – Projekt-Schnellwechsel
+// ════════════════════════════════════════════════════════════════════════════
+function Aktenregister({ projekte, aktivId, onSelect, onNeu }) {
+  return (
+    <div style={{ background:"var(--surface)", borderBottom:"3px solid var(--yellow)",
+      flexShrink:0 }}>
+      <div style={{ display:"flex", overflowX:"auto", padding:"0 12px",
+        scrollbarWidth:"none", msOverflowStyle:"none" }}>
+        {projekte.map((p, i) => {
+          const eltern  = p.felder.filter(f => !f.parentId);
+          const done    = eltern.filter(f => f.status === "done").length;
+          const total   = eltern.length;
+          const pct     = total > 0 ? Math.round(done/total*100) : 0;
+          const aktiv   = p.id === aktivId;
+          return (
+            <div key={p.id} style={{ display:"flex", alignItems:"stretch" }}>
+              {i > 0 && (
+                <div style={{ width:1, background:"var(--border)", margin:"8px 0",
+                  flexShrink:0 }} />
+              )}
+              <button onClick={() => onSelect(p.id)}
+                style={{ flexShrink:0, padding:"10px 14px 0", cursor:"pointer",
+                  background:"none", border:"none", borderBottom:`3px solid ${aktiv ? "var(--yellow)" : "transparent"}`,
+                  marginBottom:-3, display:"flex", flexDirection:"column",
+                  alignItems:"flex-start", gap:2, transition:"all 0.15s",
+                  fontFamily:"inherit" }}>
+                <div style={{ display:"flex", alignItems:"center", gap:5 }}>
+                  <div style={{ width:7, height:7, borderRadius:4, background:p.farbe, flexShrink:0 }} />
+                  <span style={{ fontSize:12, fontWeight:700,
+                    color: aktiv ? "var(--text)" : "var(--muted)",
+                    whiteSpace:"nowrap" }}>
+                    {p.name.split(" ").slice(0,2).join(" ")}
+                  </span>
+                </div>
+                <span style={{ fontSize:10, color: aktiv ? "var(--text2)" : "var(--muted)",
+                  paddingBottom:8, whiteSpace:"nowrap" }}>
+                  {pct}% · {PROJEKTTYPEN[p.typ]?.icon || "🏗️"}
+                </span>
+              </button>
+            </div>
+          );
+        })}
+        {/* + Neue Baustelle */}
+        <div style={{ width:1, background:"var(--border)", margin:"8px 0", flexShrink:0 }} />
+        <button onClick={onNeu}
+          style={{ flexShrink:0, padding:"10px 16px 14px", cursor:"pointer",
+            background:"none", border:"none", color:"var(--muted)", fontSize:20,
+            fontFamily:"inherit", lineHeight:1 }}>
+          ＋
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Projekt Info Strip ───────────────────────────────────────────────────────
+function ProjektInfoStrip({ projekt }) {
+  if (!projekt) return null;
+  const eltern = projekt.felder.filter(f => !f.parentId);
+  const done   = eltern.filter(f => f.status === "done").length;
+  const total  = eltern.length;
+  const pct    = total > 0 ? Math.round(done/total*100) : 0;
+  return (
+    <div style={{ background:"var(--surface2)", borderBottom:"1px solid var(--border)",
+      padding:"7px 16px", display:"flex", justifyContent:"space-between",
+      alignItems:"center", flexShrink:0 }}>
+      <div>
+        <div style={{ fontSize:11, fontWeight:700, color:"var(--muted)" }}>
+          {projekt.projektnummer} · {PROJEKTTYPEN[projekt.typ]?.label || projekt.typ}
+        </div>
+        <div style={{ fontSize:11, color:"var(--text2)", marginTop:1 }}>
+          👤 {projekt.bauleiter}
+        </div>
+      </div>
+      <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+        <div style={{ width:64, height:5, background:"var(--border2)", borderRadius:3, overflow:"hidden" }}>
+          <div style={{ height:"100%", width:`${pct}%`, background:projekt.farbe, borderRadius:3,
+            transition:"width 0.4s" }} />
+        </div>
+        <span style={{ fontSize:11, fontWeight:800, color:"var(--text)" }}>{pct}%</span>
+      </div>
     </div>
   );
 }
@@ -4731,10 +4903,10 @@ function leerProjekt() {
 // ─── Projekt-Liste (Startscreen) ─────────────────────────────────────────────
 function ProjektListe({ projekte, onSelect, onNeu }) {
   return (
-    <div style={{ background: C.bg, minHeight:"100vh", fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
+    <div style={{ background:"var(--bg)", minHeight:"100vh", fontFamily:"'Segoe UI', system-ui, sans-serif", color:"var(--text)" }}>
       {/* Header */}
       <div style={{ background: C.bgMid, padding:"18px 18px 14px", borderBottom:`2px solid ${C.gelb}` }}>
-        <div style={{ color: C.gelb, fontWeight:800, fontSize:22, letterSpacing:-0.5 }}>⚒ POLIER PRO</div>
+        <div style={{ color: C.gelb, fontWeight:800, fontSize:22, letterSpacing:-0.5 }}>★ POLARIS</div>
         <div style={{ color: C.muted, fontSize:12, marginTop:2 }}>Baustellenmanagement</div>
       </div>
 
@@ -4976,6 +5148,7 @@ function MenuItem({ icon, label, onClick, muted, small }) {
 // ROOT APP
 // ════════════════════════════════════════════════════════════════════════════
 export default function PolierApp() {
+  const theme = useTheme();
   const [projekte,      setProjekte]    = useState(MOCK_PROJEKTE);
   const [aktivId,       setAktivId]     = useState(null);
   const [tab,           setTab]         = useState("dashboard");
@@ -5052,16 +5225,16 @@ export default function PolierApp() {
   if (!aktivId) {
     return (
       <>
-        <div style={{ background: C.bg, minHeight:"100vh", fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
+        <div style={{ background:"var(--bg)", minHeight:"100vh", fontFamily:"'Segoe UI', system-ui, sans-serif", color:"var(--text)" }}>
           {/* Header */}
           <div style={{ background: C.bgMid, padding:"16px 18px 0", borderBottom:`2px solid ${C.gelb}` }}>
-            <div style={{ color: C.gelb, fontWeight:800, fontSize:20, letterSpacing:-0.5, marginBottom:12 }}>⚒ POLIER PRO</div>
+            <div style={{ color: C.gelb, fontWeight:800, fontSize:20, letterSpacing:-0.5, marginBottom:12 }}>★ POLARIS</div>
             {/* Home Tabs */}
             <div style={{ display:"flex", gap:0 }}>
               {[["projekte","🏗️","Baustellen"],["firmen","🏢","Unternehmen"]].map(([id,icon,label]) => (
                 <button key={id} onClick={() => setHomeTab(id)}
-                  style={{ flex:1, background:"none", border:"none", cursor:"pointer", padding:"10px 0 12px",
-                    borderBottom:`3px solid ${homeTab===id ? C.gelb : "transparent"}` }}>
+                  style={{ flex:1, background:"none", border:"none", cursor:"pointer", padding:"10px 0 12px", fontFamily:"inherit",
+                    borderBottom:`3px solid ${homeTab===id ? "var(--yellow)" : "transparent"}` }}>
                   <div style={{ fontSize:22 }}>{icon}</div>
                   <div style={{ color: homeTab===id ? "#0F172A" : C.muted, fontSize:12, marginTop:2,
                     fontWeight: homeTab===id ? 700 : 400 }}>{label}</div>
@@ -5090,8 +5263,8 @@ export default function PolierApp() {
                   const projSubs = subs.filter(s => (p.subIds||[]).includes(s.id));
                   return (
                     <div key={p.id} onClick={() => { setAktivId(p.id); setTab("dashboard"); }}
-                      style={{ background:"#FFFFFF", borderRadius:16, padding:"18px 20px", marginBottom:14,
-                        border:`1px solid ${C.bgFaint}`, cursor:"pointer",
+                      style={{ background:"var(--surface)", borderRadius:16, padding:"18px 20px", marginBottom:14,
+                        border:"1.5px solid var(--border)", cursor:"pointer",
                         borderLeft:`5px solid ${p.farbe}`,
                         boxShadow:"0 2px 12px rgba(0,0,0,0.06)" }}>
                       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
@@ -5137,10 +5310,9 @@ export default function PolierApp() {
 
                 <div onClick={() => setNeuProjekt(true)}
                   style={{ border:`2px dashed ${C.gelb}`, borderRadius:16, padding:"24px",
-                    textAlign:"center", cursor:"pointer", background: C.gelbLight,
-                    boxShadow:"0 2px 8px rgba(245,196,0,0.15)" }}>
+                    textAlign:"center", cursor:"pointer", background:"var(--ybg)", boxShadow:"0 2px 8px rgba(245,196,0,0.15)" }}>
                   <div style={{ fontSize:32 }}>➕</div>
-                  <div style={{ color: C.gelbDark, fontWeight:700, marginTop:8, fontSize:15 }}>Neue Baustelle anlegen</div>
+                  <div style={{ color:"var(--ydark)", fontWeight:700, marginTop:8, fontSize:15 }}>Neue Baustelle anlegen</div>
                 </div>
               </>
             )}
@@ -5182,15 +5354,53 @@ export default function PolierApp() {
   ];
 
   return (
-    <div style={{ background: C.bg, minHeight:"100vh", fontFamily:"'Segoe UI', system-ui, sans-serif", color: C.text }}>
-      <ProjektHeader
-        projekt={projekt}
-        onBack={() => setAktivId(null)}
-        onEdit={() => setEditProjekt(true)}
-        sbConnected={sbConnected}
-      />
+    <div style={{ background:"var(--bg)", minHeight:"100vh",
+      fontFamily:"'Segoe UI', system-ui, sans-serif", color:"var(--text)" }}>
 
-      <div style={{ padding:"20px 16px 100px", background: C.bg, minHeight:"100vh" }}>
+      {/* ── TOP BAR ── */}
+      <div style={{ background:"var(--surface)", padding:"13px 16px 0",
+        borderBottom:"1px solid var(--border)", position:"sticky", top:0, zIndex:60,
+        boxShadow:"0 2px 8px rgba(0,0,0,0.08)" }}>
+        <div style={{ display:"flex", justifyContent:"space-between",
+          alignItems:"center", marginBottom:10 }}>
+          <div>
+            <div style={{ fontWeight:900, fontSize:19, letterSpacing:-1,
+              color:"var(--text)", lineHeight:1 }}>
+              <span style={{ color:"var(--yellow)" }}>★</span> POLARIS
+            </div>
+            <div style={{ fontSize:10, color:"var(--muted)", fontWeight:600,
+              letterSpacing:2, textTransform:"uppercase", marginTop:1 }}>
+              Baustellenmanagement
+            </div>
+          </div>
+          <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+            <div style={{ width:8, height:8, borderRadius:4,
+              background: sbConnected ? "var(--green)" : "var(--muted)" }} />
+            <ThemeToggle dark={theme.dark} toggle={theme.toggle} />
+            <button onClick={() => setEditProjekt(true)}
+              style={{ width:36, height:36, borderRadius:10,
+                background:"var(--surface2)", border:"1.5px solid var(--border2)",
+                cursor:"pointer", fontSize:16, display:"flex",
+                alignItems:"center", justifyContent:"center" }}>
+              ⋯
+            </button>
+          </div>
+        </div>
+
+        {/* ── AKTENREGISTER ── */}
+        <Aktenregister
+          projekte={projekte}
+          aktivId={aktivId}
+          onSelect={id => { setAktivId(id); setTab("dashboard"); }}
+          onNeu={() => setNeuProjekt(true)}
+        />
+      </div>
+
+      {/* ── PROJEKT INFO STRIP ── */}
+      <ProjektInfoStrip projekt={projekt} />
+
+      {/* ── CONTENT ── */}
+      <div style={{ padding:"16px 14px 100px", background:"var(--bg)", minHeight:"100vh" }}>
         {tab === "dashboard" && <DashboardView felder={felder} kolonnen={kolonnen} sbConnected={sbConnected} />}
         {tab === "felder"    && <BetonfelderView felder={felder} setFelder={setFelder} sbConnected={sbConnected} projektTyp={projekt.typ} projSubs={subs.filter(s=>(projekt.subIds||[]).includes(s.id))} projekt={projekt} eigeneFirma={eigeneFirma} wetter={null} />}
         {tab === "gantt"     && <GanttView felder={felder} />}
@@ -5206,18 +5416,22 @@ export default function PolierApp() {
         {tab === "zeiten"    && <ZeiterfassungView projekt={projekt} />}
       </div>
 
-      <div style={{ position:"fixed", bottom:0, left:0, right:0, background:"#FFFFFF",
-        borderTop:`1px solid ${C.bgFaint}`, display:"flex", zIndex:50,
-        boxShadow:"0 -2px 12px rgba(0,0,0,0.08)",
+      {/* ── BOTTOM NAV ── */}
+      <div style={{ position:"fixed", bottom:0, left:0, right:0,
+        background:"var(--surface)", borderTop:"2px solid var(--border)",
+        display:"flex", zIndex:50,
+        boxShadow:"0 -2px 12px rgba(0,0,0,0.10)",
         paddingBottom:"env(safe-area-inset-bottom)" }}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            style={{ flex:1, padding:"10px 0 12px", background:"none", border:"none", cursor:"pointer",
+            style={{ flex:1, padding:"10px 0 12px", background:"none",
+              border:"none", cursor:"pointer", fontFamily:"inherit",
               borderTop:`3px solid ${tab===t.id ? projekt.farbe : "transparent"}`,
-              transition:"all 0.15s" }}>
-            <div style={{ fontSize:22 }}>{t.icon}</div>
-            <div style={{ color: tab===t.id ? projekt.farbe : C.muted, fontSize:10, marginTop:2,
-              fontWeight: tab===t.id ? 700 : 400 }}>{t.label}</div>
+              transition:"border-color 0.15s" }}>
+            <div style={{ fontSize:20 }}>{t.icon}</div>
+            <div style={{ color: tab===t.id ? projekt.farbe : "var(--muted)",
+              fontSize:9, marginTop:2,
+              fontWeight: tab===t.id ? 800 : 500 }}>{t.label}</div>
           </button>
         ))}
       </div>
@@ -5228,6 +5442,13 @@ export default function PolierApp() {
           subs={subs}
           onSave={handleSaveProjekt}
           onClose={() => setEditProjekt(false)}
+        />
+      )}
+      {neuProjekt && (
+        <ProjektFormular
+          subs={subs}
+          onSave={handleSaveProjekt}
+          onClose={() => setNeuProjekt(false)}
         />
       )}
       <PWABanner pwa={pwa} />
