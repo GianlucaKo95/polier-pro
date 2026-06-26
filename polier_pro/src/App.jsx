@@ -4541,6 +4541,7 @@ function OnboardingFlow({ onComplete }) {
 }
 
 
+function usePWA() {
   const [installierbar,  setInstallierbar]  = useState(false);
   const [installiert,    setInstalliert]    = useState(false);
   const [updateVerfügbar,setUpdateVerfügbar]= useState(false);
