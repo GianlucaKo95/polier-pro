@@ -59,7 +59,7 @@ jobs:
       - name: Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build & Push
+      - name: Build & Push (no cache)
         uses: docker/build-push-action@v6
         with:
           context: polier_pro
@@ -68,5 +68,4 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=${{ matrix.arch }}
-          cache-to: type=gha,scope=${{ matrix.arch }},mode=max
+          no-cache: true
