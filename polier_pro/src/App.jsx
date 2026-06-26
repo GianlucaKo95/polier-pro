@@ -5361,10 +5361,7 @@ function NutzerVerwaltungView({ session }) {
   }
 
   async function nutzerAnlegen() {
-    // Supabase Admin API für User-Erstellung (benötigt Service Role in Produktion)
-    // Hier vereinfacht: Profil anlegen, Auth-Registrierung separat
-    alert("Nutzer-Erstellung benötigt den Supabase Service Role Key.
-Bitte in der Supabase Dashboard → Auth → Users → Invite user anlegen.");
+    alert("Nutzer-Erstellung: In Supabase Dashboard → Auth → Users → Invite user anlegen. Dann Rolle in der profile-Tabelle setzen.");
   }
 
   async function rolleAendern(id, neueRolle) {
