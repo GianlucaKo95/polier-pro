@@ -4750,6 +4750,675 @@ function PWABanner({ pwa }) {
 }
 
 
+
+// ════════════════════════════════════════════════════════════════════════════
+// AUTH & ROLLEN SYSTEM
+// ════════════════════════════════════════════════════════════════════════════
+
+const ROLLEN = {
+  administrator: {
+    label: "Administrator",
+    icon: "🔑",
+    farbe: "#7C3AED",
+    tabs: ["dashboard","felder","gantt","editor","scanner","wetter","kolonnen","tagebuch","zeiten","firmen"],
+    kannBearbeiten: true,
+    kannNutzerVerwalten: true,
+    siehtAlleProjekte: true,
+  },
+  bauleiter: {
+    label: "Bauleiter",
+    icon: "📋",
+    farbe: "#2563EB",
+    tabs: ["dashboard","felder","gantt","wetter","kolonnen","tagebuch","zeiten"],
+    kannBearbeiten: false,
+    kannNutzerVerwalten: false,
+    siehtAlleProjekte: true,
+  },
+  polier: {
+    label: "Polier",
+    icon: "⚒️",
+    farbe: "#F5C400",
+    tabs: ["dashboard","felder","gantt","editor","scanner","wetter","kolonnen","tagebuch","zeiten"],
+    kannBearbeiten: true,
+    kannNutzerVerwalten: false,
+    siehtAlleProjekte: false,
+  },
+  vorarbeiter: {
+    label: "Vorarbeiter",
+    icon: "👷",
+    farbe: "#EA580C",
+    tabs: ["dashboard","felder","kolonnen","tagebuch","stempeln"],
+    kannBearbeiten: true,
+    kannNutzerVerwalten: false,
+    siehtAlleProjekte: false,
+  },
+  facharbeiter: {
+    label: "Facharbeiter",
+    icon: "🔨",
+    farbe: "#64748B",
+    tabs: ["stempeln"],
+    kannBearbeiten: false,
+    kannNutzerVerwalten: false,
+    siehtAlleProjekte: false,
+  },
+};
+
+// ─── Supabase Auth Helpers ────────────────────────────────────────────────
+async function sbSignIn(email, password) {
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+    method: "POST",
+    headers: { "apikey": SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  return res.json();
+}
+
+async function sbSignOut(token) {
+  await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
+    method: "POST",
+    headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${token}` },
+  });
+}
+
+async function sbGetProfile(token) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/profile?select=*&limit=1`, {
+    headers: {
+      "apikey": SUPABASE_ANON_KEY,
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+  const data = await res.json();
+  return data?.[0] || null;
+}
+
+// ─── Auth Hook ────────────────────────────────────────────────────────────
+function useAuth() {
+  const [session, setSession]   = useState(() => {
+    try { return JSON.parse(localStorage.getItem("polaris-session") || "null"); } catch { return null; }
+  });
+  const [profil,  setProfil]    = useState(null);
+  const [loading, setLoading]   = useState(false);
+  const [fehler,  setFehler]    = useState("");
+
+  useEffect(() => {
+    if (session?.access_token) {
+      sbGetProfile(session.access_token).then(p => {
+        if (p) setProfil(p);
+        else { localStorage.removeItem("polaris-session"); setSession(null); }
+      });
+    }
+  }, [session?.access_token]);
+
+  async function anmelden(email, password) {
+    setLoading(true); setFehler("");
+    const data = await sbSignIn(email, password);
+    if (data.access_token) {
+      localStorage.setItem("polaris-session", JSON.stringify(data));
+      setSession(data);
+    } else {
+      setFehler(data.error_description || data.msg || "Anmeldung fehlgeschlagen");
+    }
+    setLoading(false);
+  }
+
+  async function abmelden() {
+    if (session?.access_token) await sbSignOut(session.access_token);
+    localStorage.removeItem("polaris-session");
+    setSession(null); setProfil(null);
+  }
+
+  const rolle = profil?.rolle || null;
+  const rolleConfig = rolle ? ROLLEN[rolle] : null;
+
+  // Fallback: wenn Supabase nicht konfiguriert → Demo-Modus
+  const supabaseKonfiguriert = !SUPABASE_URL.includes("DEIN");
+
+  return { session, profil, rolle, rolleConfig, loading, fehler,
+    anmelden, abmelden, supabaseKonfiguriert };
+}
+
+// ─── Login Screen ─────────────────────────────────────────────────────────
+function LoginScreen({ auth, onDemoLogin }) {
+  const [email,    setEmail]    = useState("");
+  const [password, setPassword] = useState("");
+  const [showPw,   setShowPw]   = useState(false);
+
+  return (
+    <div style={{ background:"var(--bg)", minHeight:"100vh", display:"flex",
+      flexDirection:"column", alignItems:"center", justifyContent:"center",
+      padding:"24px 20px", fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
+
+      {/* Logo */}
+      <div style={{ textAlign:"center", marginBottom:40 }}>
+        <div style={{ fontSize:56, marginBottom:12 }}>★</div>
+        <div style={{ fontWeight:900, fontSize:32, letterSpacing:-2, color:"var(--text)" }}>
+          <span style={{ color:"var(--yellow)" }}>★</span> POLARIS
+        </div>
+        <div style={{ fontSize:12, color:"var(--muted)", fontWeight:600,
+          letterSpacing:3, textTransform:"uppercase", marginTop:4 }}>
+          Baustellenmanagement
+        </div>
+      </div>
+
+      {/* Login Card */}
+      <div style={{ background:"var(--surface)", borderRadius:20, padding:28,
+        width:"100%", maxWidth:380, border:"1.5px solid var(--border)",
+        boxShadow:"0 8px 32px rgba(0,0,0,0.12)" }}>
+        <div style={{ color:"var(--text)", fontWeight:800, fontSize:18,
+          marginBottom:20 }}>Anmelden</div>
+
+        {auth.fehler && (
+          <div style={{ background:"var(--rbg)", color:"var(--red)",
+            borderRadius:10, padding:"10px 14px", marginBottom:16,
+            fontSize:13, border:"1px solid var(--red)" }}>
+            ❌ {auth.fehler}
+          </div>
+        )}
+
+        <div style={{ marginBottom:14 }}>
+          <Label>E-Mail</Label>
+          <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+            placeholder="name@firma.de" style={inputStyle()}
+            onKeyDown={e => e.key==="Enter" && auth.anmelden(email, password)} />
+        </div>
+
+        <div style={{ marginBottom:20 }}>
+          <Label>Passwort</Label>
+          <div style={{ position:"relative" }}>
+            <input type={showPw ? "text" : "password"} value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="••••••••" style={{ ...inputStyle(), paddingRight:44 }}
+              onKeyDown={e => e.key==="Enter" && auth.anmelden(email, password)} />
+            <button onClick={() => setShowPw(p=>!p)}
+              style={{ position:"absolute", right:12, top:"50%",
+                transform:"translateY(-50%)", background:"none", border:"none",
+                cursor:"pointer", fontSize:16, color:"var(--muted)" }}>
+              {showPw ? "🙈" : "👁️"}
+            </button>
+          </div>
+        </div>
+
+        <button onClick={() => auth.anmelden(email, password)}
+          disabled={auth.loading || !email || !password}
+          style={{ width:"100%", background: email && password ? "var(--yellow)" : "var(--surface2)",
+            color: email && password ? "#1a1200" : "var(--muted)",
+            border:"none", borderRadius:12, padding:16, fontWeight:800,
+            fontSize:16, cursor: email && password ? "pointer" : "default",
+            fontFamily:"inherit" }}>
+          {auth.loading ? "⏳ Anmelden…" : "Anmelden →"}
+        </button>
+
+        {/* Demo-Modus wenn Supabase nicht konfiguriert */}
+        {!auth.supabaseKonfiguriert && (
+          <div style={{ marginTop:20, borderTop:"1px solid var(--border)", paddingTop:16 }}>
+            <div style={{ color:"var(--muted)", fontSize:12, marginBottom:10, textAlign:"center" }}>
+              Supabase nicht konfiguriert — Demo-Modus:
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>
+              {Object.entries(ROLLEN).map(([key, r]) => (
+                <button key={key} onClick={() => onDemoLogin(key)}
+                  style={{ background:"var(--surface2)", color:"var(--text)",
+                    border:"1.5px solid var(--border)", borderRadius:10,
+                    padding:"8px 10px", cursor:"pointer", fontFamily:"inherit",
+                    fontSize:11, fontWeight:700, textAlign:"left" }}>
+                  {r.icon} {r.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div style={{ marginTop:20, fontSize:12, color:"var(--muted)", textAlign:"center" }}>
+        Zugangsdaten beim Administrator anfragen
+      </div>
+    </div>
+  );
+}
+
+// ─── Rollen Badge ─────────────────────────────────────────────────────────
+function RollenBadge({ rolle }) {
+  const r = ROLLEN[rolle];
+  if (!r) return null;
+  return (
+    <div style={{ background:"var(--surface2)", color:"var(--text2)",
+      border:"1px solid var(--border)", borderRadius:20,
+      padding:"3px 10px", fontSize:11, fontWeight:700,
+      display:"flex", alignItems:"center", gap:5 }}>
+      <span>{r.icon}</span>
+      <span>{r.label}</span>
+    </div>
+  );
+}
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// GPS STEMPELUHR
+// ════════════════════════════════════════════════════════════════════════════
+
+async function getGPSPosition() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error("GPS nicht verfügbar"));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude,
+        genauigkeit: Math.round(pos.coords.accuracy) }),
+      err => reject(err),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  });
+}
+
+async function reverseGeocode(lat, lng) {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
+      { headers: { "Accept-Language": "de" } }
+    );
+    const data = await res.json();
+    const a = data.address || {};
+    return [a.road, a.house_number, a.city || a.town || a.village]
+      .filter(Boolean).join(" ");
+  } catch { return `${lat.toFixed(5)}, ${lng.toFixed(5)}`; }
+}
+
+function StempeluhrView({ profil, projekte, session }) {
+  const [status,      setStatus]      = useState("aus");   // aus | ein | pause
+  const [aktiveBuchung, setAktiveBuchung] = useState(null);
+  const [gps,         setGPS]         = useState(null);
+  const [gpsLaden,    setGPSLaden]    = useState(false);
+  const [gpsError,    setGPSError]    = useState("");
+  const [jetzt,       setJetzt]       = useState(new Date());
+  const [buchungen,   setBuchungen]   = useState([]);
+  const [aktivProjekt,setAktivProjekt]= useState(projekte[0]?.id || null);
+  const [notiz,       setNotiz]       = useState("");
+
+  // Uhr aktualisieren
+  useEffect(() => {
+    const t = setInterval(() => setJetzt(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  // Heutige Buchungen laden
+  useEffect(() => {
+    ladeBuchungen();
+  }, []);
+
+  async function ladeBuchungen() {
+    if (!session?.access_token) return;
+    const heute = new Date().toISOString().slice(0,10);
+    const data = await sbFetch(
+      `zeitbuchungen?profil_id=eq.${profil.id}&eingestempelt_at=gte.${heute}T00:00:00&order=eingestempelt_at.desc`,
+      { headers: { "Authorization": `Bearer ${session.access_token}` } }
+    );
+    if (data) {
+      setBuchungen(data);
+      const aktive = data.find(b => b.status === "aktiv" || b.status === "pause");
+      if (aktive) {
+        setAktiveBuchung(aktive);
+        setStatus(aktive.status);
+      }
+    }
+  }
+
+  async function holeGPS() {
+    setGPSLaden(true); setGPSError("");
+    try {
+      const pos = await getGPSPosition();
+      const adresse = await reverseGeocode(pos.lat, pos.lng);
+      const result = { ...pos, adresse };
+      setGPS(result);
+      return result;
+    } catch(e) {
+      setGPSError("GPS nicht verfügbar — bitte Standort aktivieren");
+      return null;
+    } finally { setGPSLaden(false); }
+  }
+
+  async function einstempeln() {
+    const pos = await holeGPS();
+    const buchung = {
+      profil_id:        profil.id,
+      projekt_id:       aktivProjekt,
+      kolonne_id:       profil.kolonne_id || null,
+      eingestempelt_at: new Date().toISOString(),
+      ein_lat:          pos?.lat,
+      ein_lng:          pos?.lng,
+      ein_adresse:      pos?.adresse || null,
+      status:           "aktiv",
+      notiz:            notiz || null,
+    };
+
+    if (session?.access_token) {
+      const data = await sbFetch("zeitbuchungen", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${session.access_token}` },
+        body: JSON.stringify(buchung),
+      });
+      if (data?.[0]) { setAktiveBuchung(data[0]); }
+    } else {
+      // Demo-Modus: lokal
+      const demo = { ...buchung, id: Date.now() };
+      setAktiveBuchung(demo);
+      setBuchungen(prev => [demo, ...prev]);
+    }
+    setStatus("ein");
+  }
+
+  async function pauseStart() {
+    if (!aktiveBuchung) return;
+    const update = { pause_start_at: new Date().toISOString(), status: "pause" };
+    if (session?.access_token) {
+      await sbFetch(`zeitbuchungen?id=eq.${aktiveBuchung.id}`, {
+        method: "PATCH",
+        headers: { "Authorization": `Bearer ${session.access_token}` },
+        body: JSON.stringify(update),
+      });
+    }
+    setAktiveBuchung(prev => ({ ...prev, ...update }));
+    setStatus("pause");
+  }
+
+  async function pauseEnde() {
+    if (!aktiveBuchung) return;
+    const update = { pause_ende_at: new Date().toISOString(), status: "aktiv" };
+    if (session?.access_token) {
+      await sbFetch(`zeitbuchungen?id=eq.${aktiveBuchung.id}`, {
+        method: "PATCH",
+        headers: { "Authorization": `Bearer ${session.access_token}` },
+        body: JSON.stringify(update),
+      });
+    }
+    setAktiveBuchung(prev => ({ ...prev, ...update }));
+    setStatus("ein");
+  }
+
+  async function ausstempeln() {
+    const pos = await holeGPS();
+    if (!aktiveBuchung) return;
+
+    const ein  = new Date(aktiveBuchung.eingestempelt_at);
+    const aus  = new Date();
+    const pauseMin = aktiveBuchung.pause_start_at && aktiveBuchung.pause_ende_at
+      ? Math.round((new Date(aktiveBuchung.pause_ende_at) - new Date(aktiveBuchung.pause_start_at)) / 60000)
+      : 0;
+    const nettoMin = Math.round((aus - ein) / 60000) - pauseMin;
+
+    const update = {
+      ausgestempelt_at: aus.toISOString(),
+      aus_lat:          pos?.lat,
+      aus_lng:          pos?.lng,
+      aus_adresse:      pos?.adresse || null,
+      netto_minuten:    nettoMin,
+      status:           "abgeschlossen",
+    };
+
+    if (session?.access_token) {
+      await sbFetch(`zeitbuchungen?id=eq.${aktiveBuchung.id}`, {
+        method: "PATCH",
+        headers: { "Authorization": `Bearer ${session.access_token}` },
+        body: JSON.stringify(update),
+      });
+    }
+    setAktiveBuchung(null);
+    setStatus("aus");
+    await ladeBuchungen();
+  }
+
+  // Laufzeit berechnen
+  const laufzeit = aktiveBuchung && status !== "aus"
+    ? Math.round((jetzt - new Date(aktiveBuchung.eingestempelt_at)) / 60000)
+    : 0;
+  const laufzeitStr = `${Math.floor(laufzeit/60)}h ${(laufzeit%60).toString().padStart(2,"0")}min`;
+
+  const STATUS_FARBE = { aus: "var(--muted)", ein: "var(--green)", pause: "var(--yellow)" };
+  const STATUS_BG    = { aus: "var(--surface2)", ein: "var(--gbg)", pause: "var(--ybg)" };
+
+  return (
+    <div>
+      {/* Uhr */}
+      <div style={{ background:"var(--surface)", borderRadius:20, padding:24,
+        marginBottom:16, textAlign:"center", border:"1.5px solid var(--border)",
+        boxShadow:"0 2px 12px rgba(0,0,0,0.06)" }}>
+        <div style={{ fontSize:11, fontWeight:700, color:"var(--muted)",
+          textTransform:"uppercase", letterSpacing:2, marginBottom:8 }}>
+          {jetzt.toLocaleDateString("de-DE", { weekday:"long", day:"2-digit", month:"long" })}
+        </div>
+        <div style={{ fontSize:52, fontWeight:900, color:"var(--text)",
+          letterSpacing:-2, fontVariantNumeric:"tabular-nums" }}>
+          {jetzt.toLocaleTimeString("de-DE", { hour:"2-digit", minute:"2-digit" })}
+          <span style={{ fontSize:28, color:"var(--muted)" }}>
+            :{jetzt.getSeconds().toString().padStart(2,"0")}
+          </span>
+        </div>
+
+        {/* Status */}
+        <div style={{ display:"inline-flex", alignItems:"center", gap:8,
+          background: STATUS_BG[status], borderRadius:20, padding:"8px 16px",
+          marginTop:12, border:`1.5px solid ${STATUS_FARBE[status]}` }}>
+          <div style={{ width:8, height:8, borderRadius:4,
+            background: STATUS_FARBE[status],
+            animation: status === "ein" ? "pulse 2s infinite" : "none" }} />
+          <span style={{ fontSize:13, fontWeight:800, color: STATUS_FARBE[status] }}>
+            { status === "aus"   ? "Nicht eingestempelt"
+            : status === "ein"   ? `Eingestempelt · ${laufzeitStr}`
+            : `Pause · ${laufzeitStr}` }
+          </span>
+        </div>
+
+        {/* GPS Position */}
+        {gps && (
+          <div style={{ marginTop:10, fontSize:11, color:"var(--muted)" }}>
+            📍 {gps.adresse} · ±{gps.genauigkeit}m
+          </div>
+        )}
+        {gpsError && (
+          <div style={{ marginTop:8, fontSize:11, color:"var(--red)" }}>{gpsError}</div>
+        )}
+      </div>
+
+      {/* Projekt Auswahl */}
+      {status === "aus" && (
+        <>
+          <div style={{ marginBottom:12 }}>
+            <Label>Projekt</Label>
+            <div style={{ display:"flex", flexDirection:"column", gap:6, marginTop:6 }}>
+              {projekte.map(p => (
+                <button key={p.id} onClick={() => setAktivProjekt(p.id)}
+                  style={{ background: aktivProjekt===p.id ? "var(--ybg)" : "var(--surface)",
+                    color:"var(--text)", border:`2px solid ${aktivProjekt===p.id ? "var(--yellow)" : "var(--border)"}`,
+                    borderRadius:12, padding:"12px 16px", cursor:"pointer",
+                    fontFamily:"inherit", textAlign:"left", fontWeight: aktivProjekt===p.id ? 700 : 400 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                    <div style={{ width:8, height:8, borderRadius:4, background:p.farbe }} />
+                    <span style={{ fontSize:13 }}>{p.name}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div style={{ marginBottom:16 }}>
+            <Label>Notiz (optional)</Label>
+            <input value={notiz} onChange={e => setNotiz(e.target.value)}
+              placeholder="z.B. Bewehrungsarbeiten B1" style={inputStyle()} />
+          </div>
+        </>
+      )}
+
+      {/* Aktive Buchung Info */}
+      {aktiveBuchung && status !== "aus" && (
+        <div style={{ background:"var(--surface)", borderRadius:14, padding:16,
+          marginBottom:16, border:"1.5px solid var(--border)" }}>
+          <div style={{ color:"var(--muted)", fontSize:11, marginBottom:4 }}>Aktuelle Buchung</div>
+          <div style={{ color:"var(--text)", fontSize:13, fontWeight:600 }}>
+            {projekte.find(p=>p.id===aktiveBuchung.projekt_id)?.name || "—"}
+          </div>
+          {aktiveBuchung.ein_adresse && (
+            <div style={{ color:"var(--muted)", fontSize:11, marginTop:4 }}>
+              📍 Eingestempelt: {aktiveBuchung.ein_adresse}
+            </div>
+          )}
+          {aktiveBuchung.notiz && (
+            <div style={{ color:"var(--muted)", fontSize:11, marginTop:2 }}>
+              💬 {aktiveBuchung.notiz}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Buttons */}
+      <div style={{ display:"flex", gap:10, marginBottom:20 }}>
+        {status === "aus" && (
+          <button onClick={einstempeln} disabled={gpsLaden || !aktivProjekt}
+            style={{ flex:1, background:"var(--green)", color:"#fff",
+              border:"none", borderRadius:14, padding:18, fontWeight:900,
+              fontSize:18, cursor:"pointer", fontFamily:"inherit",
+              opacity: gpsLaden || !aktivProjekt ? 0.6 : 1 }}>
+            {gpsLaden ? "📍 GPS…" : "▶ Einstempeln"}
+          </button>
+        )}
+        {status === "ein" && (
+          <>
+            <button onClick={pauseStart}
+              style={{ flex:1, background:"var(--ybg)", color:"var(--ydark)",
+                border:"2px solid var(--yellow)", borderRadius:14, padding:16,
+                fontWeight:700, fontSize:15, cursor:"pointer", fontFamily:"inherit" }}>
+              ⏸ Pause
+            </button>
+            <button onClick={ausstempeln} disabled={gpsLaden}
+              style={{ flex:1, background:"var(--red)", color:"#fff",
+                border:"none", borderRadius:14, padding:16, fontWeight:900,
+                fontSize:15, cursor:"pointer", fontFamily:"inherit" }}>
+              {gpsLaden ? "📍…" : "⏹ Ausstempeln"}
+            </button>
+          </>
+        )}
+        {status === "pause" && (
+          <button onClick={pauseEnde}
+            style={{ flex:1, background:"var(--yellow)", color:"#1a1200",
+              border:"none", borderRadius:14, padding:18, fontWeight:900,
+              fontSize:18, cursor:"pointer", fontFamily:"inherit" }}>
+            ▶ Weiterarbeiten
+          </button>
+        )}
+      </div>
+
+      {/* Heutige Buchungen */}
+      {buchungen.filter(b=>b.status==="abgeschlossen").length > 0 && (
+        <div>
+          <div style={{ color:"var(--text)", fontWeight:700, fontSize:14, marginBottom:10 }}>
+            Heute abgeschlossen
+          </div>
+          {buchungen.filter(b=>b.status==="abgeschlossen").map(b => (
+            <div key={b.id} style={{ background:"var(--surface)", borderRadius:12,
+              padding:"12px 14px", marginBottom:8, border:"1.5px solid var(--border)" }}>
+              <div style={{ display:"flex", justifyContent:"space-between" }}>
+                <div>
+                  <div style={{ fontSize:12, color:"var(--text2)" }}>
+                    {new Date(b.eingestempelt_at).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}
+                    {" → "}
+                    {b.ausgestempelt_at ? new Date(b.ausgestempelt_at).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}) : "—"}
+                  </div>
+                  {b.ein_adresse && <div style={{ fontSize:10, color:"var(--muted)", marginTop:2 }}>📍 {b.ein_adresse}</div>}
+                </div>
+                <div style={{ fontWeight:800, color:"var(--text)", fontSize:14 }}>
+                  {b.netto_minuten ? `${Math.floor(b.netto_minuten/60)}h ${b.netto_minuten%60}min` : "—"}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <style>{`
+        @keyframes pulse {
+          0%,100%{opacity:1;transform:scale(1)}
+          50%{opacity:0.6;transform:scale(1.3)}
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ─── Nutzerverwaltung (nur Administrator) ─────────────────────────────────
+function NutzerVerwaltungView({ session }) {
+  const [nutzer,    setNutzer]    = useState([]);
+  const [laden,     setLaden]     = useState(true);
+  const [neuForm,   setNeuForm]   = useState(false);
+  const [form,      setForm]      = useState({ email:"", vorname:"", nachname:"", rolle:"facharbeiter", telefon:"" });
+
+  useEffect(() => { ladeNutzer(); }, []);
+
+  async function ladeNutzer() {
+    setLaden(true);
+    const data = await sbFetch("profile?select=*&order=created_at.desc", {
+      headers: { "Authorization": `Bearer ${session?.access_token}` }
+    });
+    if (data) setNutzer(data);
+    setLaden(false);
+  }
+
+  async function nutzerAnlegen() {
+    // Supabase Admin API für User-Erstellung (benötigt Service Role in Produktion)
+    // Hier vereinfacht: Profil anlegen, Auth-Registrierung separat
+    alert("Nutzer-Erstellung benötigt den Supabase Service Role Key.
+Bitte in der Supabase Dashboard → Auth → Users → Invite user anlegen.");
+  }
+
+  async function rolleAendern(id, neueRolle) {
+    await sbFetch(`profile?id=eq.${id}`, {
+      method: "PATCH",
+      headers: { "Authorization": `Bearer ${session?.access_token}` },
+      body: JSON.stringify({ rolle: neueRolle }),
+    });
+    setNutzer(prev => prev.map(n => n.id === id ? { ...n, rolle: neueRolle } : n));
+  }
+
+  return (
+    <div>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
+        <div style={{ color:"var(--text)", fontWeight:700, fontSize:15 }}>Nutzerverwaltung</div>
+        <button onClick={() => window.open(`${SUPABASE_URL.replace("supabase.co", "supabase.com")}/auth/users`, "_blank")}
+          style={{ background:"var(--yellow)", color:"#1a1200", border:"none",
+            borderRadius:10, padding:"8px 14px", fontWeight:700, cursor:"pointer", fontSize:12 }}>
+          + Supabase Dashboard
+        </button>
+      </div>
+
+      {laden ? (
+        <div style={{ textAlign:"center", color:"var(--muted)", padding:32 }}>⏳ Laden…</div>
+      ) : nutzer.map(n => (
+        <div key={n.id} style={{ background:"var(--surface)", borderRadius:12,
+          padding:"14px 16px", marginBottom:10, border:"1.5px solid var(--border)" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+            <div>
+              <div style={{ color:"var(--text)", fontWeight:700, fontSize:14 }}>
+                {n.vorname} {n.nachname}
+              </div>
+              {n.telefon && <div style={{ color:"var(--muted)", fontSize:12 }}>📞 {n.telefon}</div>}
+            </div>
+            <div style={{ display:"flex", gap:6, alignItems:"center" }}>
+              <div style={{ width:8, height:8, borderRadius:4,
+                background: n.aktiv ? "var(--green)" : "var(--muted)" }} />
+              <select value={n.rolle || "facharbeiter"}
+                onChange={e => rolleAendern(n.id, e.target.value)}
+                style={{ background:"var(--surface2)", color:"var(--text)",
+                  border:"1px solid var(--border)", borderRadius:8,
+                  padding:"4px 8px", fontSize:12, cursor:"pointer" }}>
+                {Object.entries(ROLLEN).map(([k,r]) => (
+                  <option key={k} value={k}>{r.icon} {r.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ════════════════════════════════════════════════════════════════════════════
 // AKTENREGISTER – Projekt-Schnellwechsel
 // ════════════════════════════════════════════════════════════════════════════
@@ -5148,7 +5817,8 @@ function MenuItem({ icon, label, onClick, muted, small }) {
 // ROOT APP
 // ════════════════════════════════════════════════════════════════════════════
 export default function PolierApp() {
-  const theme = useTheme();
+  const theme   = useTheme();
+  const auth    = useAuth();
   const [projekte,      setProjekte]    = useState(MOCK_PROJEKTE);
   const [aktivId,       setAktivId]     = useState(null);
   const [tab,           setTab]         = useState("dashboard");
@@ -5166,6 +5836,62 @@ export default function PolierApp() {
   const [onboardingDone, setOnboardingDone] = useState(
     () => !!localStorage.getItem(ONBOARDING_KEY)
   );
+
+  // ── Demo-Rolle (ohne Supabase) ──
+  const demoRolle = localStorage.getItem("polaris-demo-rolle");
+  const aktiveProfil = auth.profil || (demoRolle ? {
+    id: "demo", vorname: "Demo",
+    nachname: ROLLEN[demoRolle]?.label || demoRolle,
+    rolle: demoRolle, kolonne_id: demoRolle === "vorarbeiter" ? 1 : null,
+  } : null);
+  const aktiveRolle  = aktiveProfil?.rolle || null;
+  const rolleConfig  = aktiveRolle ? ROLLEN[aktiveRolle] : null;
+
+  // ── Login Screen ──
+  if (!aktiveProfil) {
+    return <LoginScreen auth={auth} onDemoLogin={rolle => {
+      localStorage.setItem("polaris-demo-rolle", rolle);
+      window.location.reload();
+    }} />;
+  }
+
+  function abmelden() {
+    localStorage.removeItem("polaris-demo-rolle");
+    auth.abmelden?.();
+    window.location.reload();
+  }
+
+  // ── Facharbeiter → nur Stempeluhr ──
+  if (aktiveRolle === "facharbeiter") {
+    return (
+      <div style={{ background:"var(--bg)", minHeight:"100vh",
+        fontFamily:"'Segoe UI', system-ui, sans-serif", color:"var(--text)" }}>
+        <div style={{ background:"var(--surface)", padding:"14px 18px",
+          borderBottom:"3px solid var(--yellow)", display:"flex",
+          justifyContent:"space-between", alignItems:"center",
+          boxShadow:"0 2px 8px rgba(0,0,0,0.08)" }}>
+          <div>
+            <div style={{ fontWeight:900, fontSize:18, letterSpacing:-1 }}>
+              <span style={{ color:"var(--yellow)" }}>★</span> POLARIS
+            </div>
+            <RollenBadge rolle={aktiveRolle} />
+          </div>
+          <div style={{ display:"flex", gap:8 }}>
+            <ThemeToggle dark={theme.dark} toggle={theme.toggle} />
+            <button onClick={abmelden}
+              style={{ background:"var(--surface2)", color:"var(--muted)",
+                border:"1px solid var(--border)", borderRadius:8,
+                padding:"6px 12px", cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>
+              Abmelden
+            </button>
+          </div>
+        </div>
+        <div style={{ padding:"20px 16px" }}>
+          <StempeluhrView profil={aktiveProfil} projekte={projekte} session={auth.session} />
+        </div>
+      </div>
+    );
+  }
 
   function handleOnboardingComplete(firma, ersterPolier) {
     // Firma-Daten übernehmen
@@ -5341,17 +6067,21 @@ export default function PolierApp() {
   }
 
   // ── Baustellen-Ansicht ──
-  const TABS = [
-    { id:"dashboard", icon:"📊",  label:"Übersicht" },
-    { id:"felder",    icon:"🏗️", label:"Felder"    },
-    { id:"gantt",     icon:"📅",  label:"Zeitplan"  },
-    { id:"editor",    icon:"✏️",  label:"Editor"    },
-    { id:"scanner",   icon:"📷",  label:"Scanner"   },
-    { id:"wetter",    icon:"🌤️", label:"Wetter"    },
-    { id:"kolonnen",  icon:"👷",  label:"Kolonnen"  },
-    { id:"tagebuch",  icon:"📋",  label:"Tagebuch"  },
-    { id:"zeiten",    icon:"⏱️",  label:"Zeiten"    },
+  // Rollenbasierte Tabs
+  const ALLE_TABS = [
+    { id:"dashboard",  icon:"📊",  label:"Übersicht", rollen:["administrator","bauleiter","polier","vorarbeiter"] },
+    { id:"felder",     icon:"🏗️", label:"Felder",    rollen:["administrator","bauleiter","polier","vorarbeiter"] },
+    { id:"gantt",      icon:"📅",  label:"Zeitplan",  rollen:["administrator","bauleiter","polier"] },
+    { id:"editor",     icon:"✏️",  label:"Editor",    rollen:["administrator","polier"] },
+    { id:"scanner",    icon:"📷",  label:"Scanner",   rollen:["administrator","polier"] },
+    { id:"wetter",     icon:"🌤️", label:"Wetter",    rollen:["administrator","bauleiter","polier","vorarbeiter"] },
+    { id:"kolonnen",   icon:"👷",  label:"Kolonnen",  rollen:["administrator","bauleiter","polier","vorarbeiter"] },
+    { id:"tagebuch",   icon:"📋",  label:"Tagebuch",  rollen:["administrator","polier","vorarbeiter"] },
+    { id:"zeiten",     icon:"⏱️",  label:"Zeiten",    rollen:["administrator","bauleiter","polier"] },
+    { id:"stempeln",   icon:"⏱️",  label:"Stempeln",  rollen:["administrator","polier","vorarbeiter"] },
+    { id:"nutzer",     icon:"👥",  label:"Nutzer",    rollen:["administrator"] },
   ];
+  const TABS = ALLE_TABS.filter(t => !aktiveRolle || t.rollen.includes(aktiveRolle));
 
   return (
     <div style={{ background:"var(--bg)", minHeight:"100vh",
@@ -5376,13 +6106,15 @@ export default function PolierApp() {
           <div style={{ display:"flex", gap:8, alignItems:"center" }}>
             <div style={{ width:8, height:8, borderRadius:4,
               background: sbConnected ? "var(--green)" : "var(--muted)" }} />
+            <RollenBadge rolle={aktiveRolle} />
             <ThemeToggle dark={theme.dark} toggle={theme.toggle} />
-            <button onClick={() => setEditProjekt(true)}
+            <button onClick={abmelden}
               style={{ width:36, height:36, borderRadius:10,
                 background:"var(--surface2)", border:"1.5px solid var(--border2)",
-                cursor:"pointer", fontSize:16, display:"flex",
-                alignItems:"center", justifyContent:"center" }}>
-              ⋯
+                cursor:"pointer", fontSize:14, display:"flex",
+                alignItems:"center", justifyContent:"center" }}
+              title="Abmelden">
+              🚪
             </button>
           </div>
         </div>
@@ -5414,6 +6146,8 @@ export default function PolierApp() {
             offlineSpeichern={offline.speichereOffline}
           />}
         {tab === "zeiten"    && <ZeiterfassungView projekt={projekt} />}
+        {tab === "stempeln"  && <StempeluhrView profil={aktiveProfil} projekte={projekte} session={auth.session} />}
+        {tab === "nutzer"    && <NutzerVerwaltungView session={auth.session} />}
       </div>
 
       {/* ── BOTTOM NAV ── */}
