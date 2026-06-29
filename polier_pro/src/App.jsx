@@ -506,7 +506,7 @@ function GanttView({ felder }) {
 // ════════════════════════════════════════════════════════════════════════════
 function SupabaseStatus({ connected }) {
   return (
-    <div style={{ background: connected ? "var(--green)"Light : "var(--surface2)", borderRadius:10, padding:"10px 14px",
+    <div style={{ background: connected ? "var(--gbg)" : "var(--surface2)", borderRadius:10, padding:"10px 14px",
       border:`1.5px solid ${connected ? "var(--green)" : "var(--border)"}`, marginBottom:14,
       display:"flex", justifyContent:"space-between", alignItems:"center" }}>
       <div>
@@ -2149,7 +2149,7 @@ function usePushNotifications(projekte, eigeneFirma) {
 function PushBanner({ erlaubt, berechtigung }) {
   if (erlaubt) return null;
   return (
-    <div style={{ background: "var(--blue)"Light, borderRadius:12, padding:"12px 16px", marginBottom:12,
+    <div style={{ background: "var(--bbg)", borderRadius:12, padding:"12px 16px", marginBottom:12,
       border:`1.5px solid ${'var(--blue)'}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
       <div>
         <div style={{ color: "var(--text)", fontSize:13, fontWeight:700 }}>🔔 Benachrichtigungen aktivieren</div>
@@ -2253,7 +2253,7 @@ function useOfflineSync(online, sbConnected) {
 function OfflineSyncBanner({ pending, syncing, online }) {
   if (online && pending === 0 && !syncing) return null;
   return (
-    <div style={{ background: syncing ? "var(--green)"Light : pending > 0 ? "#FFF3CC" : "var(--surface2)",
+    <div style={{ background: syncing ? "var(--gbg)" : pending > 0 ? "#FFF3CC" : "var(--surface2)",
       borderRadius:10, padding:"8px 14px", marginBottom:10,
       border:`1px solid ${syncing ? "var(--green)" : pending > 0 ? "var(--yellow)" : "var(--surface2)"}`,
       display:"flex", alignItems:"center", gap:10 }}>
