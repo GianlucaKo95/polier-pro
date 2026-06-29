@@ -4308,17 +4308,6 @@ function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboardingRese
   );
 }
 
-// ─── Sub-Zuweisung pro Projekt ────────────────────────────────────────────────
-  const sub = subs.find(s => s.id === subId);
-  if (!sub) return null;
-  return (
-    <div style={{ display:"inline-flex", alignItems:"center", gap:5,
-      background: "var(--border)", borderRadius:8, padding:"3px 8px", fontSize:11 }}>
-      <span>🏢</span>
-      <span style={{ color: "var(--blue)" }}>{sub.name}</span>
-    </div>
-  );
-}
 
 
 // ════════════════════════════════════════════════════════════════════════════
