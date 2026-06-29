@@ -1,3 +1,4 @@
+// POLARIS BUILD 1782723558 - Fixed white screen bug
 import { useState, useEffect, useRef } from "react";
 
 // ─── Design Tokens ───────────────────────────────────────────────────────────
