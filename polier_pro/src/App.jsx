@@ -2082,10 +2082,8 @@ async function pushAbonnieren() {
       userVisibleOnly: true,
       applicationServerKey: PUSH_VAPID_PUBLIC,
     });
-    console.log("[Push] Abonniert:", sub.endpoint);
     return sub;
   } catch(e) {
-    console.warn("[Push] Fehler:", e);
     return null;
   }
 }
@@ -2212,7 +2210,6 @@ async function idbDrainQueue() {
       store.delete(keys[i]);
       synced++;
     } catch(e) {
-      console.warn("[Offline Sync] Fehler:", e);
     }
   }
   return synced;
@@ -4312,7 +4309,6 @@ function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboardingRese
 }
 
 // ─── Sub-Zuweisung pro Projekt ────────────────────────────────────────────────
-function SubZuweisungBadge({ subId, subs }) {
   const sub = subs.find(s => s.id === subId);
   if (!sub) return null;
   return (
@@ -6901,7 +6897,6 @@ function MaengelView({ aufgaben, setAufgaben, kolonnen }) {
 }
 
 // ─── Kommunikation-View ───────────────────────────────────────────────────────
-function KommunikationView({ aufgaben, setAufgaben, aktiveProfil }) {
   const [ausgewählt, setAusgewählt] = useState(null);
   const [neuerText,  setNeuerText]  = useState("");
 
@@ -9353,9 +9348,7 @@ export default function PolierApp() {
       <PlanGuard firma={firma} ressource="app">
       <div style={{ padding:"16px 14px 100px", background:"var(--bg)", minHeight:"100vh" }}>
         {tab === "dashboard" && <DashboardView felder={felder} kolonnen={kolonnen} sbConnected={sbConnected} />}
-        {tab === "felder"    && <BetonfelderView felder={felder} setFelder={setFelder} sbConnected={sbConnected} projektTyp={projekt.typ} projSubs={subs.filter(s=>(projekt.subIds||[]).includes(s.id))} projekt={projekt} eigeneFirma={eigeneFirma} wetter={null} />}
         {tab === "gantt"     && <GanttView felder={felder} />}
-        {tab === "editor"    && <EditorView felder={felder} setFelder={setFelder} projektTyp={projekt.typ} />}
         {tab === "scanner"   && <ScannerView onFelderImport={handleFelderImport} projektTyp={projekt.typ} />}
         {tab === "wetter"    && <WeatherView />}
         {tab === "kolonnen"  && <KolonnenView kolonnen={kolonnen} projekt={projekt} />}
@@ -9370,7 +9363,9 @@ export default function PolierApp() {
         {tab === "kosten"        && <KostenView projekt={projekt} aufgaben={aufgaben} kolonnen={kolonnen} zeitbuchungen={zeitbuchungen} />}
         {tab === "zeiten"        && <ZeiterfassungView projekt={projekt} />}
         {tab === "stempeln"      && <StempeluhrView profil={aktiveProfil} projekte={projekte} session={auth.session} />}
-        {tab === "nutzer"        && <NutzerVerwaltungView session={auth.session} />}
+        {tab === "angebot"       && <AngebotView projekt={projekt} aufgaben={aufgaben} einheitspreise={einheitspreise} lvVorlagen={lvVorlagen} eigeneFirma={eigeneFirma} />}
+        {tab === "admin_params" && <AdminParameterView einheitspreise={einheitspreise} setEinheitspreise={setEinheitspreise} lvVorlagen={lvVorlagen} setLvVorlagen={setLvVorlagen} />}
+        {tab === "nutzer"       && <NutzerVerwaltungView session={auth.session} />}
       </div>
       </PlanGuard>
 
