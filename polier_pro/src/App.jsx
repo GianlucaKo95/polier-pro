@@ -6891,12 +6891,6 @@ function MaengelView({ aufgaben, setAufgaben, kolonnen }) {
 }
 
 // ─── Kommunikation-View ───────────────────────────────────────────────────────
-  const [ausgewählt, setAusgewählt] = useState(null);
-  const [neuerText,  setNeuerText]  = useState("");
-
-  // Alle Kommentare aus allen Aufgaben zusammenführen
-
-// ─── Kosten-View ──────────────────────────────────────────────────────────────
 function KostenView({ projekt, aufgaben, kolonnen, zeitbuchungen }) {
   const [budgetPos, setBudgetPos] = useState(projekt?.budget_positionen || [
     { id:1, bezeichnung:"Betonarbeiten",    budget:0, einheit:"m²" },
