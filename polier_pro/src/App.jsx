@@ -245,26 +245,26 @@ function WeatherView({ compact = false }) {
   const ok = warn.length === 0;
 
   if (loading) return (
-    <div style={{ background: C.bgMid, borderRadius: 12, padding: 20, textAlign:"center", color: C.muted }}>
+    <div style={{ background: "var(--surface)", borderRadius: 12, padding: 20, textAlign:"center", color: "var(--muted)" }}>
       ⏳ Wetterdaten werden geladen…
     </div>
   );
 
   if (!weather) return (
-    <div style={{ background: C.bgMid, borderRadius: 12, padding: 20, textAlign:"center", color: C.rot }}>
+    <div style={{ background: "var(--surface)", borderRadius: 12, padding: 20, textAlign:"center", color: "var(--red)" }}>
       ❌ Wetterdaten nicht verfügbar
     </div>
   );
 
   if (compact) return (
-    <div style={{ background: C.bgMid, borderRadius: 12, padding: "14px 16px", border: `1px solid ${ok ? C.gruen : C.rost}`, marginBottom: 14 }}>
+    <div style={{ background: "var(--surface)", borderRadius: 12, padding: "14px 16px", border: `1px solid ${ok ? "var(--green)" : "var(--orange)"}`, marginBottom: 14 }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
         <div>
-          <div style={{ color: C.muted, fontSize: 11, textTransform:"uppercase", letterSpacing:1 }}>{loc.name}</div>
-          <div style={{ color: C.text, fontSize: 26, fontWeight: 700 }}>{weather.icon} {weather.temp}°C</div>
-          <div style={{ color: C.muted, fontSize: 12 }}>💨 {weather.wind} km/h · 💧 {weather.humidity}% · 🌧️ {weather.rain}mm</div>
+          <div style={{ color: "var(--muted)", fontSize: 11, textTransform:"uppercase", letterSpacing:1 }}>{loc.name}</div>
+          <div style={{ color: "var(--text)", fontSize: 26, fontWeight: 700 }}>{weather.icon} {weather.temp}°C</div>
+          <div style={{ color: "var(--muted)", fontSize: 12 }}>💨 {weather.wind} km/h · 💧 {weather.humidity}% · 🌧️ {weather.rain}mm</div>
         </div>
-        <div style={{ background: ok ? C.gruen : C.rost, color:"#fff", borderRadius:8, padding:"8px 14px", fontWeight:700, fontSize:13, textAlign:"center" }}>
+        <div style={{ background: ok ? "var(--green)" : "var(--orange)", color:"#fff", borderRadius:8, padding:"8px 14px", fontWeight:700, fontSize:13, textAlign:"center" }}>
           {ok ? "✅ Betonage\nmöglich" : "⚠️ Prüfen"}
         </div>
       </div>
@@ -275,12 +275,12 @@ function WeatherView({ compact = false }) {
       )}
       <div style={{ display:"flex", gap:6, marginTop:10, overflowX:"auto" }}>
         {weather.forecast.map((f,i) => (
-          <div key={i} style={{ minWidth:52, background: C.bgLight, borderRadius:12, padding:"8px 4px", textAlign:"center",
+          <div key={i} style={{ minWidth:52, background: "var(--surface2)", borderRadius:12, padding:"8px 4px", textAlign:"center",
             border: betonCheck({temp:f.max,wind:0,rain:f.rain,humidity:70}).length > 0
-              ? `2px solid ${C.rot}` : `1px solid ${C.bgFaint}` }}>
-            <div style={{ color: C.muted, fontSize:10 }}>{f.day}</div>
+              ? `2px solid ${'var(--red)'}` : `1px solid ${'var(--border)'}` }}>
+            <div style={{ color: "var(--muted)", fontSize:10 }}>{f.day}</div>
             <div style={{ fontSize:16 }}>{f.icon}</div>
-            <div style={{ color: C.text, fontSize:11, fontWeight:600 }}>{f.max}°</div>
+            <div style={{ color: "var(--text)", fontSize:11, fontWeight:600 }}>{f.max}°</div>
             {f.rain > 0 && <div style={{ color:"#6CA8FF", fontSize:10 }}>{f.rain}mm</div>}
           </div>
         ))}
@@ -291,18 +291,18 @@ function WeatherView({ compact = false }) {
   // Full weather view
   return (
     <div>
-      <div style={{ background: C.bgMid, borderRadius:12, padding:18, border:`1px solid ${ok ? C.gruen : C.rost}`, marginBottom:14 }}>
-        <div style={{ color: C.muted, fontSize:11, textTransform:"uppercase", letterSpacing:1, marginBottom:4 }}>📍 {loc.name} · Live-Wetter</div>
+      <div style={{ background: "var(--surface)", borderRadius:12, padding:18, border:`1px solid ${ok ? "var(--green)" : "var(--orange)"}`, marginBottom:14 }}>
+        <div style={{ color: "var(--muted)", fontSize:11, textTransform:"uppercase", letterSpacing:1, marginBottom:4 }}>📍 {loc.name} · Live-Wetter</div>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div>
-            <div style={{ color: C.text, fontSize:42, fontWeight:800 }}>{weather.icon} {weather.temp}°C</div>
-            <div style={{ color: C.muted, fontSize:13, marginTop:4 }}>
+            <div style={{ color: "var(--text)", fontSize:42, fontWeight:800 }}>{weather.icon} {weather.temp}°C</div>
+            <div style={{ color: "var(--muted)", fontSize:13, marginTop:4 }}>
               💨 {weather.wind} km/h Wind &nbsp;|&nbsp; 💧 {weather.humidity}% Feuchte &nbsp;|&nbsp; 🌧️ {weather.rain} mm
             </div>
           </div>
         </div>
         <div style={{ background: ok ? "#1A3A28" : "#3A1A1A", borderRadius:10, padding:14, marginTop:14 }}>
-          <div style={{ color: ok ? C.gruen : C.rot, fontWeight:700, fontSize:15, marginBottom: warn.length ? 8 : 0 }}>
+          <div style={{ color: ok ? "var(--green)" : "var(--red)", fontWeight:700, fontSize:15, marginBottom: warn.length ? 8 : 0 }}>
             {ok ? "✅ Betonage heute möglich" : "🚫 Betonage eingeschränkt"}
           </div>
           {warn.map((w,i) => <div key={i} style={{ color:"#FF9999", fontSize:13, marginTop:4 }}>{w}</div>)}
@@ -310,21 +310,21 @@ function WeatherView({ compact = false }) {
       </div>
 
       {/* Checkliste */}
-      <div style={{ background: C.bgMid, borderRadius:12, padding:16, marginBottom:14 }}>
-        <div style={{ color: C.gelb, fontWeight:700, marginBottom:12 }}>🧱 Betonier-Checkliste</div>
+      <div style={{ background: "var(--surface)", borderRadius:12, padding:16, marginBottom:14 }}>
+        <div style={{ color: "var(--yellow)", fontWeight:700, marginBottom:12 }}>🧱 Betonier-Checkliste</div>
         {[
           ["Temperatur",    `${weather.temp}°C`,        weather.temp >= 5 && weather.temp <= 30, "5°C – 30°C"],
           ["Wind",          `${weather.wind} km/h`,     weather.wind <= 40,                      "max. 40 km/h"],
           ["Niederschlag",  `${weather.rain} mm`,       weather.rain <= 5,                       "max. 5 mm"],
           ["Luftfeuchte",   `${weather.humidity}%`,     weather.humidity <= 90,                  "max. 90%"],
         ].map(([k,v,ok,limit]) => (
-          <div key={k} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 0", borderBottom:`1px solid ${C.bgFaint}` }}>
+          <div key={k} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 0", borderBottom:`1px solid ${'var(--border)'}` }}>
             <div>
-              <div style={{ color: C.betonLight, fontSize:14 }}>{k}</div>
-              <div style={{ color: C.muted, fontSize:11 }}>Grenzwert: {limit}</div>
+              <div style={{ color: "var(--text2)", fontSize:14 }}>{k}</div>
+              <div style={{ color: "var(--muted)", fontSize:11 }}>Grenzwert: {limit}</div>
             </div>
             <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-              <span style={{ color: C.text, fontWeight:700 }}>{v}</span>
+              <span style={{ color: "var(--text)", fontWeight:700 }}>{v}</span>
               <span style={{ fontSize:18 }}>{ok ? "✅" : "🚫"}</span>
             </div>
           </div>
@@ -332,8 +332,8 @@ function WeatherView({ compact = false }) {
       </div>
 
       {/* 7-Tage */}
-      <div style={{ background: C.bgMid, borderRadius:12, padding:16 }}>
-        <div style={{ color: C.gelb, fontWeight:700, marginBottom:12 }}>📅 7-Tage Betonierplan</div>
+      <div style={{ background: "var(--surface)", borderRadius:12, padding:16 }}>
+        <div style={{ color: "var(--yellow)", fontWeight:700, marginBottom:12 }}>📅 7-Tage Betonierplan</div>
         {weather.forecast.map((f,i) => {
           const dayWarn = betonCheck({ temp:f.max, wind:30, rain:f.rain, humidity:70 });
           const dayOk = dayWarn.length === 0;
@@ -341,15 +341,15 @@ function WeatherView({ compact = false }) {
             <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
               padding:"10px 12px", borderRadius:8, marginBottom:6,
               background: dayOk ? "#1A2E1E" : "#2E1A1A",
-              border: `1px solid ${dayOk ? C.gruen : C.rot}` }}>
+              border: `1px solid ${dayOk ? "var(--green)" : "var(--red)"}` }}>
               <div style={{ display:"flex", alignItems:"center", gap:10 }}>
                 <span style={{ fontSize:20 }}>{f.icon}</span>
                 <div>
-                  <div style={{ color: C.text, fontWeight:600, fontSize:13 }}>{f.day} · {new Date(f.date).getDate()}.{(new Date(f.date).getMonth()+1).toString().padStart(2,"0")}.</div>
-                  <div style={{ color: C.muted, fontSize:11 }}>{f.min}° – {f.max}° · {f.rain > 0 ? `🌧️ ${f.rain}mm` : "kein Regen"}</div>
+                  <div style={{ color: "var(--text)", fontWeight:600, fontSize:13 }}>{f.day} · {new Date(f.date).getDate()}.{(new Date(f.date).getMonth()+1).toString().padStart(2,"0")}.</div>
+                  <div style={{ color: "var(--muted)", fontSize:11 }}>{f.min}° – {f.max}° · {f.rain > 0 ? `🌧️ ${f.rain}mm` : "kein Regen"}</div>
                 </div>
               </div>
-              <div style={{ color: dayOk ? C.gruen : C.rot, fontWeight:700, fontSize:12 }}>
+              <div style={{ color: dayOk ? "var(--green)" : "var(--red)", fontWeight:700, fontSize:12 }}>
                 {dayOk ? "✅ OK" : "🚫 Nein"}
               </div>
             </div>
@@ -391,26 +391,26 @@ function GanttView({ felder }) {
 
   return (
     <div>
-      <div style={{ color: C.text, fontWeight:700, marginBottom:12 }}>📅 Betonfeld-Terminplan</div>
+      <div style={{ color: "var(--text)", fontWeight:700, marginBottom:12 }}>📅 Betonfeld-Terminplan</div>
 
       {/* Legend */}
       <div style={{ display:"flex", gap:12, marginBottom:12, flexWrap:"wrap" }}>
         {Object.entries(STATUS_LABEL).map(([k,v]) => (
           <div key={k} style={{ display:"flex", alignItems:"center", gap:5, fontSize:11 }}>
             <div style={{ width:10, height:10, borderRadius:2, background: STATUS_COLOR[k] }} />
-            <span style={{ color: C.muted }}>{v.split(" ")[1]}</span>
+            <span style={{ color: "var(--muted)" }}>{v.split(" ")[1]}</span>
           </div>
         ))}
       </div>
 
       {/* Scrollable Gantt */}
-      <div style={{ background:"#FFFFFF", borderRadius:16, overflow:"hidden", boxShadow:"0 2px 12px rgba(0,0,0,0.06)", border:`1px solid ${C.bgFaint}` }}>
+      <div style={{ background:"var(--surface)", borderRadius:16, overflow:"hidden", boxShadow:"0 2px 12px rgba(0,0,0,0.06)", border:`1px solid ${'var(--border)'}` }}>
         <div ref={scrollRef} style={{ overflowX:"auto" }}>
           <div style={{ minWidth: (totalDays + 1) * DAY_W + 130 }}>
 
             {/* Header row */}
-            <div style={{ display:"flex", borderBottom:`2px solid ${C.bgFaint}`, background: C.bgLight }}>
-              <div style={{ width:130, minWidth:130, padding:"8px 10px", color: C.muted, fontSize:11, borderRight:`1px solid ${C.bgFaint}` }}>Feld</div>
+            <div style={{ display:"flex", borderBottom:`2px solid ${'var(--border)'}`, background: "var(--surface2)" }}>
+              <div style={{ width:130, minWidth:130, padding:"8px 10px", color: "var(--muted)", fontSize:11, borderRight:`1px solid ${'var(--border)'}` }}>Feld</div>
               {days.map((d,i) => {
                 const isToday = d.toDateString() === heute.toDateString();
                 const isMon = d.getDay() === 1;
@@ -418,11 +418,11 @@ function GanttView({ felder }) {
                 return (
                   <div key={i} style={{
                     width: DAY_W, minWidth: DAY_W, textAlign:"center", padding:"4px 0",
-                    background: isToday ? C.gelb+"33" : isSun ? C.bgLight : "transparent",
-                    borderRight: isMon ? `1px solid ${C.bgFaint}` : "none",
+                    background: isToday ? "var(--yellow)"+"33" : isSun ? "var(--surface2)" : "transparent",
+                    borderRight: isMon ? `1px solid ${'var(--border)'}` : "none",
                   }}>
                     {(isMon || isToday) && (
-                      <div style={{ color: isToday ? C.gelb : C.muted, fontSize:9, fontWeight: isToday ? 700 : 400 }}>
+                      <div style={{ color: isToday ? "var(--yellow)" : "var(--muted)", fontSize:9, fontWeight: isToday ? 700 : 400 }}>
                         {isToday ? "●" : `${d.getDate()}.${(d.getMonth()+1).toString().padStart(2,"0")}`}
                       </div>
                     )}
@@ -437,14 +437,14 @@ function GanttView({ felder }) {
               const dur = f.dauer_tage || 1;
               const isLate = f.status !== "done" && new Date(f.geplant) < heute;
               return (
-                <div key={f.id} style={{ display:"flex", alignItems:"center", borderBottom:`1px solid ${C.bgFaint}`, minHeight:40 }}>
-                  <div style={{ width:130, minWidth:130, padding:"6px 10px", borderRight:`1px solid ${C.bgFaint}` }}>
-                    <div style={{ color: C.text, fontSize:11, fontWeight:600, lineHeight:1.2 }}>{f.name.split("–")[0].trim()}</div>
-                    <div style={{ color: C.muted, fontSize:10 }}>{f.m2}m²</div>
+                <div key={f.id} style={{ display:"flex", alignItems:"center", borderBottom:`1px solid ${'var(--border)'}`, minHeight:40 }}>
+                  <div style={{ width:130, minWidth:130, padding:"6px 10px", borderRight:`1px solid ${'var(--border)'}` }}>
+                    <div style={{ color: "var(--text)", fontSize:11, fontWeight:600, lineHeight:1.2 }}>{f.name.split("–")[0].trim()}</div>
+                    <div style={{ color: "var(--muted)", fontSize:10 }}>{f.m2}m²</div>
                   </div>
                   <div style={{ flex:1, position:"relative", height:40 }}>
                     {/* Today line */}
-                    <div style={{ position:"absolute", left: todayOffset * DAY_W, top:0, bottom:0, width:2, background: C.gelb, opacity:0.7, zIndex:10 }} />
+                    <div style={{ position:"absolute", left: todayOffset * DAY_W, top:0, bottom:0, width:2, background: "var(--yellow)", opacity:0.7, zIndex:10 }} />
 
                     {/* Bar */}
                     <div style={{
@@ -457,7 +457,7 @@ function GanttView({ felder }) {
                       opacity: 0.9,
                       display:"flex", alignItems:"center", paddingLeft:6,
                       overflow:"hidden",
-                      boxShadow: isLate ? `0 0 0 2px ${C.rot}` : "none",
+                      boxShadow: isLate ? `0 0 0 2px ${'var(--red)'}` : "none",
                     }}>
                       <span style={{ color:"#fff", fontSize:10, fontWeight:700, whiteSpace:"nowrap" }}>
                         {f.status === "in_progress" ? "▶ " : ""}{f.name.split("–")[1]?.trim() || f.name}
@@ -472,10 +472,10 @@ function GanttView({ felder }) {
                         left: (startOff + dur) * DAY_W + 4,
                         top:14, height:12,
                         width: 32,
-                        background: f.festigkeit >= 95 ? C.gruen+"44" : C.gelb+"44",
+                        background: f.festigkeit >= 95 ? "var(--green)"+"44" : "var(--yellow)"+"44",
                         borderRadius:3, display:"flex", alignItems:"center", justifyContent:"center"
                       }}>
-                        <span style={{ fontSize:9, color: C.text }}>{f.festigkeit}%</span>
+                        <span style={{ fontSize:9, color: "var(--text)" }}>{f.festigkeit}%</span>
                       </div>
                     )}
                   </div>
@@ -489,7 +489,7 @@ function GanttView({ felder }) {
       {/* Verzögerungen */}
       {felder.filter(f => f.status !== "done" && new Date(f.geplant) < heute).length > 0 && (
         <div style={{ background:"#2E1A1A", borderRadius:10, padding:14, marginTop:12 }}>
-          <div style={{ color: C.rot, fontWeight:700, marginBottom:8 }}>⚠️ Verzögerungen</div>
+          <div style={{ color: "var(--red)", fontWeight:700, marginBottom:8 }}>⚠️ Verzögerungen</div>
           {felder.filter(f => f.status !== "done" && new Date(f.geplant) < heute).map(f => (
             <div key={f.id} style={{ color:"#FF9999", fontSize:13, marginBottom:4 }}>
               {f.name} – {daysBetween(f.geplant, heute.toISOString().slice(0,10))} Tage Verzug
@@ -506,19 +506,19 @@ function GanttView({ felder }) {
 // ════════════════════════════════════════════════════════════════════════════
 function SupabaseStatus({ connected }) {
   return (
-    <div style={{ background: connected ? C.gruenLight : C.bgLight, borderRadius:10, padding:"10px 14px",
-      border:`1.5px solid ${connected ? C.gruen : C.bgFaint}`, marginBottom:14,
+    <div style={{ background: connected ? "var(--green)"Light : "var(--surface2)", borderRadius:10, padding:"10px 14px",
+      border:`1.5px solid ${connected ? "var(--green)" : "var(--border)"}`, marginBottom:14,
       display:"flex", justifyContent:"space-between", alignItems:"center" }}>
       <div>
-        <div style={{ color: connected ? C.gruen : C.muted, fontWeight:700, fontSize:12 }}>
+        <div style={{ color: connected ? "var(--green)" : "var(--muted)", fontWeight:700, fontSize:12 }}>
           {connected ? "🟢 Supabase verbunden" : "⚫ Supabase nicht konfiguriert"}
         </div>
-        <div style={{ color: C.muted, fontSize:10 }}>
+        <div style={{ color: "var(--muted)", fontSize:10 }}>
           {connected ? "Echtzeit-Daten aktiv" : "Mock-Daten werden angezeigt"}
         </div>
       </div>
       {!connected && (
-        <div style={{ color: C.gelb, fontSize:11, textAlign:"right" }}>
+        <div style={{ color: "var(--yellow)", fontSize:11, textAlign:"right" }}>
           URL + Key<br/>eintragen →
         </div>
       )}
@@ -596,17 +596,17 @@ function UnterfeldSchnellanlage({ parent, onAdd, onClose }) {
   return (
     <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:400,
       display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
-      <div style={{ background: C.bgMid, borderRadius:"16px 16px 0 0", padding:20,
+      <div style={{ background: "var(--surface)", borderRadius:"16px 16px 0 0", padding:20,
         width:"100%", maxWidth:520, maxHeight:"90vh", overflowY:"auto" }}>
 
         {/* Header */}
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
-          <div style={{ color: C.gelb, fontWeight:700, fontSize:16 }}>⚡ Unterfelder Schnellanlage</div>
-          <button onClick={onClose} style={{ background:"none", border:"none", color: C.muted, fontSize:22, cursor:"pointer" }}>✕</button>
+          <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:16 }}>⚡ Unterfelder Schnellanlage</div>
+          <button onClick={onClose} style={{ background:"none", border:"none", color: "var(--muted)", fontSize:22, cursor:"pointer" }}>✕</button>
         </div>
-        <div style={{ color: C.muted, fontSize:12, marginBottom:14 }}>
-          Unterfelder für <span style={{ color: C.text, fontWeight:700 }}>{parent.name}</span>
-          {elternM2 > 0 && <span style={{ color: C.muted }}> · {elternM2} m² gesamt</span>}
+        <div style={{ color: "var(--muted)", fontSize:12, marginBottom:14 }}>
+          Unterfelder für <span style={{ color: "var(--text)", fontWeight:700 }}>{parent.name}</span>
+          {elternM2 > 0 && <span style={{ color: "var(--muted)" }}> · {elternM2} m² gesamt</span>}
         </div>
 
         {/* Präfix + Datum */}
@@ -631,8 +631,8 @@ function UnterfeldSchnellanlage({ parent, onAdd, onClose }) {
           <div style={{ display:"flex", gap:8, marginTop:6 }}>
             {[["gleich","🔲 Alle gleich"],["einzeln","✏️ Individuell"]].map(([v,l]) => (
               <button key={v} onClick={() => switchModus(v)}
-                style={{ flex:1, background: modus===v ? C.gelb : C.bgFaint,
-                  color: modus===v ? "#1C2027" : C.muted,
+                style={{ flex:1, background: modus===v ? "var(--yellow)" : "var(--border)",
+                  color: modus===v ? "#1C2027" : "var(--muted)",
                   border:"none", borderRadius:8, padding:"9px 0",
                   fontWeight: modus===v ? 700 : 400, cursor:"pointer", fontSize:13 }}>
                 {l}
@@ -651,7 +651,7 @@ function UnterfeldSchnellanlage({ parent, onAdd, onClose }) {
                 onChange={e => { setStdM2(+e.target.value); setFelder(prev=>prev.map(f=>({...f,m2:+e.target.value}))); }}
                 style={{ ...inputStyle(), width:80, textAlign:"center", fontSize:18, fontWeight:700 }} />
               <StepBtn onClick={() => { setStdM2(m=>m+5); setFelder(prev=>prev.map(f=>({...f,m2:stdM2+5}))); }}>+</StepBtn>
-              <span style={{ color: C.muted, fontSize:13 }}>m²</span>
+              <span style={{ color: "var(--muted)", fontSize:13 }}>m²</span>
             </div>
           </div>
         )}
@@ -661,14 +661,14 @@ function UnterfeldSchnellanlage({ parent, onAdd, onClose }) {
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
             <Label>Felder ({felder.length})</Label>
             <button onClick={addFeld}
-              style={{ background: C.bgFaint, color: C.text, border:"none", borderRadius:7,
+              style={{ background: "var(--border)", color: "var(--text)", border:"none", borderRadius:7,
                 padding:"4px 12px", cursor:"pointer", fontSize:12 }}>+ Feld</button>
           </div>
 
           {felder.map((f, i) => (
             <div key={i} style={{ display:"flex", gap:8, alignItems:"center", marginBottom:7 }}>
               {/* Nummer-Badge */}
-              <div style={{ background: C.bgFaint, color: C.muted, borderRadius:6,
+              <div style={{ background: "var(--border)", color: "var(--muted)", borderRadius:6,
                 padding:"4px 8px", fontSize:11, fontWeight:700, minWidth:28, textAlign:"center" }}>
                 {i+1}
               </div>
@@ -683,38 +683,38 @@ function UnterfeldSchnellanlage({ parent, onAdd, onClose }) {
                   readOnly={modus === "gleich"}
                   onChange={e => modus === "einzeln" && updateFeld(i, "m2", +e.target.value)}
                   style={{ ...inputStyle(), fontSize:13, padding:"8px 10px",
-                    color: modus === "gleich" ? C.muted : C.text,
-                    background: modus === "gleich" ? C.bgFaint : C.bgLight,
+                    color: modus === "gleich" ? "var(--muted)" : "var(--text)",
+                    background: modus === "gleich" ? "var(--border)" : "var(--surface2)",
                     cursor: modus === "gleich" ? "default" : "text" }}
                 />
                 <span style={{ position:"absolute", right:8, top:"50%", transform:"translateY(-50%)",
-                  color: C.muted, fontSize:10, pointerEvents:"none" }}>m²</span>
+                  color: "var(--muted)", fontSize:10, pointerEvents:"none" }}>m²</span>
               </div>
               {/* Löschen */}
               <button onClick={() => removeFeld(i)}
-                style={{ background:"none", border:"none", color: C.rot, cursor:"pointer", fontSize:18, padding:"0 2px" }}>✕</button>
+                style={{ background:"none", border:"none", color: "var(--red)", cursor:"pointer", fontSize:18, padding:"0 2px" }}>✕</button>
             </div>
           ))}
         </div>
 
         {/* Summen-Anzeige */}
-        <div style={{ background: diffOk ? "#1A3A28" : elternM2 > 0 ? "#2A2010" : C.bgFaint,
+        <div style={{ background: diffOk ? "#1A3A28" : elternM2 > 0 ? "#2A2010" : "var(--border)",
           borderRadius:10, padding:"10px 14px", marginBottom:14,
-          border:`1px solid ${diffOk ? C.gruen : elternM2 > 0 ? C.gelb : C.bgLight}` }}>
+          border:`1px solid ${diffOk ? "var(--green)" : elternM2 > 0 ? "var(--yellow)" : "var(--surface2)"}` }}>
           <div style={{ display:"flex", justifyContent:"space-between" }}>
-            <span style={{ color: C.muted, fontSize:12 }}>Summe Unterfelder</span>
-            <span style={{ color: C.text, fontWeight:700 }}>{totalM2} m²</span>
+            <span style={{ color: "var(--muted)", fontSize:12 }}>Summe Unterfelder</span>
+            <span style={{ color: "var(--text)", fontWeight:700 }}>{totalM2} m²</span>
           </div>
           {elternM2 > 0 && (
             <div style={{ display:"flex", justifyContent:"space-between", marginTop:4 }}>
-              <span style={{ color: C.muted, fontSize:12 }}>Elternfeld</span>
-              <span style={{ color: C.muted }}>{elternM2} m²</span>
+              <span style={{ color: "var(--muted)", fontSize:12 }}>Elternfeld</span>
+              <span style={{ color: "var(--muted)" }}>{elternM2} m²</span>
             </div>
           )}
           {elternM2 > 0 && (
             <div style={{ display:"flex", justifyContent:"space-between", marginTop:4 }}>
-              <span style={{ color: C.muted, fontSize:12 }}>Differenz</span>
-              <span style={{ color: diffOk ? C.gruen : C.gelb, fontWeight:700 }}>
+              <span style={{ color: "var(--muted)", fontSize:12 }}>Differenz</span>
+              <span style={{ color: diffOk ? "var(--green)" : "var(--yellow)", fontWeight:700 }}>
                 {diffM2 > 0 ? `−${diffM2}` : diffM2 < 0 ? `+${Math.abs(diffM2)}` : "✓ Passt genau"} {diffOk ? "" : "m²"}
               </span>
             </div>
@@ -722,8 +722,8 @@ function UnterfeldSchnellanlage({ parent, onAdd, onClose }) {
         </div>
 
         <button onClick={anlegen} disabled={felder.length === 0}
-          style={{ width:"100%", background: felder.length > 0 ? C.gelb : C.bgFaint,
-            color: felder.length > 0 ? "#1C2027" : C.muted,
+          style={{ width:"100%", background: felder.length > 0 ? "var(--yellow)" : "var(--border)",
+            color: felder.length > 0 ? "#1C2027" : "var(--muted)",
             border:"none", borderRadius:10, padding:14, fontWeight:700, cursor:"pointer", fontSize:15 }}>
           ⚡ {felder.length} Unterfelder anlegen · {totalM2} m² gesamt
         </button>
@@ -743,21 +743,21 @@ function FeldKarte({ f, unterfelder, selected, onSelect, onEdit, onSchnell, onSt
     <div style={{ marginBottom: 8 }}>
       {/* Elternfeld */}
       <div onClick={() => onSelect(f)}
-        style={{ background: C.bgMid,
-          border:`2px solid ${selected?.id === f.id ? C.gelb : STATUS_COLOR[f.status]}`,
+        style={{ background: "var(--surface)",
+          border:`2px solid ${selected?.id === f.id ? "var(--yellow)" : STATUS_COLOR[f.status]}`,
           borderRadius: expanded ? "10px 10px 0 0" : 10,
           padding:"12px 14px", cursor:"pointer" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
           <div style={{ flex:1 }}>
-            {f.gewerk && <div style={{ color: C.muted, fontSize:10, marginBottom:2 }}>{f.gewerk}</div>}
-            <div style={{ color: C.text, fontSize:13, fontWeight:700 }}>{f.name}</div>
-            <div style={{ color: C.muted, fontSize:11, marginTop:3 }}>
+            {f.gewerk && <div style={{ color: "var(--muted)", fontSize:10, marginBottom:2 }}>{f.gewerk}</div>}
+            <div style={{ color: "var(--text)", fontSize:13, fontWeight:700 }}>{f.name}</div>
+            <div style={{ color: "var(--muted)", fontSize:11, marginTop:3 }}>
               {f.m2} m²{f.geplant ? ` · ${fmt(f.geplant)}` : ""}
-              {hatUnter && <span style={{ color: C.beton, marginLeft:6 }}>· {unterfelder.length} Unterfelder</span>}
+              {hatUnter && <span style={{ color: "var(--muted)", marginLeft:6 }}>· {unterfelder.length} Unterfelder</span>}
             </div>
             {(f.subIds||[]).length > 0 && (
               <div style={{ marginTop:5 }}>
-                <span style={{ color: C.blau, fontSize:10 }}>🏢 Sub zugewiesen</span>
+                <span style={{ color: "var(--blue)", fontSize:10 }}>🏢 Sub zugewiesen</span>
               </div>
             )}
           </div>
@@ -768,7 +768,7 @@ function FeldKarte({ f, unterfelder, selected, onSelect, onEdit, onSchnell, onSt
             </div>
             {hatUnter && (
               <div onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
-                style={{ color: C.muted, fontSize:11, cursor:"pointer", userSelect:"none" }}>
+                style={{ color: "var(--muted)", fontSize:11, cursor:"pointer", userSelect:"none" }}>
                 {expanded ? "▲" : "▼"} {unterDone}/{unterfelder.length}
               </div>
             )}
@@ -777,37 +777,37 @@ function FeldKarte({ f, unterfelder, selected, onSelect, onEdit, onSchnell, onSt
         {/* Unterfeld-Fortschritt */}
         {hatUnter && (
           <div style={{ marginTop:8 }}>
-            <div style={{ background: C.bgFaint, borderRadius:3, height:5 }}>
-              <div style={{ background: unterPct === 100 ? C.gruen : C.gelb,
+            <div style={{ background: "var(--border)", borderRadius:3, height:5 }}>
+              <div style={{ background: unterPct === 100 ? "var(--green)" : "var(--yellow)",
                 width:`${unterPct}%`, height:"100%", borderRadius:3, transition:"width 0.4s" }} />
             </div>
-            <div style={{ color: C.muted, fontSize:10, marginTop:2 }}>{unterPct}% der Unterfelder fertig</div>
+            <div style={{ color: "var(--muted)", fontSize:10, marginTop:2 }}>{unterPct}% der Unterfelder fertig</div>
           </div>
         )}
         {f.festigkeit && !hatUnter && (
           <div style={{ marginTop:6 }}>
-            <div style={{ background: C.bgFaint, borderRadius:3, height:4 }}>
-              <div style={{ background: f.festigkeit >= 95 ? C.gruen : C.gelb,
+            <div style={{ background: "var(--border)", borderRadius:3, height:4 }}>
+              <div style={{ background: f.festigkeit >= 95 ? "var(--green)" : "var(--yellow)",
                 width:`${f.festigkeit}%`, height:"100%", borderRadius:3 }} />
             </div>
-            <div style={{ color: C.muted, fontSize:10, marginTop:2 }}>Festigkeit {f.festigkeit}%</div>
+            <div style={{ color: "var(--muted)", fontSize:10, marginTop:2 }}>Festigkeit {f.festigkeit}%</div>
           </div>
         )}
       </div>
 
       {/* Unterfelder (ausgeklappt) */}
       {expanded && hatUnter && (
-        <div style={{ background: C.bgLight, borderRadius:"0 0 10px 10px",
-          border:`1px solid ${C.bgFaint}`, borderTop:"none", padding:"8px 10px" }}>
+        <div style={{ background: "var(--surface2)", borderRadius:"0 0 10px 10px",
+          border:`1px solid ${'var(--border)'}`, borderTop:"none", padding:"8px 10px" }}>
           {unterfelder.map(u => (
             <div key={u.id} onClick={() => onSelect(u)}
               style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
-                background: C.bgMid, borderRadius:8, padding:"8px 10px", marginBottom:5,
-                border:`1.5px solid ${selected?.id === u.id ? C.gelb : STATUS_COLOR[u.status]}`,
+                background: "var(--surface)", borderRadius:8, padding:"8px 10px", marginBottom:5,
+                border:`1.5px solid ${selected?.id === u.id ? "var(--yellow)" : STATUS_COLOR[u.status]}`,
                 cursor:"pointer" }}>
               <div>
-                <div style={{ color: C.text, fontSize:12, fontWeight:600 }}>{u.name}</div>
-                <div style={{ color: C.muted, fontSize:10 }}>{u.m2} m²{u.geplant ? ` · ${fmt(u.geplant)}` : ""}</div>
+                <div style={{ color: "var(--text)", fontSize:12, fontWeight:600 }}>{u.name}</div>
+                <div style={{ color: "var(--muted)", fontSize:10 }}>{u.m2} m²{u.geplant ? ` · ${fmt(u.geplant)}` : ""}</div>
               </div>
               <div style={{ display:"flex", gap:6, alignItems:"center" }}>
                 <div style={{ background: STATUS_COLOR[u.status], color:"#fff",
@@ -815,13 +815,13 @@ function FeldKarte({ f, unterfelder, selected, onSelect, onEdit, onSchnell, onSt
                   {STATUS_LABEL[u.status]?.split(" ")[0]}
                 </div>
                 <button onClick={e => { e.stopPropagation(); onEdit(u); }}
-                  style={{ background:"none", border:"none", color: C.muted, cursor:"pointer", fontSize:14 }}>✏️</button>
+                  style={{ background:"none", border:"none", color: "var(--muted)", cursor:"pointer", fontSize:14 }}>✏️</button>
               </div>
             </div>
           ))}
           <button onClick={() => onSchnell(f)}
-            style={{ width:"100%", background: C.bgFaint, color: C.muted,
-              border:`1px dashed ${C.beton}`, borderRadius:8, padding:"7px 0",
+            style={{ width:"100%", background: "var(--border)", color: "var(--muted)",
+              border:`1px dashed ${'var(--muted)'}`, borderRadius:8, padding:"7px 0",
               cursor:"pointer", fontSize:12, marginTop:2 }}>
             ⚡ Weitere Unterfelder hinzufügen
           </button>
@@ -848,19 +848,19 @@ function FeldDetail({ selected, felder, onEdit, onStatusChange, onSchnell, projS
   const zugewieseneSubs = projSubs.filter(s => (selected.subIds||[]).includes(s.id));
 
   return (
-    <div style={{ background: C.bgLight, borderRadius:10, padding:16,
-      border:`1px solid ${C.gelb}`, marginBottom:8 }}>
+    <div style={{ background: "var(--surface2)", borderRadius:10, padding:16,
+      border:`1px solid ${'var(--yellow)'}`, marginBottom:8 }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
         <div style={{ flex:1 }}>
-          {eltern && <div style={{ color: C.muted, fontSize:10, marginBottom:2 }}>↳ Unterfeld von {eltern.name}</div>}
-          {selected.gewerk && <div style={{ color: C.muted, fontSize:11 }}>{selected.gewerk}</div>}
-          <div style={{ color: C.gelb, fontWeight:700, fontSize:15 }}>{selected.name}</div>
+          {eltern && <div style={{ color: "var(--muted)", fontSize:10, marginBottom:2 }}>↳ Unterfeld von {eltern.name}</div>}
+          {selected.gewerk && <div style={{ color: "var(--muted)", fontSize:11 }}>{selected.gewerk}</div>}
+          <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:15 }}>{selected.name}</div>
           {/* Zugewiesene Subs Badge */}
           {zugewieseneSubs.length > 0 && (
             <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginTop:6 }}>
               {zugewieseneSubs.map(s => (
-                <div key={s.id} style={{ background:"#1A2040", color: C.blau,
-                  fontSize:10, padding:"2px 8px", borderRadius:10, border:`1px solid ${C.blau}44` }}>
+                <div key={s.id} style={{ background:"#1A2040", color: "var(--blue)",
+                  fontSize:10, padding:"2px 8px", borderRadius:10, border:`1px solid ${'var(--blue)'}44` }}>
                   🏢 {s.name}
                 </div>
               ))}
@@ -870,13 +870,13 @@ function FeldDetail({ selected, felder, onEdit, onStatusChange, onSchnell, projS
         <div style={{ display:"flex", gap:6 }}>
           {!istUnterfeld && unterfelder.length === 0 && (
             <button onClick={() => onSchnell(selected)}
-              style={{ background: C.bgFaint, color: C.text, border:`1px solid ${C.beton}`,
+              style={{ background: "var(--border)", color: "var(--text)", border:`1px solid ${'var(--muted)'}`,
                 borderRadius:8, padding:"5px 10px", cursor:"pointer", fontSize:11 }}>
               ⚡ Unterfelder
             </button>
           )}
           <button onClick={() => onEdit(selected)}
-            style={{ background: C.bgFaint, color: C.text, border:"none",
+            style={{ background: "var(--border)", color: "var(--text)", border:"none",
               borderRadius:8, padding:"5px 12px", cursor:"pointer", fontSize:12 }}>
             ✏️ Bearbeiten
           </button>
@@ -899,8 +899,8 @@ function FeldDetail({ selected, felder, onEdit, onStatusChange, onSchnell, projS
           ...(selected.belag_phase     ? [["Belag",    selected.belag_phase]]     : []),
         ].map(([k,v]) => (
           <div key={k}>
-            <div style={{ color: C.muted, fontSize:10 }}>{k}</div>
-            <div style={{ color: C.text, fontSize:13, fontWeight:600 }}>{v}</div>
+            <div style={{ color: "var(--muted)", fontSize:10 }}>{k}</div>
+            <div style={{ color: "var(--text)", fontSize:13, fontWeight:600 }}>{v}</div>
           </div>
         ))}
       </div>
@@ -908,24 +908,24 @@ function FeldDetail({ selected, felder, onEdit, onStatusChange, onSchnell, projS
       {/* Sub-Zuweisung auf Feldebene */}
       {projSubs.length > 0 && (
         <div style={{ marginBottom:12 }}>
-          <div style={{ color: C.muted, fontSize:11, marginBottom:6 }}>🏢 Subunternehmer für dieses Feld:</div>
+          <div style={{ color: "var(--muted)", fontSize:11, marginBottom:6 }}>🏢 Subunternehmer für dieses Feld:</div>
           <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
             {projSubs.map(s => {
               const aktiv = (selected.subIds||[]).includes(s.id);
               return (
                 <div key={s.id} onClick={() => toggleSubFeld(s.id)}
                   style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
-                    background: aktiv ? "#1A2040" : C.bgFaint,
-                    border:`1.5px solid ${aktiv ? C.blau : "transparent"}`,
+                    background: aktiv ? "#1A2040" : "var(--border)",
+                    border:`1.5px solid ${aktiv ? "var(--blue)" : "transparent"}`,
                     borderRadius:8, padding:"8px 11px", cursor:"pointer" }}>
                   <div>
-                    <div style={{ color: C.text, fontSize:12, fontWeight: aktiv ? 700 : 400 }}>{s.name}</div>
+                    <div style={{ color: "var(--text)", fontSize:12, fontWeight: aktiv ? 700 : 400 }}>{s.name}</div>
                     <div style={{ display:"flex", gap:5, marginTop:3 }}>
                       {s.gewerke.map(k => {
                         const g = ALLE_GEWERKE.find(x=>x.key===k);
-                        return g ? <span key={k} style={{ color: C.muted, fontSize:10 }}>{g.icon}</span> : null;
+                        return g ? <span key={k} style={{ color: "var(--muted)", fontSize:10 }}>{g.icon}</span> : null;
                       })}
-                      {s.stundensatz > 0 && <span style={{ color: C.muted, fontSize:10 }}>· {s.stundensatz}€/Std.</span>}
+                      {s.stundensatz > 0 && <span style={{ color: "var(--muted)", fontSize:10 }}>· {s.stundensatz}€/Std.</span>}
                     </div>
                   </div>
                   <span style={{ fontSize:16 }}>{aktiv ? "🔵" : "⚪"}</span>
@@ -937,22 +937,22 @@ function FeldDetail({ selected, felder, onEdit, onStatusChange, onSchnell, projS
       )}
 
       {unterfelder.length > 0 ? (
-        <div style={{ background: C.bgFaint, borderRadius:8, padding:"8px 10px", marginBottom:10 }}>
-          <div style={{ color: C.muted, fontSize:11, marginBottom:4 }}>
+        <div style={{ background: "var(--border)", borderRadius:8, padding:"8px 10px", marginBottom:10 }}>
+          <div style={{ color: "var(--muted)", fontSize:11, marginBottom:4 }}>
             Unterfelder: {unterfelder.filter(u=>u.status==="done").length}/{unterfelder.length} fertig
           </div>
-          <div style={{ color: C.muted, fontSize:10 }}>
+          <div style={{ color: "var(--muted)", fontSize:10 }}>
             Status des Elternfeldes wird automatisch aktualisiert.
           </div>
         </div>
       ) : (
         <>
-          <div style={{ color: C.muted, fontSize:11, marginBottom:6 }}>Status ändern:</div>
+          <div style={{ color: "var(--muted)", fontSize:11, marginBottom:6 }}>Status ändern:</div>
           <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
             {Object.entries(STATUS_LABEL).map(([k,v]) => (
               <button key={k} onClick={() => onStatusChange(selected.id, k)}
-                style={{ background: selected.status === k ? STATUS_COLOR[k] : C.bgFaint,
-                  color: selected.status === k ? "#fff" : C.muted,
+                style={{ background: selected.status === k ? STATUS_COLOR[k] : "var(--border)",
+                  color: selected.status === k ? "#fff" : "var(--muted)",
                   border:"none", borderRadius:8, padding:"6px 12px", cursor:"pointer", fontSize:12 }}>
                 {v}
               </button>
@@ -1033,27 +1033,27 @@ function BetonfelderView({ felder, setFelder, sbConnected, projektTyp, projSubs=
 
       {/* Header */}
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
-        <div style={{ color: C.text, fontWeight:700 }}>
+        <div style={{ color: "var(--text)", fontWeight:700 }}>
           {cfg.einheitenPl} · {done}/{total} fertig
         </div>
         <button onClick={() => setEditFeld({ name:"", m2:0, geplant:"", dauer_tage:1, bewehrung:"", abhaengigkeiten:[], status:"planned" })}
-          style={{ background: C.gelb, color:"#1C2027", border:"none", borderRadius:9,
+          style={{ background: "var(--yellow)", color:"#1C2027", border:"none", borderRadius:9,
             padding:"7px 14px", fontWeight:700, cursor:"pointer", fontSize:13 }}>
           + {cfg.einheitLabel}
         </button>
       </div>
 
       {/* Fortschritt */}
-      <div style={{ background: C.bgFaint, borderRadius:4, height:8, marginBottom:14 }}>
-        <div style={{ background: C.gruen, width:`${progress}%`, height:"100%", borderRadius:4, transition:"width 0.6s" }} />
+      <div style={{ background: "var(--border)", borderRadius:4, height:8, marginBottom:14 }}>
+        <div style={{ background: "var(--green)", width:`${progress}%`, height:"100%", borderRadius:4, transition:"width 0.6s" }} />
       </div>
 
       {felder.length === 0 ? (
-        <div style={{ background: C.bgMid, borderRadius:12, padding:32, textAlign:"center" }}>
+        <div style={{ background: "var(--surface)", borderRadius:12, padding:32, textAlign:"center" }}>
           <div style={{ fontSize:36 }}>🏗️</div>
-          <div style={{ color: C.muted, marginTop:10, marginBottom:16 }}>Noch keine {cfg.einheitenPl} angelegt.</div>
+          <div style={{ color: "var(--muted)", marginTop:10, marginBottom:16 }}>Noch keine {cfg.einheitenPl} angelegt.</div>
           <button onClick={() => setEditFeld({ name:"", m2:0, geplant:"", dauer_tage:1, bewehrung:"", abhaengigkeiten:[], status:"planned" })}
-            style={{ background: C.gelb, color:"#1C2027", border:"none", borderRadius:10,
+            style={{ background: "var(--yellow)", color:"#1C2027", border:"none", borderRadius:10,
               padding:"12px 24px", fontWeight:700, cursor:"pointer", fontSize:14 }}>
             + Erste {cfg.einheitLabel} anlegen
           </button>
@@ -1136,9 +1136,9 @@ function BetonfelderView({ felder, setFelder, sbConnected, projektTyp, projSubs=
 function FilterBtn({ active, onClick, children }) {
   return (
     <button onClick={onClick}
-      style={{ background: active ? C.gelb : "#FFFFFF",
-        color: active ? "#1C2027" : C.muted,
-        border:`1.5px solid ${active ? C.gelb : C.bgFaint}`,
+      style={{ background: active ? "var(--yellow)" : "#FFFFFF",
+        color: active ? "#1C2027" : "var(--muted)",
+        border:`1.5px solid ${active ? "var(--yellow)" : "var(--border)"}`,
         borderRadius:20, padding:"8px 16px", cursor:"pointer",
         fontSize:13, fontWeight: active ? 700 : 500, whiteSpace:"nowrap",
         boxShadow: active ? "0 2px 8px rgba(245,196,0,0.3)" : "0 1px 3px rgba(0,0,0,0.06)" }}>
@@ -1166,76 +1166,76 @@ function MitarbeiterZeilen({ ma, zeitdaten, vonDatum, bisDatum }) {
   const totalH = maBuchungen.reduce((s, z) => s + (z.hours||0) + (z.minutes||0)/60, 0);
   const hatDaten = zeitdaten.length > 0;
 
-  const ROLLEN_FARBE = { "Vorarbeiter": C.gelb, "Facharbeiter": C.blau, "Helfer": C.beton };
+  const ROLLEN_FARBE = { "Vorarbeiter": "var(--yellow)", "Facharbeiter": "var(--blue)", "Helfer": "var(--muted)" };
 
   return (
     <div style={{ marginBottom:6 }}>
       {/* MA Zeile */}
       <div onClick={() => hatDaten && setOpen(o => !o)}
         style={{ display:"flex", alignItems:"center", gap:10,
-          background: open ? C.bgLight : C.bgFaint,
+          background: open ? "var(--surface2)" : "var(--border)",
           borderRadius: open ? "8px 8px 0 0" : 8,
           padding:"10px 12px",
           cursor: hatDaten ? "pointer" : "default",
-          border:`1px solid ${open ? C.gelb+"66" : "transparent"}` }}>
+          border:`1px solid ${open ? "var(--yellow)"+"66" : "transparent"}` }}>
         {/* Avatar */}
         <div style={{ width:32, height:32, borderRadius:16, flexShrink:0,
-          background: C.bgMid, display:"flex", alignItems:"center", justifyContent:"center",
-          border:`2px solid ${ROLLEN_FARBE[ma.rolle] || C.beton}`,
-          color: ROLLEN_FARBE[ma.rolle] || C.beton, fontSize:13, fontWeight:700 }}>
+          background: "var(--surface)", display:"flex", alignItems:"center", justifyContent:"center",
+          border:`2px solid ${ROLLEN_FARBE[ma.rolle] || "var(--muted)"}`,
+          color: ROLLEN_FARBE[ma.rolle] || "var(--muted)", fontSize:13, fontWeight:700 }}>
           {ma.name.split(" ").map(n=>n[0]).join("").slice(0,2)}
         </div>
         <div style={{ flex:1 }}>
-          <div style={{ color: C.text, fontSize:13, fontWeight:600 }}>{ma.name}</div>
-          <div style={{ color: ROLLEN_FARBE[ma.rolle] || C.muted, fontSize:10 }}>{ma.rolle}</div>
+          <div style={{ color: "var(--text)", fontSize:13, fontWeight:600 }}>{ma.name}</div>
+          <div style={{ color: ROLLEN_FARBE[ma.rolle] || "var(--muted)", fontSize:10 }}>{ma.rolle}</div>
         </div>
         {/* Stunden */}
         {hatDaten ? (
           <div style={{ textAlign:"right" }}>
-            <div style={{ color: totalH > 0 ? C.gelb : C.muted, fontWeight:700, fontSize:14 }}>
+            <div style={{ color: totalH > 0 ? "var(--yellow)" : "var(--muted)", fontWeight:700, fontSize:14 }}>
               {totalH > 0 ? totalH.toFixed(1)+"h" : "—"}
             </div>
-            <div style={{ color: C.muted, fontSize:10 }}>
+            <div style={{ color: "var(--muted)", fontSize:10 }}>
               {maBuchungen.length > 0 ? `${maBuchungen.length} Buchung${maBuchungen.length>1?"en":""}` : "keine"}
             </div>
           </div>
         ) : (
-          <div style={{ color: C.muted, fontSize:11 }}>nicht geladen</div>
+          <div style={{ color: "var(--muted)", fontSize:11 }}>nicht geladen</div>
         )}
         {hatDaten && maBuchungen.length > 0 && (
-          <div style={{ color: C.muted, fontSize:12 }}>{open ? "▲" : "▼"}</div>
+          <div style={{ color: "var(--muted)", fontSize:12 }}>{open ? "▲" : "▼"}</div>
         )}
       </div>
 
       {/* Aufgeklappte Buchungen */}
       {open && maBuchungen.length > 0 && (
-        <div style={{ background: C.bgMid, borderRadius:"0 0 8px 8px",
-          border:`1px solid ${C.gelb+"66"}`, borderTop:"none", padding:"8px 10px" }}>
+        <div style={{ background: "var(--surface)", borderRadius:"0 0 8px 8px",
+          border:`1px solid ${"var(--yellow)"+"66"}`, borderTop:"none", padding:"8px 10px" }}>
           {maBuchungen.map((z, i) => (
             <div key={i} style={{ display:"flex", justifyContent:"space-between",
               alignItems:"center", padding:"6px 4px",
-              borderBottom: i < maBuchungen.length-1 ? `1px solid ${C.bgFaint}` : "none" }}>
+              borderBottom: i < maBuchungen.length-1 ? `1px solid ${'var(--border)'}` : "none" }}>
               <div>
-                <div style={{ color: C.betonLight, fontSize:12 }}>
+                <div style={{ color: "var(--text2)", fontSize:12 }}>
                   {new Date(z.date).toLocaleDateString("de-DE", { weekday:"short", day:"2-digit", month:"2-digit" })}
                 </div>
                 {z.activity?.name && (
-                  <div style={{ color: C.muted, fontSize:10 }}>🔧 {z.activity.name}</div>
+                  <div style={{ color: "var(--muted)", fontSize:10 }}>🔧 {z.activity.name}</div>
                 )}
                 {z.note && (
-                  <div style={{ color: C.muted, fontSize:10, fontStyle:"italic" }}>💬 {z.note}</div>
+                  <div style={{ color: "var(--muted)", fontSize:10, fontStyle:"italic" }}>💬 {z.note}</div>
                 )}
               </div>
-              <div style={{ color: C.gelb, fontWeight:700, fontSize:13 }}>
+              <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:13 }}>
                 {(z.hours||0)}h{z.minutes > 0 ? ` ${z.minutes}min` : ""}
               </div>
             </div>
           ))}
           {/* MA-Summe */}
           <div style={{ display:"flex", justifyContent:"space-between",
-            borderTop:`1px solid ${C.bgFaint}`, marginTop:4, paddingTop:6 }}>
-            <div style={{ color: C.muted, fontSize:11 }}>Gesamt</div>
-            <div style={{ color: C.gelb, fontWeight:800, fontSize:14 }}>{totalH.toFixed(1)} h</div>
+            borderTop:`1px solid ${'var(--border)'}`, marginTop:4, paddingTop:6 }}>
+            <div style={{ color: "var(--muted)", fontSize:11 }}>Gesamt</div>
+            <div style={{ color: "var(--yellow)", fontWeight:800, fontSize:14 }}>{totalH.toFixed(1)} h</div>
           </div>
         </div>
       )}
@@ -1270,25 +1270,25 @@ function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, erfasstVerbunden }) {
   return (
     <div style={{ marginBottom:12 }}>
       {/* Kolonne Header */}
-      <div style={{ background: C.bgMid, borderRadius: expanded ? "12px 12px 0 0" : 12,
-        padding:"14px 16px", border:`1px solid ${C.bgFaint}`,
+      <div style={{ background: "var(--surface)", borderRadius: expanded ? "12px 12px 0 0" : 12,
+        padding:"14px 16px", border:`1px solid ${'var(--border)'}`,
         borderBottom: expanded ? "none" : undefined }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
           <div style={{ flex:1 }}>
-            <div style={{ color: C.text, fontWeight:700, fontSize:15 }}>{k.name}</div>
-            <div style={{ color: C.muted, fontSize:12, marginTop:2 }}>📍 {k.einsatz}</div>
+            <div style={{ color: "var(--text)", fontWeight:700, fontSize:15 }}>{k.name}</div>
+            <div style={{ color: "var(--muted)", fontSize:12, marginTop:2 }}>📍 {k.einsatz}</div>
             {k.vorarbeiter && (
-              <div style={{ color: C.muted, fontSize:11, marginTop:2 }}>👷 VA: {k.vorarbeiter}</div>
+              <div style={{ color: "var(--muted)", fontSize:11, marginTop:2 }}>👷 VA: {k.vorarbeiter}</div>
             )}
           </div>
           <div style={{ textAlign:"right" }}>
             {erfasstVerbunden && kolonneH > 0 ? (
-              <div style={{ color: C.gelb, fontWeight:800, fontSize:18 }}>{kolonneH.toFixed(1)}h</div>
+              <div style={{ color: "var(--yellow)", fontWeight:800, fontSize:18 }}>{kolonneH.toFixed(1)}h</div>
             ) : (
-              <div style={{ color: C.gelb, fontSize:13 }}>👷 {totalMann} Mann</div>
+              <div style={{ color: "var(--yellow)", fontSize:13 }}>👷 {totalMann} Mann</div>
             )}
             {erfasstVerbunden && (
-              <div style={{ color: C.muted, fontSize:10 }}>
+              <div style={{ color: "var(--muted)", fontSize:10 }}>
                 {anwesend}/{totalMann} anwesend
               </div>
             )}
@@ -1298,8 +1298,8 @@ function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, erfasstVerbunden }) {
         {/* Fortschrittsbalken Anwesenheit */}
         {erfasstVerbunden && totalMann > 0 && (
           <div style={{ marginTop:10 }}>
-            <div style={{ background: C.bgFaint, borderRadius:4, height:5 }}>
-              <div style={{ background: anwesend === totalMann ? C.gruen : C.gelb,
+            <div style={{ background: "var(--border)", borderRadius:4, height:5 }}>
+              <div style={{ background: anwesend === totalMann ? "var(--green)" : "var(--yellow)",
                 width:`${(anwesend/totalMann)*100}%`, height:"100%", borderRadius:4, transition:"width 0.4s" }} />
             </div>
           </div>
@@ -1310,22 +1310,22 @@ function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, erfasstVerbunden }) {
           <div style={{ display:"flex" }}>
             {mas.slice(0,5).map((ma, i) => (
               <div key={ma.id} style={{ width:26, height:26, borderRadius:13,
-                background: C.bgFaint, border:`2px solid ${C.bgMid}`,
+                background: "var(--border)", border:`2px solid ${'var(--surface)'}`,
                 marginLeft: i > 0 ? -8 : 0,
                 display:"flex", alignItems:"center", justifyContent:"center",
-                color: C.muted, fontSize:10, fontWeight:700, zIndex:5-i }}>
+                color: "var(--muted)", fontSize:10, fontWeight:700, zIndex:5-i }}>
                 {ma.name.split(" ").map(n=>n[0]).join("").slice(0,2)}
               </div>
             ))}
             {mas.length > 5 && (
               <div style={{ width:26, height:26, borderRadius:13,
-                background: C.bgFaint, border:`2px solid ${C.bgMid}`,
+                background: "var(--border)", border:`2px solid ${'var(--surface)'}`,
                 marginLeft:-8, display:"flex", alignItems:"center", justifyContent:"center",
-                color: C.muted, fontSize:9 }}>+{mas.length-5}</div>
+                color: "var(--muted)", fontSize:9 }}>+{mas.length-5}</div>
             )}
           </div>
           <button onClick={() => setExpanded(e => !e)}
-            style={{ marginLeft:"auto", background: C.bgFaint, border:"none", color: C.text,
+            style={{ marginLeft:"auto", background: "var(--border)", border:"none", color: "var(--text)",
               borderRadius:8, padding:"5px 12px", cursor:"pointer", fontSize:12 }}>
             {expanded ? "▲ Zuklappen" : "▼ Mitarbeiter"}
           </button>
@@ -1334,8 +1334,8 @@ function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, erfasstVerbunden }) {
 
       {/* Aufgeklappte MA-Liste */}
       {expanded && (
-        <div style={{ background: C.bgLight, borderRadius:"0 0 12px 12px",
-          border:`1px solid ${C.bgFaint}`, borderTop:"none", padding:"10px 12px" }}>
+        <div style={{ background: "var(--surface2)", borderRadius:"0 0 12px 12px",
+          border:`1px solid ${'var(--border)'}`, borderTop:"none", padding:"10px 12px" }}>
           {mas.map(ma => (
             <MitarbeiterZeilen
               key={ma.id}
@@ -1348,9 +1348,9 @@ function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, erfasstVerbunden }) {
           {/* Kolonnen-Summe */}
           {erfasstVerbunden && kolonneH > 0 && (
             <div style={{ display:"flex", justifyContent:"space-between",
-              background: C.bgFaint, borderRadius:8, padding:"10px 12px", marginTop:8 }}>
-              <div style={{ color: C.muted, fontSize:12 }}>Kolonne gesamt</div>
-              <div style={{ color: C.gelb, fontWeight:800, fontSize:15 }}>{kolonneH.toFixed(1)} h</div>
+              background: "var(--border)", borderRadius:8, padding:"10px 12px", marginTop:8 }}>
+              <div style={{ color: "var(--muted)", fontSize:12 }}>Kolonne gesamt</div>
+              <div style={{ color: "var(--yellow)", fontWeight:800, fontSize:15 }}>{kolonneH.toFixed(1)} h</div>
             </div>
           )}
         </div>
@@ -1397,17 +1397,17 @@ function KolonnenView({ kolonnen, projekt }) {
     <div>
       {/* KPI Leiste */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, marginBottom:14 }}>
-        <div style={{ background: C.bgMid, borderRadius:10, padding:"11px 12px", borderBottom:`3px solid ${C.gelb}` }}>
-          <div style={{ color: C.muted, fontSize:10 }}>Kolonnen</div>
-          <div style={{ color: C.text, fontWeight:800, fontSize:22 }}>{kolonnen.length}</div>
+        <div style={{ background: "var(--surface)", borderRadius:10, padding:"11px 12px", borderBottom:`3px solid ${'var(--yellow)'}` }}>
+          <div style={{ color: "var(--muted)", fontSize:10 }}>Kolonnen</div>
+          <div style={{ color: "var(--text)", fontWeight:800, fontSize:22 }}>{kolonnen.length}</div>
         </div>
-        <div style={{ background: C.bgMid, borderRadius:10, padding:"11px 12px", borderBottom:`3px solid ${C.blau}` }}>
-          <div style={{ color: C.muted, fontSize:10 }}>Mitarbeiter</div>
-          <div style={{ color: C.text, fontWeight:800, fontSize:22 }}>{totalMann}</div>
+        <div style={{ background: "var(--surface)", borderRadius:10, padding:"11px 12px", borderBottom:`3px solid ${'var(--blue)'}` }}>
+          <div style={{ color: "var(--muted)", fontSize:10 }}>Mitarbeiter</div>
+          <div style={{ color: "var(--text)", fontWeight:800, fontSize:22 }}>{totalMann}</div>
         </div>
-        <div style={{ background: C.bgMid, borderRadius:10, padding:"11px 12px", borderBottom:`3px solid ${C.gruen}` }}>
-          <div style={{ color: C.muted, fontSize:10 }}>Stunden Σ</div>
-          <div style={{ color: C.text, fontWeight:800, fontSize:22 }}>
+        <div style={{ background: "var(--surface)", borderRadius:10, padding:"11px 12px", borderBottom:`3px solid ${'var(--green)'}` }}>
+          <div style={{ color: "var(--muted)", fontSize:10 }}>Stunden Σ</div>
+          <div style={{ color: "var(--text)", fontWeight:800, fontSize:22 }}>
             {ladeStatus === "ok" ? totalStd.toFixed(1)+"h" : "—"}
           </div>
         </div>
@@ -1425,7 +1425,7 @@ function KolonnenView({ kolonnen, projekt }) {
             <input type="date" value={bisDatum} onChange={e => setBisDatum(e.target.value)} style={inputStyle()} />
           </div>
           <button onClick={ladeZeiten}
-            style={{ background: C.bgFaint, border:"none", color: C.text,
+            style={{ background: "var(--border)", border:"none", color: "var(--text)",
               borderRadius:8, padding:"10px 12px", cursor:"pointer", fontSize:16,
               height:40, display:"flex", alignItems:"center" }}>
             {ladeStatus === "loading" ? "⏳" : "🔄"}
@@ -1435,10 +1435,10 @@ function KolonnenView({ kolonnen, projekt }) {
 
       {/* Status-Banner */}
       {!konfiguriert && (
-        <div style={{ background: C.bgFaint, borderRadius:8, padding:"8px 12px", marginBottom:12,
+        <div style={{ background: "var(--border)", borderRadius:8, padding:"8px 12px", marginBottom:12,
           display:"flex", gap:8, alignItems:"center" }}>
           <span style={{ fontSize:14 }}>ℹ️</span>
-          <span style={{ color: C.muted, fontSize:12 }}>
+          <span style={{ color: "var(--muted)", fontSize:12 }}>
             123erfasst nicht konfiguriert — Stunden werden aus Mock-Daten angezeigt.
           </span>
         </div>
@@ -1447,13 +1447,13 @@ function KolonnenView({ kolonnen, projekt }) {
         <div style={{ background:"#2A2010", borderRadius:8, padding:"8px 12px", marginBottom:12,
           display:"flex", gap:8, alignItems:"center" }}>
           <span style={{ fontSize:14 }}>⚠️</span>
-          <span style={{ color: C.gelb, fontSize:12 }}>
+          <span style={{ color: "var(--yellow)", fontSize:12 }}>
             Kein 123erfasst-Projekt verknüpft. Im ⏱️ Zeiten-Tab verknüpfen.
           </span>
         </div>
       )}
       {ladeStatus === "error" && (
-        <div style={{ background:"#2E1A1A", borderRadius:8, padding:"8px 12px", marginBottom:12, color: C.rot, fontSize:12 }}>
+        <div style={{ background:"#2E1A1A", borderRadius:8, padding:"8px 12px", marginBottom:12, color: "var(--red)", fontSize:12 }}>
           ❌ Zeitdaten konnten nicht geladen werden.
         </div>
       )}
@@ -1470,8 +1470,8 @@ function KolonnenView({ kolonnen, projekt }) {
         />
       ))}
 
-      <button style={{ width:"100%", background: C.bgFaint, color: C.text,
-        border:`1px dashed ${C.beton}`, borderRadius:10, padding:12, cursor:"pointer", fontSize:14 }}>
+      <button style={{ width:"100%", background: "var(--border)", color: "var(--text)",
+        border:`1px dashed ${'var(--muted)'}`, borderRadius:10, padding:12, cursor:"pointer", fontSize:14 }}>
         + Kolonne einteilen
       </button>
     </div>
@@ -1551,9 +1551,9 @@ function DiktierFeld({ label, value, rows = 3, onChange }) {
         <Label>{label}</Label>
         {unterstuetzt && (
           <button onClick={toggleDiktat}
-            style={{ background: aktiv ? C.rot : C.bgFaint,
-              color: aktiv ? "#fff" : C.muted,
-              border: aktiv ? `1px solid ${C.rot}` : `1px solid ${C.bgLight}`,
+            style={{ background: aktiv ? "var(--red)" : "var(--border)",
+              color: aktiv ? "#fff" : "var(--muted)",
+              border: aktiv ? `1px solid ${'var(--red)'}` : `1px solid ${'var(--surface2)'}`,
               borderRadius:20, padding:"3px 10px", cursor:"pointer",
               fontSize:11, fontWeight: aktiv ? 700 : 400,
               display:"flex", alignItems:"center", gap:5,
@@ -1574,8 +1574,8 @@ function DiktierFeld({ label, value, rows = 3, onChange }) {
       {aktiv && (
         <div style={{ background:"#2E1A1A", borderRadius:8, padding:"8px 12px",
           marginBottom:6, display:"flex", alignItems:"center", gap:8,
-          border:`1px solid ${C.rot}44` }}>
-          <div style={{ width:8, height:8, borderRadius:4, background: C.rot,
+          border:`1px solid ${'var(--red)'}44` }}>
+          <div style={{ width:8, height:8, borderRadius:4, background: "var(--red)",
             flexShrink:0, animation:"blink 1s infinite" }} />
           <div style={{ flex:1 }}>
             {interim ? (
@@ -1583,7 +1583,7 @@ function DiktierFeld({ label, value, rows = 3, onChange }) {
                 {interim}
               </span>
             ) : (
-              <span style={{ color: C.muted, fontSize:12 }}>Sprechen Sie jetzt…</span>
+              <span style={{ color: "var(--muted)", fontSize:12 }}>Sprechen Sie jetzt…</span>
             )}
           </div>
         </div>
@@ -1593,9 +1593,9 @@ function DiktierFeld({ label, value, rows = 3, onChange }) {
       <textarea rows={rows} value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={aktiv ? "Diktat läuft…" : "Tippen oder 🎤 Diktieren"}
-        style={{ width:"100%", background: aktiv ? "#1A1A2E" : C.bgLight,
-          color: C.text,
-          border:`1px solid ${aktiv ? C.rot+"66" : C.bgFaint}`,
+        style={{ width:"100%", background: aktiv ? "#1A1A2E" : "var(--surface2)",
+          color: "var(--text)",
+          border:`1px solid ${aktiv ? "var(--red)"+"66" : "var(--border)"}`,
           borderRadius:8, padding:10, fontSize:13, resize:"none",
           boxSizing:"border-box", transition:"border-color 0.2s, background 0.2s" }} />
 
@@ -1908,7 +1908,7 @@ function PDFExportButton({ bericht, feld, projekt, eigeneFirma, wetter, kolonnen
   }
   return (
     <button onClick={handleExport}
-      style={{ background: C.rot, color:"#fff", border:"none", borderRadius:8,
+      style={{ background: "var(--red)", color:"#fff", border:"none", borderRadius:8,
         padding:"6px 14px", fontWeight:700, cursor:"pointer", fontSize:13,
         display:"flex", alignItems:"center", gap:6 }}>
       📄 PDF
@@ -2008,7 +2008,7 @@ function KIBerichtButton({ onGenerated, projekt, kolonnen, wetter }) {
   return (
     <>
       <button onClick={() => setOffen(true)}
-        style={{ background: C.blau, color:"#fff", border:"none", borderRadius:8,
+        style={{ background: "var(--blue)", color:"#fff", border:"none", borderRadius:8,
           padding:"6px 14px", fontWeight:700, cursor:"pointer", fontSize:13,
           display:"flex", alignItems:"center", gap:6 }}>
         🤖 KI-Bericht
@@ -2017,14 +2017,14 @@ function KIBerichtButton({ onGenerated, projekt, kolonnen, wetter }) {
       {offen && (
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:500,
           display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
-          <div style={{ background: C.bgMid, borderRadius:"16px 16px 0 0", padding:22,
+          <div style={{ background: "var(--surface)", borderRadius:"16px 16px 0 0", padding:22,
             width:"100%", maxWidth:520 }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
-              <div style={{ color: C.gelb, fontWeight:700, fontSize:16 }}>🤖 KI-Tagesbericht</div>
+              <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:16 }}>🤖 KI-Tagesbericht</div>
               <button onClick={() => setOffen(false)}
-                style={{ background:"none", border:"none", color: C.muted, fontSize:22, cursor:"pointer" }}>✕</button>
+                style={{ background:"none", border:"none", color: "var(--muted)", fontSize:22, cursor:"pointer" }}>✕</button>
             </div>
-            <div style={{ color: C.muted, fontSize:13, marginBottom:12 }}>
+            <div style={{ color: "var(--muted)", fontSize:13, marginBottom:12 }}>
               Beschreibe kurz was heute auf der Baustelle passiert ist — die KI erstellt daraus einen vollständigen, professionellen Bericht.
             </div>
 
@@ -2033,13 +2033,13 @@ function KIBerichtButton({ onGenerated, projekt, kolonnen, wetter }) {
               <textarea rows={5} value={diktat}
                 onChange={e => setDiktat(e.target.value)}
                 placeholder="z.B. Heute haben wir die Bodenplatte B1 fertig betoniert. Kolonne Huber war mit 4 Mann da. Nachmittags kam Regen, haben aufgehört. Bewehrung für C1 läuft gut..."
-                style={{ width:"100%", background: aufnahme ? "#1A1A2E" : C.bgLight,
-                  color: C.text, border:`1px solid ${aufnahme ? C.rot : C.bgFaint}`,
+                style={{ width:"100%", background: aufnahme ? "#1A1A2E" : "var(--surface2)",
+                  color: "var(--text)", border:`1px solid ${aufnahme ? "var(--red)" : "var(--border)"}`,
                   borderRadius:8, padding:"10px 12px", fontSize:13, resize:"none",
                   boxSizing:"border-box" }} />
               <button onClick={startDiktat}
                 style={{ position:"absolute", bottom:10, right:10,
-                  background: aufnahme ? C.rot : C.bgFaint, color: aufnahme ? "#fff" : C.muted,
+                  background: aufnahme ? "var(--red)" : "var(--border)", color: aufnahme ? "#fff" : "var(--muted)",
                   border:"none", borderRadius:20, padding:"4px 12px", cursor:"pointer", fontSize:12 }}>
                 {aufnahme ? "⏹ Stopp" : "🎤 Diktieren"}
               </button>
@@ -2047,11 +2047,11 @@ function KIBerichtButton({ onGenerated, projekt, kolonnen, wetter }) {
 
             <div style={{ display:"flex", gap:10 }}>
               <button onClick={() => setOffen(false)}
-                style={{ flex:1, background: C.bgFaint, color: C.muted, border:"none",
+                style={{ flex:1, background: "var(--border)", color: "var(--muted)", border:"none",
                   borderRadius:10, padding:13, cursor:"pointer" }}>Abbrechen</button>
               <button onClick={generieren} disabled={!diktat.trim() || laden}
-                style={{ flex:2, background: diktat.trim() && !laden ? C.gelb : C.bgFaint,
-                  color: diktat.trim() && !laden ? "#1C2027" : C.muted,
+                style={{ flex:2, background: diktat.trim() && !laden ? "var(--yellow)" : "var(--border)",
+                  color: diktat.trim() && !laden ? "#1C2027" : "var(--muted)",
                   border:"none", borderRadius:10, padding:13, fontWeight:700, cursor:"pointer", fontSize:15 }}>
                 {laden ? "⏳ KI schreibt…" : "✨ Bericht generieren"}
               </button>
@@ -2149,14 +2149,14 @@ function usePushNotifications(projekte, eigeneFirma) {
 function PushBanner({ erlaubt, berechtigung }) {
   if (erlaubt) return null;
   return (
-    <div style={{ background: C.blauLight, borderRadius:12, padding:"12px 16px", marginBottom:12,
-      border:`1.5px solid ${C.blau}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+    <div style={{ background: "var(--blue)"Light, borderRadius:12, padding:"12px 16px", marginBottom:12,
+      border:`1.5px solid ${'var(--blue)'}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
       <div>
-        <div style={{ color: C.text, fontSize:13, fontWeight:700 }}>🔔 Benachrichtigungen aktivieren</div>
-        <div style={{ color: C.muted, fontSize:11 }}>Wetterwarnung, Verzug & Tagesbericht-Erinnerung</div>
+        <div style={{ color: "var(--text)", fontSize:13, fontWeight:700 }}>🔔 Benachrichtigungen aktivieren</div>
+        <div style={{ color: "var(--muted)", fontSize:11 }}>Wetterwarnung, Verzug & Tagesbericht-Erinnerung</div>
       </div>
       <button onClick={berechtigung}
-        style={{ background: C.blau, color:"#fff", border:"none", borderRadius:8,
+        style={{ background: "var(--blue)", color:"#fff", border:"none", borderRadius:8,
           padding:"6px 12px", cursor:"pointer", fontWeight:700, fontSize:12 }}>
         Aktivieren
       </button>
@@ -2253,24 +2253,24 @@ function useOfflineSync(online, sbConnected) {
 function OfflineSyncBanner({ pending, syncing, online }) {
   if (online && pending === 0 && !syncing) return null;
   return (
-    <div style={{ background: syncing ? C.gruenLight : pending > 0 ? "#FFF3CC" : C.bgLight,
+    <div style={{ background: syncing ? "var(--green)"Light : pending > 0 ? "#FFF3CC" : "var(--surface2)",
       borderRadius:10, padding:"8px 14px", marginBottom:10,
-      border:`1px solid ${syncing ? C.gruen : pending > 0 ? C.gelb : C.bgLight}`,
+      border:`1px solid ${syncing ? "var(--green)" : pending > 0 ? "var(--yellow)" : "var(--surface2)"}`,
       display:"flex", alignItems:"center", gap:10 }}>
       <span style={{ fontSize:16 }}>{syncing ? "🔄" : pending > 0 ? "📴" : "✅"}</span>
       <div>
-        <div style={{ color: syncing ? C.gruen : pending > 0 ? C.gelb : C.text, fontWeight:700, fontSize:12 }}>
+        <div style={{ color: syncing ? "var(--green)" : pending > 0 ? "var(--yellow)" : "var(--text)", fontWeight:700, fontSize:12 }}>
           {syncing ? "Synchronisiere…" : pending > 0 ? `${pending} Einträge offline gespeichert` : "Alles synchronisiert"}
         </div>
         {pending > 0 && !syncing && (
-          <div style={{ color: C.muted, fontSize:10 }}>Werden synchronisiert sobald wieder online</div>
+          <div style={{ color: "var(--muted)", fontSize:10 }}>Werden synchronisiert sobald wieder online</div>
         )}
       </div>
     </div>
   );
 }
 
-function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eigeneFirma, kolonnen, offlineSpeichern }) {
+function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eigeneFirma, kolonnen, offlineSpeichern, aufgaben, setAufgaben }) {
   const [open,       setOpen]       = useState(false);
   const [detail,     setDetail]     = useState(null);
   const [form,       setForm]       = useState({ taetigkeit:"", besonderheiten:"", material:"", arbeiter:0, maengel:0 });
@@ -2384,11 +2384,11 @@ function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eigeneFirm
     <div>
       <SupabaseStatus connected={sbConnected} />
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-        <div style={{ color: C.text, fontWeight:700 }}>Bautagebuch</div>
+        <div style={{ color: "var(--text)", fontWeight:700 }}>Bautagebuch</div>
         <div style={{ display:"flex", gap:8 }}>
           <KIBerichtButton onGenerated={handleKIGenerated} projekt={projekt} kolonnen={kolonnen} wetter={wetter} />
           <button onClick={() => setOpen(true)}
-            style={{ background: C.gelb, color:"#1C2027", border:"none",
+            style={{ background: "var(--yellow)", color:"#1C2027", border:"none",
               borderRadius:8, padding:"6px 14px", fontWeight:700, cursor:"pointer", fontSize:13 }}>
             + Bericht
           </button>
@@ -2398,30 +2398,30 @@ function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eigeneFirm
       {/* Berichtsliste */}
       {berichte.map((b, i) => (
         <div key={i} onClick={() => setDetail(b)}
-          style={{ background:"#FFFFFF", borderRadius:14, padding:"16px 18px", marginBottom:12,
-            borderLeft:`4px solid ${C.gelb}`, cursor:"pointer",
+          style={{ background:"var(--surface)", borderRadius:14, padding:"16px 18px", marginBottom:12,
+            borderLeft:`4px solid ${'var(--yellow)'}`, cursor:"pointer",
             boxShadow:"0 2px 8px rgba(0,0,0,0.05)" }}>
           <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6, alignItems:"flex-start" }}>
-            <div style={{ color: C.text, fontWeight:600 }}>{b.datum}</div>
+            <div style={{ color: "var(--text)", fontWeight:600 }}>{b.datum}</div>
             <div style={{ display:"flex", gap:6, alignItems:"center" }} onClick={e => e.stopPropagation()}>
               <PDFExportButton bericht={b} projekt={projekt} eigeneFirma={eigeneFirma} wetter={b.wetterData || wetter} kolonnen={kolonnen} typ="bericht" />
               {b.bilder?.length > 0 && (
-                <div style={{ background: C.blau+"33", color: C.blau, fontSize:10, padding:"2px 7px", borderRadius:10 }}>
+                <div style={{ background: "var(--blue)"+"33", color: "var(--blue)", fontSize:10, padding:"2px 7px", borderRadius:10 }}>
                   📷 {b.bilder.length}
                 </div>
               )}
             </div>
           </div>
-          <div style={{ color: C.muted, fontSize:11, marginBottom:4 }}>{b.wetter} · {b.arbeiter} Arbeiter</div>
-          <div style={{ color: C.betonLight, fontSize:13 }}>{b.taetigkeit}</div>
-          {b.maengel > 0 && <div style={{ color: C.rost, fontSize:12, marginTop:6 }}>⚠️ {b.maengel} Mängel</div>}
+          <div style={{ color: "var(--muted)", fontSize:11, marginBottom:4 }}>{b.wetter} · {b.arbeiter} Arbeiter</div>
+          <div style={{ color: "var(--text2)", fontSize:13 }}>{b.taetigkeit}</div>
+          {b.maengel > 0 && <div style={{ color: "var(--orange)", fontSize:12, marginTop:6 }}>⚠️ {b.maengel} Mängel</div>}
           {b.bilder?.length > 0 && (
             <div style={{ display:"flex", gap:6, marginTop:10, flexWrap:"wrap" }}>
               {b.bilder.slice(0,4).map((url, j) => (
-                <img key={j} src={url} alt="" style={{ width:56, height:56, borderRadius:6, objectFit:"cover", border:`1px solid ${C.bgFaint}` }} />
+                <img key={j} src={url} alt="" style={{ width:56, height:56, borderRadius:6, objectFit:"cover", border:`1px solid ${'var(--border)'}` }} />
               ))}
               {b.bilder.length > 4 && (
-                <div style={{ width:56, height:56, borderRadius:6, background: C.bgFaint, display:"flex", alignItems:"center", justifyContent:"center", color: C.muted, fontSize:12, fontWeight:700 }}>
+                <div style={{ width:56, height:56, borderRadius:6, background: "var(--border)", display:"flex", alignItems:"center", justifyContent:"center", color: "var(--muted)", fontSize:12, fontWeight:700 }}>
                   +{b.bilder.length - 4}
                 </div>
               )}
@@ -2434,11 +2434,11 @@ function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eigeneFirm
       {detail && (
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.9)", zIndex:300,
           overflowY:"auto" }}>
-          <div style={{ background: C.bgMid, minHeight:"100vh", maxWidth:520, margin:"0 auto", padding:20 }}>
+          <div style={{ background: "var(--surface)", minHeight:"100vh", maxWidth:520, margin:"0 auto", padding:20 }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
-              <div style={{ color: C.gelb, fontWeight:700, fontSize:16 }}>📋 {detail.datum}</div>
+              <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:16 }}>📋 {detail.datum}</div>
               <button onClick={() => setDetail(null)}
-                style={{ background: C.bgFaint, border:"none", color: C.text,
+                style={{ background: "var(--border)", border:"none", color: "var(--text)",
                   borderRadius:8, padding:"6px 14px", cursor:"pointer" }}>✕ Schließen</button>
             </div>
 
@@ -2450,9 +2450,9 @@ function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eigeneFirm
                 ["Mängel",    detail.maengel || 0],
                 ["Fotos",     detail.bilder?.length || 0],
               ].map(([k,v]) => (
-                <div key={k} style={{ background: C.bgFaint, borderRadius:8, padding:"10px 12px" }}>
-                  <div style={{ color: C.muted, fontSize:10 }}>{k}</div>
-                  <div style={{ color: C.text, fontWeight:700, fontSize:16 }}>{v}</div>
+                <div key={k} style={{ background: "var(--border)", borderRadius:8, padding:"10px 12px" }}>
+                  <div style={{ color: "var(--muted)", fontSize:10 }}>{k}</div>
+                  <div style={{ color: "var(--text)", fontWeight:700, fontSize:16 }}>{v}</div>
                 </div>
               ))}
             </div>
@@ -2464,16 +2464,16 @@ function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eigeneFirm
               ["Materiallieferungen",    detail.material],
             ].filter(([,v]) => v).map(([k,v]) => (
               <div key={k} style={{ marginBottom:14 }}>
-                <div style={{ color: C.muted, fontSize:11, marginBottom:4 }}>{k}</div>
-                <div style={{ background: C.bgFaint, borderRadius:8, padding:"10px 12px",
-                  color: C.betonLight, fontSize:13, lineHeight:1.5 }}>{v}</div>
+                <div style={{ color: "var(--muted)", fontSize:11, marginBottom:4 }}>{k}</div>
+                <div style={{ background: "var(--border)", borderRadius:8, padding:"10px 12px",
+                  color: "var(--text2)", fontSize:13, lineHeight:1.5 }}>{v}</div>
               </div>
             ))}
 
             {/* Bilder Galerie */}
             {detail.bilder?.length > 0 && (
               <div>
-                <div style={{ color: C.muted, fontSize:11, marginBottom:8 }}>
+                <div style={{ color: "var(--muted)", fontSize:11, marginBottom:8 }}>
                   FOTOS ({detail.bilder.length})
                 </div>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
@@ -2482,7 +2482,7 @@ function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eigeneFirm
                       onClick={() => window.open(url, "_blank")}
                       style={{ width:"100%", aspectRatio:"4/3", objectFit:"cover",
                         borderRadius:10, cursor:"pointer",
-                        border:`1px solid ${C.bgFaint}` }} />
+                        border:`1px solid ${'var(--border)'}` }} />
                   ))}
                 </div>
               </div>
@@ -2495,15 +2495,15 @@ function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eigeneFirm
       {open && (
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.8)", zIndex:200,
           display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
-          <div style={{ background: C.bgMid, borderRadius:"16px 16px 0 0", padding:22,
+          <div style={{ background: "var(--surface)", borderRadius:"16px 16px 0 0", padding:22,
             width:"100%", maxWidth:520, maxHeight:"92vh", overflowY:"auto" }}>
 
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
-              <div style={{ color: C.gelb, fontWeight:700, fontSize:16 }}>
+              <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:16 }}>
                 📋 Tagesbericht – {new Date().toLocaleDateString("de-DE")}
               </div>
               <button onClick={resetForm}
-                style={{ background:"none", border:"none", color: C.muted, fontSize:22, cursor:"pointer" }}>✕</button>
+                style={{ background:"none", border:"none", color: "var(--muted)", fontSize:22, cursor:"pointer" }}>✕</button>
             </div>
 
             {/* Zahlenfelder */}
@@ -2546,14 +2546,14 @@ function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eigeneFirm
               {/* Upload-Button */}
               <div style={{ display:"flex", gap:8, marginTop:6, marginBottom:10 }}>
                 <button onClick={() => { fileRef.current.removeAttribute("capture"); fileRef.current.click(); }}
-                  style={{ flex:1, background: C.bgFaint, color: C.text,
-                    border:`1px dashed ${C.beton}`, borderRadius:10, padding:"10px 0",
+                  style={{ flex:1, background: "var(--border)", color: "var(--text)",
+                    border:`1px dashed ${'var(--muted)'}`, borderRadius:10, padding:"10px 0",
                     cursor:"pointer", fontSize:13 }}>
                   📁 Galerie
                 </button>
                 <button onClick={() => { fileRef.current.setAttribute("capture","environment"); fileRef.current.click(); }}
-                  style={{ flex:1, background: C.bgFaint, color: C.text,
-                    border:`1px dashed ${C.beton}`, borderRadius:10, padding:"10px 0",
+                  style={{ flex:1, background: "var(--border)", color: "var(--text)",
+                    border:`1px dashed ${'var(--muted)'}`, borderRadius:10, padding:"10px 0",
                     cursor:"pointer", fontSize:13 }}>
                   📷 Kamera
                 </button>
@@ -2576,7 +2576,7 @@ function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eigeneFirm
                           alignItems:"center", justifyContent:"center", padding:0 }}>
                         ✕
                       </button>
-                      <div style={{ color: C.muted, fontSize:9, marginTop:2,
+                      <div style={{ color: "var(--muted)", fontSize:9, marginTop:2,
                         textAlign:"center", overflow:"hidden", textOverflow:"ellipsis",
                         whiteSpace:"nowrap" }}>{b.groesse}</div>
                     </div>
@@ -2588,13 +2588,13 @@ function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eigeneFirm
             {/* Speichern */}
             <div style={{ display:"flex", gap:10 }}>
               <button onClick={resetForm}
-                style={{ flex:1, background: C.bgFaint, color: C.muted,
+                style={{ flex:1, background: "var(--border)", color: "var(--muted)",
                   border:"none", borderRadius:8, padding:13, cursor:"pointer" }}>
                 Abbrechen
               </button>
               <button onClick={saveBericht} disabled={uploading}
-                style={{ flex:2, background: uploading ? C.bgFaint : C.gelb,
-                  color: uploading ? C.muted : "#1C2027",
+                style={{ flex:2, background: uploading ? "var(--border)" : "var(--yellow)",
+                  color: uploading ? "var(--muted)" : "#1C2027",
                   border:"none", borderRadius:8, padding:13, fontWeight:700,
                   cursor: uploading ? "default" : "pointer", fontSize:15 }}>
                 {uploading ? "⏳ Bilder werden hochgeladen…"
@@ -2626,26 +2626,26 @@ function DashboardView({ felder, kolonnen, sbConnected }) {
       <SupabaseStatus connected={sbConnected} />
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:16 }}>
         {[
-          { l:"m² betoniert", v:`${doneM2}/${totalM2}`, u:"m²", col: C.gruen },
-          { l:"Mann heute",   v:totalMann,               u:"",   col: C.gelb  },
-          { l:"Felder offen", v:offen,                   u:"",   col: C.beton },
-          { l:"Verzug",       v:delayed,                 u:"",   col: delayed > 0 ? C.rot : C.gruen },
+          { l:"m² betoniert", v:`${doneM2}/${totalM2}`, u:"m²", col: "var(--green)" },
+          { l:"Mann heute",   v:totalMann,               u:"",   col: "var(--yellow)"  },
+          { l:"Felder offen", v:offen,                   u:"",   col: "var(--muted)" },
+          { l:"Verzug",       v:delayed,                 u:"",   col: delayed > 0 ? "var(--red)" : "var(--green)" },
         ].map(k => (
-          <div key={k.l} style={{ background: C.bgMid, borderRadius:10, padding:"14px 16px", borderBottom:`3px solid ${k.col}` }}>
-            <div style={{ color: C.muted, fontSize:11, textTransform:"uppercase", letterSpacing:0.8 }}>{k.l}</div>
-            <div style={{ color: C.text, fontSize:24, fontWeight:800 }}>{k.v}<span style={{ fontSize:12, fontWeight:400, marginLeft:2 }}>{k.u}</span></div>
+          <div key={k.l} style={{ background: "var(--surface)", borderRadius:10, padding:"14px 16px", borderBottom:`3px solid ${k.col}` }}>
+            <div style={{ color: "var(--muted)", fontSize:11, textTransform:"uppercase", letterSpacing:0.8 }}>{k.l}</div>
+            <div style={{ color: "var(--text)", fontSize:24, fontWeight:800 }}>{k.v}<span style={{ fontSize:12, fontWeight:400, marginLeft:2 }}>{k.u}</span></div>
           </div>
         ))}
       </div>
-      <div style={{ color: C.text, fontWeight:700, marginBottom:10 }}>Aktive Kolonnen</div>
+      <div style={{ color: "var(--text)", fontWeight:700, marginBottom:10 }}>Aktive Kolonnen</div>
       {kolonnen.map(k => (
-        <div key={k.id} style={{ background: C.bgMid, borderRadius:8, padding:"10px 14px", marginBottom:8,
+        <div key={k.id} style={{ background: "var(--surface)", borderRadius:8, padding:"10px 14px", marginBottom:8,
           display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div>
-            <div style={{ color: C.text, fontSize:13, fontWeight:600 }}>{k.name}</div>
-            <div style={{ color: C.muted, fontSize:12 }}>{k.einsatz}</div>
+            <div style={{ color: "var(--text)", fontSize:13, fontWeight:600 }}>{k.name}</div>
+            <div style={{ color: "var(--muted)", fontSize:12 }}>{k.einsatz}</div>
           </div>
-          <div style={{ color: C.gelb, fontSize:13, fontWeight:700 }}>👷 {k.mitglieder}</div>
+          <div style={{ color: "var(--yellow)", fontSize:13, fontWeight:700 }}>👷 {k.mitglieder}</div>
         </div>
       ))}
     </div>
@@ -2883,8 +2883,8 @@ function RasterGenerator({ onGenerate }) {
   }
 
   return (
-    <div style={{ background: C.bgMid, borderRadius:14, padding:18, marginBottom:16 }}>
-      <div style={{ color: C.gelb, fontWeight:700, fontSize:15, marginBottom:14 }}>🔲 Raster generieren</div>
+    <div style={{ background: "var(--surface)", borderRadius:14, padding:18, marginBottom:16 }}>
+      <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:15, marginBottom:14 }}>🔲 Raster generieren</div>
 
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:14 }}>
         {/* Zeilen */}
@@ -2892,7 +2892,7 @@ function RasterGenerator({ onGenerate }) {
           <Label>Zeilen</Label>
           <div style={{ display:"flex", alignItems:"center", gap:8 }}>
             <StepBtn onClick={() => setZeilen(z => Math.max(1,z-1))}>−</StepBtn>
-            <span style={{ color: C.text, fontWeight:700, fontSize:20, minWidth:24, textAlign:"center" }}>{zeilen}</span>
+            <span style={{ color: "var(--text)", fontWeight:700, fontSize:20, minWidth:24, textAlign:"center" }}>{zeilen}</span>
             <StepBtn onClick={() => setZeilen(z => Math.min(10,z+1))}>+</StepBtn>
           </div>
         </div>
@@ -2901,7 +2901,7 @@ function RasterGenerator({ onGenerate }) {
           <Label>Spalten</Label>
           <div style={{ display:"flex", alignItems:"center", gap:8 }}>
             <StepBtn onClick={() => setSpalten(s => Math.max(1,s-1))}>−</StepBtn>
-            <span style={{ color: C.text, fontWeight:700, fontSize:20, minWidth:24, textAlign:"center" }}>{spalten}</span>
+            <span style={{ color: "var(--text)", fontWeight:700, fontSize:20, minWidth:24, textAlign:"center" }}>{spalten}</span>
             <StepBtn onClick={() => setSpalten(s => Math.min(12,s+1))}>+</StepBtn>
           </div>
         </div>
@@ -2925,8 +2925,8 @@ function RasterGenerator({ onGenerate }) {
         <div style={{ display:"flex", gap:8 }}>
           {[["alpha","A1, B2, C3…"],["num","Präfix + lfd. Nr."]].map(([v,l]) => (
             <button key={v} onClick={() => setSchema(v)}
-              style={{ flex:1, background: schema===v ? C.gelb : C.bgLight,
-                color: schema===v ? "#1C2027" : C.muted,
+              style={{ flex:1, background: schema===v ? "var(--yellow)" : "var(--surface2)",
+                color: schema===v ? "#1C2027" : "var(--muted)",
                 border:"none", borderRadius:8, padding:"8px 0", cursor:"pointer", fontSize:12, fontWeight: schema===v ? 700 : 400 }}>
               {l}
             </button>
@@ -2938,7 +2938,7 @@ function RasterGenerator({ onGenerate }) {
             <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
               {PRAEFIX_OPTIONEN.map(p => (
                 <button key={p} onClick={() => setPraefix(p)}
-                  style={{ background: praefix===p ? C.gelb : C.bgLight, color: praefix===p ? "#1C2027" : C.muted,
+                  style={{ background: praefix===p ? "var(--yellow)" : "var(--surface2)", color: praefix===p ? "#1C2027" : "var(--muted)",
                     border:"none", borderRadius:6, padding:"4px 12px", cursor:"pointer", fontWeight:700 }}>
                   {p}
                 </button>
@@ -2953,8 +2953,8 @@ function RasterGenerator({ onGenerate }) {
         <Label>Vorschau ({zeilen * spalten} Felder)</Label>
         <div style={{ display:"grid", gridTemplateColumns:`repeat(${spalten}, 1fr)`, gap:4 }}>
           {vorschau.map((name, i) => (
-            <div key={i} style={{ background: C.bgFaint, borderRadius:6, padding:"6px 4px", textAlign:"center",
-              color: C.betonLight, fontSize:11, fontWeight:600, border:`1px solid ${C.bgLight}` }}>
+            <div key={i} style={{ background: "var(--border)", borderRadius:6, padding:"6px 4px", textAlign:"center",
+              color: "var(--text2)", fontSize:11, fontWeight:600, border:`1px solid ${'var(--surface2)'}` }}>
               {name}
             </div>
           ))}
@@ -2962,7 +2962,7 @@ function RasterGenerator({ onGenerate }) {
       </div>
 
       <button onClick={generate}
-        style={{ width:"100%", background: C.gelb, color:"#1C2027", border:"none",
+        style={{ width:"100%", background: "var(--yellow)", color:"#1C2027", border:"none",
           borderRadius:10, padding:13, fontWeight:700, cursor:"pointer", fontSize:15 }}>
         ✅ {zeilen * spalten} Felder erstellen
       </button>
@@ -2992,14 +2992,14 @@ function FeldEditor({ feld, allFelder, onSave, onDelete, onClose, projektTyp, pr
   return (
     <div style={{ position:"fixed", inset:0, background:"rgba(15,23,42,0.6)", backdropFilter:"blur(4px)", zIndex:300,
       display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
-      <div style={{ background: C.bgMid, borderRadius:"16px 16px 0 0", padding:20,
+      <div style={{ background: "var(--surface)", borderRadius:"16px 16px 0 0", padding:20,
         width:"100%", maxWidth:520, maxHeight:"90vh", overflowY:"auto" }}>
 
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
-          <div style={{ color: C.gelb, fontWeight:700, fontSize:16 }}>
+          <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:16 }}>
             {feld.id ? "✏️ Position bearbeiten" : "➕ Neue Position"}
           </div>
-          <button onClick={onClose} style={{ background:"none", border:"none", color: C.muted, fontSize:22, cursor:"pointer" }}>✕</button>
+          <button onClick={onClose} style={{ background:"none", border:"none", color: "var(--muted)", fontSize:22, cursor:"pointer" }}>✕</button>
         </div>
 
         {/* Gewerk-Auswahl (nur Hochbau) */}
@@ -3011,12 +3011,12 @@ function FeldEditor({ feld, allFelder, onSave, onDelete, onClose, projektTyp, pr
                 const aktiv = f.gewerk?.includes(g.label);
                 return (
                   <div key={g.label} onClick={() => setF(p => ({ ...p, gewerk: `${g.icon} ${g.label}`, bewehrung:"", name: p.name || "" }))}
-                    style={{ background: aktiv ? C.bgLight : C.bgFaint,
-                      border:`2px solid ${aktiv ? C.gelb : "transparent"}`,
+                    style={{ background: aktiv ? "var(--surface2)" : "var(--border)",
+                      border:`2px solid ${aktiv ? "var(--yellow)" : "transparent"}`,
                       borderRadius:9, padding:"8px 10px", cursor:"pointer",
                       display:"flex", alignItems:"center", gap:7 }}>
                     <span style={{ fontSize:18 }}>{g.icon}</span>
-                    <span style={{ color: aktiv ? C.text : C.muted, fontSize:11, fontWeight: aktiv ? 700 : 400 }}>{g.label}</span>
+                    <span style={{ color: aktiv ? "var(--text)" : "var(--muted)", fontSize:11, fontWeight: aktiv ? 700 : 400 }}>{g.label}</span>
                   </div>
                 );
               })}
@@ -3032,7 +3032,7 @@ function FeldEditor({ feld, allFelder, onSave, onDelete, onClose, projektTyp, pr
           <div style={{ display:"flex", flexWrap:"wrap", gap:5, marginBottom:6 }}>
             {aktivCfg.feldTypen.map(t => (
               <button key={t} onClick={() => setF(p=>({...p, name: f.name ? f.name : t}))}
-                style={{ background: C.bgFaint, color: C.muted, border:"none", borderRadius:6,
+                style={{ background: "var(--border)", color: "var(--muted)", border:"none", borderRadius:6,
                   padding:"4px 9px", cursor:"pointer", fontSize:11 }}>{t}</button>
             ))}
           </div>
@@ -3051,7 +3051,7 @@ function FeldEditor({ feld, allFelder, onSave, onDelete, onClose, projektTyp, pr
             <Label>Dauer (Tage)</Label>
             <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:4 }}>
               <StepBtn onClick={() => setF(p=>({...p,dauer_tage:Math.max(1,p.dauer_tage-1)}))}>−</StepBtn>
-              <span style={{ color: C.text, fontWeight:700, fontSize:18, minWidth:20, textAlign:"center" }}>{f.dauer_tage}</span>
+              <span style={{ color: "var(--text)", fontWeight:700, fontSize:18, minWidth:20, textAlign:"center" }}>{f.dauer_tage}</span>
               <StepBtn onClick={() => setF(p=>({...p,dauer_tage:p.dauer_tage+1}))}>+</StepBtn>
             </div>
           </div>
@@ -3072,8 +3072,8 @@ function FeldEditor({ feld, allFelder, onSave, onDelete, onClose, projektTyp, pr
               <div style={{ display:"flex", flexWrap:"wrap", gap:5, marginBottom:6 }}>
                 {ef.optionen.map(o => (
                   <button key={o} onClick={() => setF(p=>({...p,[ef.key]:o}))}
-                    style={{ background: f[ef.key]===o ? C.blau : C.bgFaint,
-                      color: f[ef.key]===o ? "#fff" : C.muted,
+                    style={{ background: f[ef.key]===o ? "var(--blue)" : "var(--border)",
+                      color: f[ef.key]===o ? "#fff" : "var(--muted)",
                       border:"none", borderRadius:7, padding:"5px 9px", cursor:"pointer", fontSize:11 }}>
                     {o}
                   </button>
@@ -3093,8 +3093,8 @@ function FeldEditor({ feld, allFelder, onSave, onDelete, onClose, projektTyp, pr
           <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:6 }}>
             {(aktivCfg.bewehrung||[]).map(o => (
               <button key={o} onClick={() => setF(p=>({...p,bewehrung:o}))}
-                style={{ background: f.bewehrung===o ? C.blau : C.bgFaint,
-                  color: f.bewehrung===o ? "#fff" : C.muted,
+                style={{ background: f.bewehrung===o ? "var(--blue)" : "var(--border)",
+                  color: f.bewehrung===o ? "#fff" : "var(--muted)",
                   border:"none", borderRadius:7, padding:"5px 10px", cursor:"pointer", fontSize:11 }}>
                 {o}
               </button>
@@ -3119,17 +3119,17 @@ function FeldEditor({ feld, allFelder, onSave, onDelete, onClose, projektTyp, pr
                       : [...(p.subIds||[]), s.id]
                   }))}
                     style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
-                      background: aktiv ? "#1A2040" : C.bgLight,
-                      border:`1.5px solid ${aktiv ? C.blau : C.bgFaint}`,
+                      background: aktiv ? "#1A2040" : "var(--surface2)",
+                      border:`1.5px solid ${aktiv ? "var(--blue)" : "var(--border)"}`,
                       borderRadius:9, padding:"9px 12px", cursor:"pointer" }}>
                     <div>
-                      <div style={{ color: C.text, fontSize:13, fontWeight: aktiv ? 700 : 400 }}>{s.name}</div>
+                      <div style={{ color: "var(--text)", fontSize:13, fontWeight: aktiv ? 700 : 400 }}>{s.name}</div>
                       <div style={{ display:"flex", gap:6, marginTop:2 }}>
                         {s.gewerke.map(k => {
                           const g = ALLE_GEWERKE.find(x=>x.key===k);
-                          return g ? <span key={k} style={{ color: C.muted, fontSize:10 }}>{g.icon} {g.label}</span> : null;
+                          return g ? <span key={k} style={{ color: "var(--muted)", fontSize:10 }}>{g.icon} {g.label}</span> : null;
                         })}
-                        {s.stundensatz > 0 && <span style={{ color: C.muted, fontSize:10 }}>· {s.stundensatz}€/Std.</span>}
+                        {s.stundensatz > 0 && <span style={{ color: "var(--muted)", fontSize:10 }}>· {s.stundensatz}€/Std.</span>}
                       </div>
                     </div>
                     <div style={{ fontSize:18 }}>{aktiv ? "🔵" : "⚪"}</div>
@@ -3150,12 +3150,12 @@ function FeldEditor({ feld, allFelder, onSave, onDelete, onClose, projektTyp, pr
                 return (
                   <div key={x.id} onClick={() => toggleAbh(x.id)}
                     style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
-                      background: active ? "#1A2A3A" : C.bgLight,
-                      border:`1.5px solid ${active ? C.blau : C.bgFaint}`,
+                      background: active ? "#1A2A3A" : "var(--surface2)",
+                      border:`1.5px solid ${active ? "var(--blue)" : "var(--border)"}`,
                       borderRadius:9, padding:"9px 12px", cursor:"pointer" }}>
                     <div>
-                      <div style={{ color: C.text, fontSize:13, fontWeight: active ? 700 : 400 }}>{x.name}</div>
-                      <div style={{ color: C.muted, fontSize:11 }}>{x.m2} m² · {x.status}</div>
+                      <div style={{ color: "var(--text)", fontSize:13, fontWeight: active ? 700 : 400 }}>{x.name}</div>
+                      <div style={{ color: "var(--muted)", fontSize:11 }}>{x.m2} m² · {x.status}</div>
                     </div>
                     <div style={{ fontSize:18 }}>{active ? "🔵" : "⚪"}</div>
                   </div>
@@ -3169,18 +3169,18 @@ function FeldEditor({ feld, allFelder, onSave, onDelete, onClose, projektTyp, pr
         <div style={{ display:"flex", gap:10 }}>
           {feld.id && (
             <button onClick={() => onDelete(f.id)}
-              style={{ background:"#2E1A1A", color: C.rot, border:`1px solid ${C.rot}`,
+              style={{ background:"#2E1A1A", color: "var(--red)", border:`1px solid ${'var(--red)'}`,
                 borderRadius:10, padding:"12px 16px", cursor:"pointer", fontSize:13 }}>
               🗑️
             </button>
           )}
           <button onClick={onClose}
-            style={{ flex:1, background: C.bgFaint, color: C.muted, border:"none", borderRadius:10, padding:13, cursor:"pointer" }}>
+            style={{ flex:1, background: "var(--border)", color: "var(--muted)", border:"none", borderRadius:10, padding:13, cursor:"pointer" }}>
             Abbrechen
           </button>
           <button onClick={() => onSave(f)} disabled={!f.name || !f.m2}
-            style={{ flex:2, background: f.name && f.m2 ? C.gelb : C.bgFaint,
-              color: f.name && f.m2 ? "#1C2027" : C.muted,
+            style={{ flex:2, background: f.name && f.m2 ? "var(--yellow)" : "var(--border)",
+              color: f.name && f.m2 ? "#1C2027" : "var(--muted)",
               border:"none", borderRadius:10, padding:13, fontWeight:700, cursor:"pointer", fontSize:15 }}>
             💾 Speichern
           </button>
@@ -3227,13 +3227,13 @@ function EditorView({ felder, setFelder, projektTyp }) {
       {/* Aktionsleiste */}
       <div style={{ display:"flex", gap:8, marginBottom:16 }}>
         <button onClick={() => setShowRaster(s => !s)}
-          style={{ flex:1, background: showRaster ? C.gelb : C.bgMid,
-            color: showRaster ? "#1C2027" : C.text, border:`1px solid ${showRaster ? C.gelb : C.bgFaint}`,
+          style={{ flex:1, background: showRaster ? "var(--yellow)" : "var(--surface)",
+            color: showRaster ? "#1C2027" : "var(--text)", border:`1px solid ${showRaster ? "var(--yellow)" : "var(--border)"}`,
             borderRadius:10, padding:"10px 0", cursor:"pointer", fontWeight:700, fontSize:13 }}>
           🔲 Raster
         </button>
         <button onClick={() => setEditFeld({ name:"", m2:0, geplant:"", dauer_tage:1, bewehrung:"", abhaengigkeiten:[], status:"planned" })}
-          style={{ flex:1, background: C.bgMid, color: C.text, border:`1px solid ${C.bgFaint}`,
+          style={{ flex:1, background: "var(--surface)", color: "var(--text)", border:`1px solid ${'var(--border)'}`,
             borderRadius:10, padding:"10px 0", cursor:"pointer", fontWeight:700, fontSize:13 }}>
           ➕ {cfg.einheitLabel}
         </button>
@@ -3246,7 +3246,7 @@ function EditorView({ felder, setFelder, projektTyp }) {
       <div style={{ display:"flex", gap:6, marginBottom:12, overflowX:"auto" }}>
         {[["all","Alle"],["planned","Geplant"],["in_progress","Aktiv"],["done","Fertig"],["blocked","Blockiert"]].map(([v,l]) => (
           <button key={v} onClick={() => setFilter(v)}
-            style={{ background: filter===v ? C.gelb : C.bgMid, color: filter===v ? "#1C2027" : C.muted,
+            style={{ background: filter===v ? "var(--yellow)" : "var(--surface)", color: filter===v ? "#1C2027" : "var(--muted)",
               border:"none", borderRadius:20, padding:"5px 12px", cursor:"pointer", fontSize:12,
               fontWeight: filter===v ? 700 : 400, whiteSpace:"nowrap" }}>
             {l} {v==="all" ? `(${felder.length})` : `(${felder.filter(f=>f.status===v).length})`}
@@ -3256,22 +3256,22 @@ function EditorView({ felder, setFelder, projektTyp }) {
 
       {/* Feldliste */}
       {filtered.length === 0 ? (
-        <div style={{ background: C.bgMid, borderRadius:12, padding:32, textAlign:"center" }}>
+        <div style={{ background: "var(--surface)", borderRadius:12, padding:32, textAlign:"center" }}>
           <div style={{ fontSize:36 }}>🏗️</div>
-          <div style={{ color: C.muted, marginTop:10 }}>Noch keine Felder angelegt.<br/>Raster generieren oder Einzelfeld hinzufügen.</div>
+          <div style={{ color: "var(--muted)", marginTop:10 }}>Noch keine Felder angelegt.<br/>Raster generieren oder Einzelfeld hinzufügen.</div>
         </div>
       ) : filtered.map(f => {
         const abh = (f.abhaengigkeiten||[]).map(id => felder.find(x=>x.id===id)?.name).filter(Boolean);
         const abhNichtFertig = (f.abhaengigkeiten||[]).some(id => felder.find(x=>x.id===id)?.status !== "done");
         return (
           <div key={f.id} onClick={() => setEditFeld(f)}
-            style={{ background: C.bgMid, borderRadius:11, padding:"13px 15px", marginBottom:9,
-              border:`2px solid ${abhNichtFertig && f.status==="planned" ? C.rost : STATUS_COLOR[f.status]}`,
+            style={{ background: "var(--surface)", borderRadius:11, padding:"13px 15px", marginBottom:9,
+              border:`2px solid ${abhNichtFertig && f.status==="planned" ? "var(--orange)" : STATUS_COLOR[f.status]}`,
               cursor:"pointer" }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
               <div style={{ flex:1 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                  <span style={{ color: C.text, fontWeight:700, fontSize:14 }}>{f.name}</span>
+                  <span style={{ color: "var(--text)", fontWeight:700, fontSize:14 }}>{f.name}</span>
                   <span style={{ background: STATUS_COLOR[f.status], color:"#fff", fontSize:9,
                     padding:"2px 7px", borderRadius:20 }}>
                     {STATUS_LABEL[f.status]?.split(" ")[1]}
@@ -3282,20 +3282,20 @@ function EditorView({ felder, setFelder, projektTyp }) {
                   {f.geplant && <Chip icon="📅" label={f.geplant} />}
                   {f.dauer_tage > 1 && <Chip icon="⏱️" label={`${f.dauer_tage} Tage`} />}
                 </div>
-                {f.bewehrung && <div style={{ color: C.muted, fontSize:11, marginTop:5 }}>🔩 {f.bewehrung}</div>}
+                {f.bewehrung && <div style={{ color: "var(--muted)", fontSize:11, marginTop:5 }}>🔩 {f.bewehrung}</div>}
                 {abh.length > 0 && (
                   <div style={{ marginTop:6, display:"flex", gap:5, flexWrap:"wrap" }}>
-                    <span style={{ color: C.muted, fontSize:11 }}>🔗</span>
+                    <span style={{ color: "var(--muted)", fontSize:11 }}>🔗</span>
                     {abh.map((n,i) => (
                       <span key={i} style={{ background: abhNichtFertig ? "#2E1A1A" : "#1A2E1A",
-                        color: abhNichtFertig ? C.rost : C.gruen,
+                        color: abhNichtFertig ? "var(--orange)" : "var(--green)",
                         fontSize:10, padding:"2px 7px", borderRadius:10 }}>{n}</span>
                     ))}
-                    {abhNichtFertig && <span style={{ color: C.rost, fontSize:10 }}>⚠️ Vorgänger nicht fertig</span>}
+                    {abhNichtFertig && <span style={{ color: "var(--orange)", fontSize:10 }}>⚠️ Vorgänger nicht fertig</span>}
                   </div>
                 )}
               </div>
-              <div style={{ color: C.muted, fontSize:18, marginLeft:8 }}>›</div>
+              <div style={{ color: "var(--muted)", fontSize:18, marginLeft:8 }}>›</div>
             </div>
           </div>
         );
@@ -3319,19 +3319,19 @@ function EditorView({ felder, setFelder, projektTyp }) {
 
 // ─── Shared UI Helpers ───────────────────────────────────────────────────────
 function Label({ children }) {
-  return <div style={{ color: C.muted, fontSize:12, marginBottom:5, fontWeight:600, letterSpacing:0.3 }}>{children}</div>;
+  return <div style={{ color: "var(--muted)", fontSize:12, marginBottom:5, fontWeight:600, letterSpacing:0.3 }}>{children}</div>;
 }
 function StepBtn({ onClick, children }) {
   return (
-    <button onClick={onClick} style={{ width:44, height:44, background: C.bgLight, color: C.text,
-      border:`1.5px solid ${C.bgFaint}`, borderRadius:10, cursor:"pointer", fontSize:20, fontWeight:700,
+    <button onClick={onClick} style={{ width:44, height:44, background: "var(--surface2)", color: "var(--text)",
+      border:`1.5px solid ${'var(--border)'}`, borderRadius:10, cursor:"pointer", fontSize:20, fontWeight:700,
       display:"flex", alignItems:"center", justifyContent:"center",
       boxShadow:"0 1px 3px rgba(0,0,0,0.08)" }}>{children}</button>
   );
 }
 function inputStyle() {
-  return { width:"100%", background: "#FFFFFF", color: C.text,
-    border:`1.5px solid ${C.bgFaint}`, borderRadius:10,
+  return { width:"100%", background: "var(--surface)", color: "var(--text)",
+    border:`1.5px solid ${'var(--border)'}`, borderRadius:10,
     padding:"13px 14px", fontSize:15, boxSizing:"border-box", marginTop:4,
     boxShadow:"0 1px 3px rgba(0,0,0,0.06)" };
 }
@@ -3488,14 +3488,14 @@ function ZeiterfassungView({ projekt }) {
 
   // ── Unconfigured ──
   if (status === "unconfigured") return (
-    <div style={{ background: C.bgMid, borderRadius:14, padding:24 }}>
+    <div style={{ background: "var(--surface)", borderRadius:14, padding:24 }}>
       <div style={{ fontSize:36, textAlign:"center", marginBottom:12 }}>⏱️</div>
-      <div style={{ color: C.gelb, fontWeight:700, fontSize:16, marginBottom:10 }}>123erfasst Anbindung</div>
-      <div style={{ color: C.muted, fontSize:13, marginBottom:20, lineHeight:1.6 }}>
+      <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:16, marginBottom:10 }}>123erfasst Anbindung</div>
+      <div style={{ color: "var(--muted)", fontSize:13, marginBottom:20, lineHeight:1.6 }}>
         Um Zeiterfassungsdaten zu laden, muss die Supabase Edge Function konfiguriert werden.
       </div>
-      <div style={{ background: C.bgFaint, borderRadius:10, padding:14, marginBottom:16 }}>
-        <div style={{ color: C.text, fontSize:12, fontWeight:700, marginBottom:8 }}>Setup (einmalig):</div>
+      <div style={{ background: "var(--border)", borderRadius:10, padding:14, marginBottom:16 }}>
+        <div style={{ color: "var(--text)", fontSize:12, fontWeight:700, marginBottom:8 }}>Setup (einmalig):</div>
         {[
           ["1.", "Supabase Edge Function deployen:", "supabase functions deploy erfasst-proxy"],
           ["2.", "API-Key setzen:", "supabase secrets set ERFASST_API_KEY=<key>"],
@@ -3503,9 +3503,9 @@ function ZeiterfassungView({ projekt }) {
           ["4.", "Proxy-URL in polier-app.jsx eintragen:", "ERFASST_PROXY = 'https://...'"],
         ].map(([nr, label, code]) => (
           <div key={nr} style={{ marginBottom:10 }}>
-            <div style={{ color: C.muted, fontSize:11 }}>{nr} {label}</div>
-            <div style={{ background: C.bgMid, borderRadius:6, padding:"5px 10px", marginTop:3,
-              color: C.gelb, fontSize:11, fontFamily:"monospace" }}>{code}</div>
+            <div style={{ color: "var(--muted)", fontSize:11 }}>{nr} {label}</div>
+            <div style={{ background: "var(--surface)", borderRadius:6, padding:"5px 10px", marginTop:3,
+              color: "var(--yellow)", fontSize:11, fontFamily:"monospace" }}>{code}</div>
           </div>
         ))}
       </div>
@@ -3516,17 +3516,17 @@ function ZeiterfassungView({ projekt }) {
     <div>
       {/* Header */}
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
-        <div style={{ color: C.text, fontWeight:700, fontSize:15 }}>⏱️ Zeiterfassung</div>
+        <div style={{ color: "var(--text)", fontWeight:700, fontSize:15 }}>⏱️ Zeiterfassung</div>
         <div style={{ display:"flex", gap:8 }}>
           <button onClick={() => setScreen(s => s==="zeiten" ? "verknuepfen" : "zeiten")}
-            style={{ background: screen==="verknuepfen" ? C.gelb : C.bgFaint,
-              color: screen==="verknuepfen" ? "#1C2027" : C.muted,
+            style={{ background: screen==="verknuepfen" ? "var(--yellow)" : "var(--border)",
+              color: screen==="verknuepfen" ? "#1C2027" : "var(--muted)",
               border:"none", borderRadius:8, padding:"6px 12px", cursor:"pointer", fontSize:12 }}>
             🔗 Projekt verknüpfen
           </button>
           {screen==="zeiten" && linkedId && (
             <button onClick={ladeZeiten}
-              style={{ background: C.bgFaint, color: C.text, border:"none",
+              style={{ background: "var(--border)", color: "var(--text)", border:"none",
                 borderRadius:8, padding:"6px 12px", cursor:"pointer", fontSize:12 }}>
               🔄
             </button>
@@ -3537,31 +3537,31 @@ function ZeiterfassungView({ projekt }) {
       {/* Projekt-Verknüpfung */}
       {screen === "verknuepfen" && (
         <div>
-          <div style={{ color: C.muted, fontSize:13, marginBottom:14 }}>
+          <div style={{ color: "var(--muted)", fontSize:13, marginBottom:14 }}>
             Wähle das entsprechende Projekt in 123erfasst — Zeitbuchungen werden dann hier angezeigt.
           </div>
           {status === "loading" ? (
-            <div style={{ textAlign:"center", color: C.muted, padding:32 }}>⏳ Lade Projekte…</div>
+            <div style={{ textAlign:"center", color: "var(--muted)", padding:32 }}>⏳ Lade Projekte…</div>
           ) : status === "error" ? (
-            <div style={{ background:"#2E1A1A", borderRadius:10, padding:14, color: C.rot }}>{fehler}</div>
+            <div style={{ background:"#2E1A1A", borderRadius:10, padding:14, color: "var(--red)" }}>{fehler}</div>
           ) : (
             <div style={{ display:"flex", flexDirection:"column", gap:7 }}>
               <div onClick={() => { setLinkedId(null); setScreen("zeiten"); }}
-                style={{ background: !linkedId ? C.bgLight : C.bgFaint,
-                  border:`1.5px solid ${!linkedId ? C.gelb : "transparent"}`,
+                style={{ background: !linkedId ? "var(--surface2)" : "var(--border)",
+                  border:`1.5px solid ${!linkedId ? "var(--yellow)" : "transparent"}`,
                   borderRadius:9, padding:"10px 14px", cursor:"pointer" }}>
-                <div style={{ color: C.muted, fontSize:12 }}>Keine Verknüpfung</div>
+                <div style={{ color: "var(--muted)", fontSize:12 }}>Keine Verknüpfung</div>
               </div>
               {projekte123.map(p => (
                 <div key={p.ident} onClick={() => { setLinkedId(p.ident); setScreen("zeiten"); }}
-                  style={{ background: linkedId===p.ident ? C.bgLight : C.bgFaint,
-                    border:`1.5px solid ${linkedId===p.ident ? C.gelb : "transparent"}`,
+                  style={{ background: linkedId===p.ident ? "var(--surface2)" : "var(--border)",
+                    border:`1.5px solid ${linkedId===p.ident ? "var(--yellow)" : "transparent"}`,
                     borderRadius:9, padding:"10px 14px", cursor:"pointer" }}>
                   <div style={{ display:"flex", justifyContent:"space-between" }}>
-                    <div style={{ color: C.text, fontWeight: linkedId===p.ident ? 700 : 400 }}>{p.name}</div>
-                    {linkedId===p.ident && <span style={{ color: C.gelb }}>✓</span>}
+                    <div style={{ color: "var(--text)", fontWeight: linkedId===p.ident ? 700 : 400 }}>{p.name}</div>
+                    {linkedId===p.ident && <span style={{ color: "var(--yellow)" }}>✓</span>}
                   </div>
-                  {p.number && <div style={{ color: C.muted, fontSize:11, marginTop:2 }}>Nr. {p.number}</div>}
+                  {p.number && <div style={{ color: "var(--muted)", fontSize:11, marginTop:2 }}>Nr. {p.number}</div>}
                 </div>
               ))}
             </div>
@@ -3573,13 +3573,13 @@ function ZeiterfassungView({ projekt }) {
       {screen === "zeiten" && (
         <>
           {!linkedId ? (
-            <div style={{ background: C.bgMid, borderRadius:12, padding:28, textAlign:"center" }}>
+            <div style={{ background: "var(--surface)", borderRadius:12, padding:28, textAlign:"center" }}>
               <div style={{ fontSize:32, marginBottom:10 }}>🔗</div>
-              <div style={{ color: C.muted, fontSize:13 }}>
+              <div style={{ color: "var(--muted)", fontSize:13 }}>
                 Noch kein 123erfasst-Projekt verknüpft.
               </div>
               <button onClick={() => setScreen("verknuepfen")}
-                style={{ background: C.gelb, color:"#1C2027", border:"none", borderRadius:10,
+                style={{ background: "var(--yellow)", color:"#1C2027", border:"none", borderRadius:10,
                   padding:"11px 22px", fontWeight:700, cursor:"pointer", marginTop:14 }}>
                 Jetzt verknüpfen
               </button>
@@ -3601,11 +3601,11 @@ function ZeiterfassungView({ projekt }) {
               </div>
 
               {status === "loading" && (
-                <div style={{ textAlign:"center", color: C.muted, padding:32 }}>⏳ Lade Zeitdaten…</div>
+                <div style={{ textAlign:"center", color: "var(--muted)", padding:32 }}>⏳ Lade Zeitdaten…</div>
               )}
 
               {status === "error" && (
-                <div style={{ background:"#2E1A1A", borderRadius:10, padding:14, color: C.rot, marginBottom:12 }}>
+                <div style={{ background:"#2E1A1A", borderRadius:10, padding:14, color: "var(--red)", marginBottom:12 }}>
                   ❌ {fehler}
                 </div>
               )}
@@ -3615,21 +3615,21 @@ function ZeiterfassungView({ projekt }) {
                   {/* KPI Leiste */}
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, marginBottom:14 }}>
                     {[
-                      ["Stunden gesamt", totalStd.toFixed(1)+"h", C.gelb],
-                      ["Einträge",       zeitdaten.length,         C.beton],
-                      ["Mitarbeiter",    Object.keys(nachPerson).length, C.gruen],
+                      ["Stunden gesamt", totalStd.toFixed(1)+"h", "var(--yellow)"],
+                      ["Einträge",       zeitdaten.length,         "var(--muted)"],
+                      ["Mitarbeiter",    Object.keys(nachPerson).length, "var(--green)"],
                     ].map(([l,v,col]) => (
-                      <div key={l} style={{ background: C.bgMid, borderRadius:10, padding:"11px 12px",
+                      <div key={l} style={{ background: "var(--surface)", borderRadius:10, padding:"11px 12px",
                         borderBottom:`3px solid ${col}` }}>
-                        <div style={{ color: C.muted, fontSize:10 }}>{l}</div>
-                        <div style={{ color: C.text, fontWeight:800, fontSize:20 }}>{v}</div>
+                        <div style={{ color: "var(--muted)", fontSize:10 }}>{l}</div>
+                        <div style={{ color: "var(--text)", fontWeight:800, fontSize:20 }}>{v}</div>
                       </div>
                     ))}
                   </div>
 
                   {/* Personen-Zusammenfassung */}
                   <div style={{ marginBottom:14 }}>
-                    <div style={{ color: C.muted, fontSize:11, marginBottom:8 }}>NACH MITARBEITER</div>
+                    <div style={{ color: "var(--muted)", fontSize:11, marginBottom:8 }}>NACH MITARBEITER</div>
                     <div style={{ display:"flex", gap:6, overflowX:"auto", paddingBottom:4 }}>
                       <FilterBtn active={personFilter==="alle"} onClick={() => setPersonFilter("alle")}>
                         Alle
@@ -3645,7 +3645,7 @@ function ZeiterfassungView({ projekt }) {
 
                   {/* Stunden-Balken pro Person */}
                   {personFilter === "alle" && Object.values(nachPerson).length > 0 && (
-                    <div style={{ background: C.bgMid, borderRadius:12, padding:14, marginBottom:14 }}>
+                    <div style={{ background: "var(--surface)", borderRadius:12, padding:14, marginBottom:14 }}>
                       {Object.values(nachPerson)
                         .sort((a,b) => b.total - a.total)
                         .map(p => {
@@ -3653,11 +3653,11 @@ function ZeiterfassungView({ projekt }) {
                           return (
                             <div key={p.name} style={{ marginBottom:10 }}>
                               <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
-                                <div style={{ color: C.text, fontSize:12 }}>{p.name}</div>
-                                <div style={{ color: C.gelb, fontSize:12, fontWeight:700 }}>{p.total.toFixed(1)}h</div>
+                                <div style={{ color: "var(--text)", fontSize:12 }}>{p.name}</div>
+                                <div style={{ color: "var(--yellow)", fontSize:12, fontWeight:700 }}>{p.total.toFixed(1)}h</div>
                               </div>
-                              <div style={{ background: C.bgFaint, borderRadius:4, height:6 }}>
-                                <div style={{ background: C.gelb, width:`${pct}%`, height:"100%", borderRadius:4 }} />
+                              <div style={{ background: "var(--border)", borderRadius:4, height:6 }}>
+                                <div style={{ background: "var(--yellow)", width:`${pct}%`, height:"100%", borderRadius:4 }} />
                               </div>
                             </div>
                           );
@@ -3667,32 +3667,32 @@ function ZeiterfassungView({ projekt }) {
 
                   {/* Einzelbuchungen */}
                   {gefiltert.length === 0 ? (
-                    <div style={{ background: C.bgMid, borderRadius:10, padding:24, textAlign:"center", color: C.muted }}>
+                    <div style={{ background: "var(--surface)", borderRadius:10, padding:24, textAlign:"center", color: "var(--muted)" }}>
                       Keine Buchungen im gewählten Zeitraum
                     </div>
                   ) : gefiltert.map((z, i) => (
-                    <div key={i} style={{ background: C.bgMid, borderRadius:10, padding:"12px 14px",
-                      marginBottom:8, borderLeft:`3px solid ${C.blau}` }}>
+                    <div key={i} style={{ background: "var(--surface)", borderRadius:10, padding:"12px 14px",
+                      marginBottom:8, borderLeft:`3px solid ${'var(--blue)'}` }}>
                       <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
-                        <div style={{ color: C.text, fontWeight:600, fontSize:13 }}>
+                        <div style={{ color: "var(--text)", fontWeight:600, fontSize:13 }}>
                           {z.person?.formattedName || "—"}
                         </div>
-                        <div style={{ color: C.gelb, fontWeight:700, fontSize:13 }}>
+                        <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:13 }}>
                           {z.hours > 0 || z.minutes > 0
                             ? `${z.hours || 0}h ${z.minutes > 0 ? z.minutes+"min" : ""}`
                             : "—"}
                         </div>
                       </div>
                       <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
-                        <span style={{ color: C.muted, fontSize:11 }}>
+                        <span style={{ color: "var(--muted)", fontSize:11 }}>
                           📅 {new Date(z.date).toLocaleDateString("de-DE")}
                         </span>
                         {z.activity?.name && (
-                          <span style={{ color: C.muted, fontSize:11 }}>🔧 {z.activity.name}</span>
+                          <span style={{ color: "var(--muted)", fontSize:11 }}>🔧 {z.activity.name}</span>
                         )}
                       </div>
                       {z.note && (
-                        <div style={{ color: C.muted, fontSize:11, marginTop:5, fontStyle:"italic" }}>
+                        <div style={{ color: "var(--muted)", fontSize:11, marginTop:5, fontStyle:"italic" }}>
                           💬 {z.note}
                         </div>
                       )}
@@ -3821,13 +3821,13 @@ function ScannerView({ onFelderImport }) {
     setResult(null); setSelected({}); setImported(false);
   }
 
-  const konfidenzColor = (k) => k >= 0.85 ? C.gruen : k >= 0.6 ? C.gelb : C.rot;
+  const konfidenzColor = (k) => k >= 0.85 ? "var(--green)" : k >= 0.6 ? "var(--yellow)" : "var(--red)";
   const konfidenzLabel = (k) => k >= 0.85 ? "Hoch" : k >= 0.6 ? "Mittel" : "Niedrig";
 
   return (
     <div>
-      <div style={{ color: C.text, fontWeight:700, fontSize:16, marginBottom:4 }}>📷 Betonkarten-Scanner</div>
-      <div style={{ color: C.muted, fontSize:13, marginBottom:18 }}>
+      <div style={{ color: "var(--text)", fontWeight:700, fontSize:16, marginBottom:4 }}>📷 Betonkarten-Scanner</div>
+      <div style={{ color: "var(--muted)", fontSize:13, marginBottom:18 }}>
         Foto eines gedruckten Betonfeld-Formulars hochladen — KI liest alle Felder automatisch aus.
       </div>
 
@@ -3837,16 +3837,16 @@ function ScannerView({ onFelderImport }) {
           <input ref={fileRef} type="file" accept="image/*" capture="environment"
             style={{ display:"none" }} onChange={e => handleFile(e.target.files[0])} />
           <div onClick={() => fileRef.current.click()}
-            style={{ border:`2px dashed ${C.gelb}`, borderRadius:20, padding:"48px 20px",
+            style={{ border:`2px dashed ${'var(--yellow)'}`, borderRadius:20, padding:"48px 20px",
               textAlign:"center", cursor:"pointer", background:"#FFFBEB",
               boxShadow:"inset 0 2px 8px rgba(245,196,0,0.1)" }}>
             <div style={{ fontSize:48, marginBottom:12 }}>📷</div>
-            <div style={{ color: C.gelb, fontWeight:700, fontSize:16 }}>Betonfeld-Karte aufnehmen</div>
-            <div style={{ color: C.muted, fontSize:13, marginTop:6 }}>Tippen zum Fotografieren oder Bild hochladen</div>
+            <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:16 }}>Betonfeld-Karte aufnehmen</div>
+            <div style={{ color: "var(--muted)", fontSize:13, marginTop:6 }}>Tippen zum Fotografieren oder Bild hochladen</div>
           </div>
           <div style={{ display:"flex", gap:10, marginTop:12 }}>
             <button onClick={() => fileRef.current.click()}
-              style={{ flex:1, background: C.bgLight, color: C.text, border:`1px solid ${C.bgFaint}`,
+              style={{ flex:1, background: "var(--surface2)", color: "var(--text)", border:`1px solid ${'var(--border)'}`,
                 borderRadius:10, padding:12, cursor:"pointer", fontSize:13 }}>
               📁 Aus Galerie wählen
             </button>
@@ -3857,12 +3857,12 @@ function ScannerView({ onFelderImport }) {
       {/* PREVIEW */}
       {phase === "preview" && (
         <div>
-          <img src={imgSrc} alt="Betonkarte" style={{ width:"100%", borderRadius:12, marginBottom:14, maxHeight:320, objectFit:"contain", background: C.bgMid }} />
+          <img src={imgSrc} alt="Betonkarte" style={{ width:"100%", borderRadius:12, marginBottom:14, maxHeight:320, objectFit:"contain", background: "var(--surface)" }} />
           <div style={{ display:"flex", gap:10 }}>
-            <button onClick={reset} style={{ flex:1, background: C.bgFaint, color: C.muted, border:"none", borderRadius:10, padding:13, cursor:"pointer" }}>
+            <button onClick={reset} style={{ flex:1, background: "var(--border)", color: "var(--muted)", border:"none", borderRadius:10, padding:13, cursor:"pointer" }}>
               ✕ Neu
             </button>
-            <button onClick={doScan} style={{ flex:2, background: C.gelb, color:"#1C2027", border:"none", borderRadius:10, padding:13, fontWeight:700, cursor:"pointer", fontSize:15 }}>
+            <button onClick={doScan} style={{ flex:2, background: "var(--yellow)", color:"#1C2027", border:"none", borderRadius:10, padding:13, fontWeight:700, cursor:"pointer", fontSize:15 }}>
               🔍 Jetzt auslesen
             </button>
           </div>
@@ -3873,11 +3873,11 @@ function ScannerView({ onFelderImport }) {
       {phase === "scanning" && (
         <div style={{ textAlign:"center", padding:"40px 20px" }}>
           <div style={{ fontSize:48, marginBottom:16 }}>🤖</div>
-          <div style={{ color: C.gelb, fontWeight:700, fontSize:16, marginBottom:8 }}>KI analysiert Betonkarte…</div>
-          <div style={{ color: C.muted, fontSize:13 }}>Feldname, m², Bewehrungsplan und Termine werden erkannt</div>
+          <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:16, marginBottom:8 }}>KI analysiert Betonkarte…</div>
+          <div style={{ color: "var(--muted)", fontSize:13 }}>Feldname, m², Bewehrungsplan und Termine werden erkannt</div>
           <div style={{ marginTop:24, display:"flex", justifyContent:"center", gap:6 }}>
             {[0,1,2].map(i => (
-              <div key={i} style={{ width:8, height:8, borderRadius:4, background: C.gelb,
+              <div key={i} style={{ width:8, height:8, borderRadius:4, background: "var(--yellow)",
                 animation:`pulse 1.2s ${i*0.3}s infinite`, opacity:0.8 }} />
             ))}
           </div>
@@ -3889,9 +3889,9 @@ function ScannerView({ onFelderImport }) {
       {phase === "error" && (
         <div style={{ background:"#2E1A1A", borderRadius:12, padding:24, textAlign:"center" }}>
           <div style={{ fontSize:40, marginBottom:12 }}>❌</div>
-          <div style={{ color: C.rot, fontWeight:700, marginBottom:8 }}>Scan fehlgeschlagen</div>
-          <div style={{ color: C.muted, fontSize:13, marginBottom:16 }}>Bitte Bild prüfen und nochmals versuchen.</div>
-          <button onClick={reset} style={{ background: C.bgFaint, color: C.text, border:"none", borderRadius:10, padding:"10px 24px", cursor:"pointer" }}>
+          <div style={{ color: "var(--red)", fontWeight:700, marginBottom:8 }}>Scan fehlgeschlagen</div>
+          <div style={{ color: "var(--muted)", fontSize:13, marginBottom:16 }}>Bitte Bild prüfen und nochmals versuchen.</div>
+          <button onClick={reset} style={{ background: "var(--border)", color: "var(--text)", border:"none", borderRadius:10, padding:"10px 24px", cursor:"pointer" }}>
             Nochmals versuchen
           </button>
         </div>
@@ -3901,21 +3901,21 @@ function ScannerView({ onFelderImport }) {
       {phase === "result" && result && (
         <div>
           {/* Bild klein */}
-          <img src={imgSrc} alt="Betonkarte" style={{ width:"100%", borderRadius:10, marginBottom:14, maxHeight:160, objectFit:"contain", background: C.bgMid }} />
+          <img src={imgSrc} alt="Betonkarte" style={{ width:"100%", borderRadius:10, marginBottom:14, maxHeight:160, objectFit:"contain", background: "var(--surface)" }} />
 
           {/* Konfidenz */}
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
-            background: C.bgMid, borderRadius:10, padding:"10px 14px", marginBottom:12 }}>
+            background: "var(--surface)", borderRadius:10, padding:"10px 14px", marginBottom:12 }}>
             <div>
-              <div style={{ color: C.muted, fontSize:11 }}>KI-Erkennungssicherheit</div>
+              <div style={{ color: "var(--muted)", fontSize:11 }}>KI-Erkennungssicherheit</div>
               <div style={{ color: konfidenzColor(result.konfidenz), fontWeight:700, fontSize:15 }}>
                 {konfidenzLabel(result.konfidenz)} · {Math.round(result.konfidenz * 100)}%
               </div>
             </div>
             <div style={{ width:48, height:48, borderRadius:24,
-              background: `conic-gradient(${konfidenzColor(result.konfidenz)} ${result.konfidenz*360}deg, ${C.bgFaint} 0deg)`,
+              background: `conic-gradient(${konfidenzColor(result.konfidenz)} ${result.konfidenz*360}deg, ${'var(--border)'} 0deg)`,
               display:"flex", alignItems:"center", justifyContent:"center" }}>
-              <div style={{ width:36, height:36, borderRadius:18, background: C.bgMid,
+              <div style={{ width:36, height:36, borderRadius:18, background: "var(--surface)",
                 display:"flex", alignItems:"center", justifyContent:"center",
                 color: konfidenzColor(result.konfidenz), fontSize:11, fontWeight:700 }}>
                 {Math.round(result.konfidenz*100)}%
@@ -3932,23 +3932,23 @@ function ScannerView({ onFelderImport }) {
 
           {/* Felder */}
           {result.felder.length === 0 ? (
-            <div style={{ background: C.bgMid, borderRadius:12, padding:24, textAlign:"center" }}>
+            <div style={{ background: "var(--surface)", borderRadius:12, padding:24, textAlign:"center" }}>
               <div style={{ fontSize:32 }}>🤷</div>
-              <div style={{ color: C.muted, marginTop:8 }}>Kein Betonfeld-Formular erkannt.<br/>Bitte ein klareres Foto versuchen.</div>
+              <div style={{ color: "var(--muted)", marginTop:8 }}>Kein Betonfeld-Formular erkannt.<br/>Bitte ein klareres Foto versuchen.</div>
             </div>
           ) : (
             <>
-              <div style={{ color: C.text, fontWeight:700, marginBottom:10 }}>
+              <div style={{ color: "var(--text)", fontWeight:700, marginBottom:10 }}>
                 {result.felder.length} Feld{result.felder.length > 1 ? "er" : ""} erkannt — auswählen zum Importieren:
               </div>
               {result.felder.map((f, i) => (
                 <div key={i} onClick={() => setSelected(p => ({ ...p, [i]: !p[i] }))}
-                  style={{ background: selected[i] ? C.bgLight : C.bgMid,
-                    border:`2px solid ${selected[i] ? C.gelb : C.bgFaint}`,
+                  style={{ background: selected[i] ? "var(--surface2)" : "var(--surface)",
+                    border:`2px solid ${selected[i] ? "var(--yellow)" : "var(--border)"}`,
                     borderRadius:12, padding:"14px 16px", marginBottom:10, cursor:"pointer" }}>
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
                     <div style={{ flex:1 }}>
-                      <div style={{ color: C.text, fontWeight:700, fontSize:14 }}>{f.name}</div>
+                      <div style={{ color: "var(--text)", fontWeight:700, fontSize:14 }}>{f.name}</div>
                       <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginTop:8 }}>
                         {f.m2 && <Chip icon="📐" label={`${f.m2} m²`} />}
                         {f.geplant && <Chip icon="📅" label={f.geplant} />}
@@ -3956,10 +3956,10 @@ function ScannerView({ onFelderImport }) {
                         {f.betonsorte && <Chip icon="🧱" label={f.betonsorte} />}
                       </div>
                       {f.bewehrung && (
-                        <div style={{ color: C.muted, fontSize:11, marginTop:8 }}>🔩 {f.bewehrung}</div>
+                        <div style={{ color: "var(--muted)", fontSize:11, marginTop:8 }}>🔩 {f.bewehrung}</div>
                       )}
                       {f.bemerkung && (
-                        <div style={{ color: C.muted, fontSize:11, marginTop:4 }}>📝 {f.bemerkung}</div>
+                        <div style={{ color: "var(--muted)", fontSize:11, marginTop:4 }}>📝 {f.bemerkung}</div>
                       )}
                     </div>
                     <div style={{ marginLeft:12, fontSize:22 }}>{selected[i] ? "✅" : "⬜"}</div>
@@ -3969,23 +3969,23 @@ function ScannerView({ onFelderImport }) {
 
               {imported ? (
                 <div style={{ background:"#1A3A28", borderRadius:12, padding:16, textAlign:"center" }}>
-                  <div style={{ color: C.gruen, fontWeight:700, fontSize:15 }}>✅ Erfolgreich importiert!</div>
-                  <div style={{ color: C.muted, fontSize:13, marginTop:4 }}>Felder sind jetzt in der Felderliste und im Gantt-Plan sichtbar.</div>
-                  <button onClick={reset} style={{ background: C.bgFaint, color: C.text, border:"none",
+                  <div style={{ color: "var(--green)", fontWeight:700, fontSize:15 }}>✅ Erfolgreich importiert!</div>
+                  <div style={{ color: "var(--muted)", fontSize:13, marginTop:4 }}>Felder sind jetzt in der Felderliste und im Gantt-Plan sichtbar.</div>
+                  <button onClick={reset} style={{ background: "var(--border)", color: "var(--text)", border:"none",
                     borderRadius:10, padding:"10px 20px", marginTop:14, cursor:"pointer" }}>
                     Weitere Karte scannen
                   </button>
                 </div>
               ) : (
                 <div style={{ display:"flex", gap:10, marginTop:4 }}>
-                  <button onClick={reset} style={{ flex:1, background: C.bgFaint, color: C.muted,
+                  <button onClick={reset} style={{ flex:1, background: "var(--border)", color: "var(--muted)",
                     border:"none", borderRadius:10, padding:13, cursor:"pointer" }}>
                     ✕ Verwerfen
                   </button>
                   <button onClick={doImport}
                     disabled={Object.values(selected).every(v => !v)}
-                    style={{ flex:2, background: Object.values(selected).some(v=>v) ? C.gelb : C.bgFaint,
-                      color: Object.values(selected).some(v=>v) ? "#1C2027" : C.muted,
+                    style={{ flex:2, background: Object.values(selected).some(v=>v) ? "var(--yellow)" : "var(--border)",
+                      color: Object.values(selected).some(v=>v) ? "#1C2027" : "var(--muted)",
                       border:"none", borderRadius:10, padding:13, fontWeight:700, cursor:"pointer", fontSize:15 }}>
                     ✅ {Object.values(selected).filter(Boolean).length} Feld{Object.values(selected).filter(Boolean).length !== 1 ? "er" : ""} importieren
                   </button>
@@ -4001,10 +4001,10 @@ function ScannerView({ onFelderImport }) {
 
 function Chip({ icon, label }) {
   return (
-    <div style={{ background: C.bgLight, borderRadius:20, padding:"5px 10px", display:"flex", gap:5, alignItems:"center",
-      border:`1px solid ${C.bgFaint}` }}>
+    <div style={{ background: "var(--surface2)", borderRadius:20, padding:"5px 10px", display:"flex", gap:5, alignItems:"center",
+      border:`1px solid ${'var(--border)'}` }}>
       <span style={{ fontSize:12 }}>{icon}</span>
-      <span style={{ color: C.textMed, fontSize:12, fontWeight:500 }}>{label}</span>
+      <span style={{ color: "var(--text)"Med, fontSize:12, fontWeight:500 }}>{label}</span>
     </div>
   );
 }
@@ -4068,13 +4068,13 @@ function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboardingRese
         <>
           {/* Eigene Firma Karte */}
           <div onClick={() => { setTmpFirma({...owneFirma}); setScreen("eigene"); }}
-            style={{ background: C.bgMid, borderRadius:14, padding:"16px 18px", marginBottom:14,
-              border:`2px solid ${C.gelb}`, cursor:"pointer" }}>
+            style={{ background: "var(--surface)", borderRadius:14, padding:"16px 18px", marginBottom:14,
+              border:`2px solid ${'var(--yellow)'}`, cursor:"pointer" }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
               <div>
-                <div style={{ color: C.muted, fontSize:11, marginBottom:2 }}>🏢 Eigenes Unternehmen</div>
-                <div style={{ color: C.text, fontWeight:700, fontSize:16 }}>{owneFirma.name || "Firma hinterlegen"}</div>
-                {owneFirma.ort && <div style={{ color: C.muted, fontSize:12, marginTop:2 }}>📍 {owneFirma.plz} {owneFirma.ort}</div>}
+                <div style={{ color: "var(--muted)", fontSize:11, marginBottom:2 }}>🏢 Eigenes Unternehmen</div>
+                <div style={{ color: "var(--text)", fontWeight:700, fontSize:16 }}>{owneFirma.name || "Firma hinterlegen"}</div>
+                {owneFirma.ort && <div style={{ color: "var(--muted)", fontSize:12, marginTop:2 }}>📍 {owneFirma.plz} {owneFirma.ort}</div>}
                 {owneFirma.gewerke?.length > 0 && (
                   <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginTop:8 }}>
                     {owneFirma.gewerke.map(k => {
@@ -4084,39 +4084,39 @@ function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboardingRese
                   </div>
                 )}
               </div>
-              <div style={{ color: C.muted, fontSize:22 }}>›</div>
+              <div style={{ color: "var(--muted)", fontSize:22 }}>›</div>
             </div>
           </div>
 
           {/* Subunternehmer */}
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
-            <div style={{ color: C.text, fontWeight:700 }}>Subunternehmer ({subs.length})</div>
+            <div style={{ color: "var(--text)", fontWeight:700 }}>Subunternehmer ({subs.length})</div>
             <button onClick={() => { setEditSub({ id:null, name:"", gewerke:[], kontakt:"", telefon:"", email:"", status:"aktiv", stundensatz:0 }); setScreen("subEdit"); }}
-              style={{ background: C.gelb, color:"#1C2027", border:"none", borderRadius:9,
+              style={{ background: "var(--yellow)", color:"#1C2027", border:"none", borderRadius:9,
                 padding:"7px 14px", fontWeight:700, cursor:"pointer", fontSize:13 }}>
               + Sub
             </button>
           </div>
 
           {subs.length === 0 ? (
-            <div style={{ background: C.bgMid, borderRadius:12, padding:24, textAlign:"center" }}>
+            <div style={{ background: "var(--surface)", borderRadius:12, padding:24, textAlign:"center" }}>
               <div style={{ fontSize:32 }}>🏢</div>
-              <div style={{ color: C.muted, marginTop:8 }}>Noch keine Subunternehmer angelegt.</div>
+              <div style={{ color: "var(--muted)", marginTop:8 }}>Noch keine Subunternehmer angelegt.</div>
             </div>
           ) : subs.map(s => (
             <div key={s.id} onClick={() => { setEditSub({...s}); setScreen("subEdit"); }}
-              style={{ background: C.bgMid, borderRadius:11, padding:"13px 15px", marginBottom:9,
-                border:`1.5px solid ${s.status==="aktiv" ? C.bgFaint : C.rot}`, cursor:"pointer" }}>
+              style={{ background: "var(--surface)", borderRadius:11, padding:"13px 15px", marginBottom:9,
+                border:`1.5px solid ${s.status==="aktiv" ? "var(--border)" : "var(--red)"}`, cursor:"pointer" }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
                 <div style={{ flex:1 }}>
                   <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                    <div style={{ color: C.text, fontWeight:700 }}>{s.name}</div>
-                    <div style={{ background: s.status==="aktiv" ? C.gruen : C.rot,
+                    <div style={{ color: "var(--text)", fontWeight:700 }}>{s.name}</div>
+                    <div style={{ background: s.status==="aktiv" ? "var(--green)" : "var(--red)",
                       color:"#fff", fontSize:9, padding:"2px 7px", borderRadius:20 }}>
                       {s.status}
                     </div>
                   </div>
-                  <div style={{ color: C.muted, fontSize:12, marginTop:3 }}>👤 {s.kontakt} · 📞 {s.telefon}</div>
+                  <div style={{ color: "var(--muted)", fontSize:12, marginTop:3 }}>👤 {s.kontakt} · 📞 {s.telefon}</div>
                   <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginTop:7 }}>
                     {s.gewerke.map(k => {
                       const g = ALLE_GEWERKE.find(x=>x.key===k);
@@ -4124,25 +4124,25 @@ function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboardingRese
                     })}
                   </div>
                   {s.stundensatz > 0 && (
-                    <div style={{ color: C.muted, fontSize:11, marginTop:5 }}>💶 {s.stundensatz} €/Std.</div>
+                    <div style={{ color: "var(--muted)", fontSize:11, marginTop:5 }}>💶 {s.stundensatz} €/Std.</div>
                   )}
                 </div>
-                <div style={{ color: C.muted, fontSize:18 }}>›</div>
+                <div style={{ color: "var(--muted)", fontSize:18 }}>›</div>
               </div>
             </div>
           ))}
 
           {/* Onboarding zurücksetzen */}
           {onOnboardingReset && (
-            <div style={{ marginTop:24, borderTop:`1px solid ${C.bgFaint}`, paddingTop:16 }}>
+            <div style={{ marginTop:24, borderTop:`1px solid ${'var(--border)'}`, paddingTop:16 }}>
               <button onClick={() => {
                   if (window.confirm("Onboarding zurücksetzen? Die App startet beim nächsten Laden neu mit dem Einrichtungsassistenten.")) {
                     localStorage.removeItem(ONBOARDING_KEY);
                     onOnboardingReset();
                   }
                 }}
-                style={{ width:"100%", background: C.bgFaint, color: C.muted,
-                  border:`1px solid ${C.bgFaint}`, borderRadius:10, padding:12,
+                style={{ width:"100%", background: "var(--border)", color: "var(--muted)",
+                  border:`1px solid ${'var(--border)'}`, borderRadius:10, padding:12,
                   cursor:"pointer", fontSize:13 }}>
                 🔄 Einrichtungsassistent erneut starten
               </button>
@@ -4156,9 +4156,9 @@ function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboardingRese
         <div>
           <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
             <button onClick={() => setScreen("home")}
-              style={{ background: C.bgFaint, border:"none", color: C.text, borderRadius:8,
+              style={{ background: "var(--border)", border:"none", color: "var(--text)", borderRadius:8,
                 padding:"6px 10px", cursor:"pointer", fontSize:16 }}>‹</button>
-            <div style={{ color: C.gelb, fontWeight:700, fontSize:16 }}>🏢 Eigenes Unternehmen</div>
+            <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:16 }}>🏢 Eigenes Unternehmen</div>
           </div>
 
           {[
@@ -4190,12 +4190,12 @@ function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboardingRese
                       ? p.gewerke.filter(x=>x!==g.key)
                       : [...(p.gewerke||[]), g.key]
                   }))}
-                    style={{ background: aktiv ? C.bgLight : C.bgFaint,
-                      border:`2px solid ${aktiv ? C.gelb : "transparent"}`,
+                    style={{ background: aktiv ? "var(--surface2)" : "var(--border)",
+                      border:`2px solid ${aktiv ? "var(--yellow)" : "transparent"}`,
                       borderRadius:9, padding:"8px 10px", cursor:"pointer",
                       display:"flex", alignItems:"center", gap:7 }}>
                     <span style={{ fontSize:16 }}>{g.icon}</span>
-                    <span style={{ color: aktiv ? C.text : C.muted, fontSize:11, fontWeight: aktiv ? 700 : 400 }}>{g.label}</span>
+                    <span style={{ color: aktiv ? "var(--text)" : "var(--muted)", fontSize:11, fontWeight: aktiv ? 700 : 400 }}>{g.label}</span>
                   </div>
                 );
               })}
@@ -4203,7 +4203,7 @@ function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboardingRese
           </div>
 
           <button onClick={() => { setEigeneFirma(tmpFirma); setScreen("home"); }}
-            style={{ width:"100%", background: C.gelb, color:"#1C2027", border:"none",
+            style={{ width:"100%", background: "var(--yellow)", color:"#1C2027", border:"none",
               borderRadius:10, padding:14, fontWeight:700, cursor:"pointer", fontSize:15 }}>
             💾 Speichern
           </button>
@@ -4215,9 +4215,9 @@ function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboardingRese
         <div>
           <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
             <button onClick={() => setScreen("home")}
-              style={{ background: C.bgFaint, border:"none", color: C.text, borderRadius:8,
+              style={{ background: "var(--border)", border:"none", color: "var(--text)", borderRadius:8,
                 padding:"6px 10px", cursor:"pointer", fontSize:16 }}>‹</button>
-            <div style={{ color: C.gelb, fontWeight:700, fontSize:16 }}>
+            <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:16 }}>
               {editSub.id ? "✏️ Subunternehmer" : "➕ Neuer Subunternehmer"}
             </div>
           </div>
@@ -4247,8 +4247,8 @@ function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboardingRese
             <div style={{ display:"flex", gap:8, marginTop:6 }}>
               {["aktiv","inaktiv","gesperrt"].map(s => (
                 <button key={s} onClick={() => setEditSub(p=>({...p,status:s}))}
-                  style={{ flex:1, background: editSub.status===s ? C.gelb : C.bgFaint,
-                    color: editSub.status===s ? "#1C2027" : C.muted,
+                  style={{ flex:1, background: editSub.status===s ? "var(--yellow)" : "var(--border)",
+                    color: editSub.status===s ? "#1C2027" : "var(--muted)",
                     border:"none", borderRadius:8, padding:10, cursor:"pointer",
                     fontWeight: editSub.status===s ? 700 : 400, fontSize:12 }}>
                   {s}
@@ -4269,12 +4269,12 @@ function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboardingRese
                       ? p.gewerke.filter(x=>x!==g.key)
                       : [...(p.gewerke||[]), g.key]
                   }))}
-                    style={{ background: aktiv ? C.bgLight : C.bgFaint,
-                      border:`2px solid ${aktiv ? C.blau : "transparent"}`,
+                    style={{ background: aktiv ? "var(--surface2)" : "var(--border)",
+                      border:`2px solid ${aktiv ? "var(--blue)" : "transparent"}`,
                       borderRadius:9, padding:"8px 10px", cursor:"pointer",
                       display:"flex", alignItems:"center", gap:7 }}>
                     <span style={{ fontSize:16 }}>{g.icon}</span>
-                    <span style={{ color: aktiv ? C.text : C.muted, fontSize:11, fontWeight: aktiv ? 700 : 400 }}>{g.label}</span>
+                    <span style={{ color: aktiv ? "var(--text)" : "var(--muted)", fontSize:11, fontWeight: aktiv ? 700 : 400 }}>{g.label}</span>
                   </div>
                 );
               })}
@@ -4284,11 +4284,11 @@ function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboardingRese
           <div style={{ display:"flex", gap:10 }}>
             {editSub.id && (
               <button onClick={() => { setSubs(prev => prev.filter(s=>s.id!==editSub.id)); setScreen("home"); }}
-                style={{ background:"#2E1A1A", color: C.rot, border:`1px solid ${C.rot}`,
+                style={{ background:"#2E1A1A", color: "var(--red)", border:`1px solid ${'var(--red)'}`,
                   borderRadius:10, padding:"12px 16px", cursor:"pointer" }}>🗑️</button>
             )}
             <button onClick={() => setScreen("home")}
-              style={{ flex:1, background: C.bgFaint, color: C.muted, border:"none", borderRadius:10, padding:13, cursor:"pointer" }}>
+              style={{ flex:1, background: "var(--border)", color: "var(--muted)", border:"none", borderRadius:10, padding:13, cursor:"pointer" }}>
               Abbrechen
             </button>
             <button disabled={!editSub.name} onClick={() => {
@@ -4299,8 +4299,8 @@ function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboardingRese
                 }
                 setScreen("home");
               }}
-              style={{ flex:2, background: editSub.name ? C.gelb : C.bgFaint,
-                color: editSub.name ? "#1C2027" : C.muted,
+              style={{ flex:2, background: editSub.name ? "var(--yellow)" : "var(--border)",
+                color: editSub.name ? "#1C2027" : "var(--muted)",
                 border:"none", borderRadius:10, padding:13, fontWeight:700, cursor:"pointer", fontSize:15 }}>
               💾 Speichern
             </button>
@@ -4317,9 +4317,9 @@ function SubZuweisungBadge({ subId, subs }) {
   if (!sub) return null;
   return (
     <div style={{ display:"inline-flex", alignItems:"center", gap:5,
-      background: C.bgFaint, borderRadius:8, padding:"3px 8px", fontSize:11 }}>
+      background: "var(--border)", borderRadius:8, padding:"3px 8px", fontSize:11 }}>
       <span>🏢</span>
-      <span style={{ color: C.blau }}>{sub.name}</span>
+      <span style={{ color: "var(--blue)" }}>{sub.name}</span>
     </div>
   );
 }
@@ -5394,11 +5394,11 @@ function PWABanner({ pwa }) {
       {pwa.offline && (
         <div style={{ background:"#2E1A1A", borderRadius:12, padding:"10px 14px",
           display:"flex", alignItems:"center", gap:10,
-          border:`1px solid ${C.rot}`, boxShadow:"0 4px 20px rgba(0,0,0,0.5)" }}>
+          border:`1px solid ${'var(--red)'}`, boxShadow:"0 4px 20px rgba(0,0,0,0.5)" }}>
           <span style={{ fontSize:18 }}>📵</span>
           <div style={{ flex:1 }}>
-            <div style={{ color: C.rot, fontWeight:700, fontSize:13 }}>Offline</div>
-            <div style={{ color: C.muted, fontSize:11 }}>Änderungen werden gespeichert und synchronisiert sobald du wieder online bist.</div>
+            <div style={{ color: "var(--red)", fontWeight:700, fontSize:13 }}>Offline</div>
+            <div style={{ color: "var(--muted)", fontSize:11 }}>Änderungen werden gespeichert und synchronisiert sobald du wieder online bist.</div>
           </div>
         </div>
       )}
@@ -5407,14 +5407,14 @@ function PWABanner({ pwa }) {
       {pwa.updateVerfügbar && (
         <div style={{ background:"#1A2A1A", borderRadius:12, padding:"10px 14px",
           display:"flex", alignItems:"center", gap:10,
-          border:`1px solid ${C.gruen}`, boxShadow:"0 4px 20px rgba(0,0,0,0.5)" }}>
+          border:`1px solid ${'var(--green)'}`, boxShadow:"0 4px 20px rgba(0,0,0,0.5)" }}>
           <span style={{ fontSize:18 }}>🔄</span>
           <div style={{ flex:1 }}>
-            <div style={{ color: C.gruen, fontWeight:700, fontSize:13 }}>Update verfügbar</div>
-            <div style={{ color: C.muted, fontSize:11 }}>Neue Version von Polaris bereit.</div>
+            <div style={{ color: "var(--green)", fontWeight:700, fontSize:13 }}>Update verfügbar</div>
+            <div style={{ color: "var(--muted)", fontSize:11 }}>Neue Version von Polaris bereit.</div>
           </div>
           <button onClick={pwa.updateAnwenden}
-            style={{ background: C.gruen, color:"#fff", border:"none",
+            style={{ background: "var(--green)", color:"#fff", border:"none",
               borderRadius:8, padding:"6px 12px", cursor:"pointer", fontWeight:700, fontSize:12 }}>
             Jetzt
           </button>
@@ -5423,16 +5423,16 @@ function PWABanner({ pwa }) {
 
       {/* Install-Banner */}
       {pwa.installierbar && !pwa.installiert && (
-        <div style={{ background: C.bgMid, borderRadius:12, padding:"12px 14px",
+        <div style={{ background: "var(--surface)", borderRadius:12, padding:"12px 14px",
           display:"flex", alignItems:"center", gap:10,
-          border:`1px solid ${C.gelb}`, boxShadow:"0 4px 20px rgba(0,0,0,0.5)" }}>
+          border:`1px solid ${'var(--yellow)'}`, boxShadow:"0 4px 20px rgba(0,0,0,0.5)" }}>
           <span style={{ fontSize:22 }}>⚒️</span>
           <div style={{ flex:1 }}>
-            <div style={{ color: C.text, fontWeight:700, fontSize:13 }}>Polaris installieren</div>
-            <div style={{ color: C.muted, fontSize:11 }}>Zum Homescreen hinzufügen – funktioniert auch offline.</div>
+            <div style={{ color: "var(--text)", fontWeight:700, fontSize:13 }}>Polaris installieren</div>
+            <div style={{ color: "var(--muted)", fontSize:11 }}>Zum Homescreen hinzufügen – funktioniert auch offline.</div>
           </div>
           <button onClick={pwa.installieren}
-            style={{ background: C.gelb, color:"#1C2027", border:"none",
+            style={{ background: "var(--yellow)", color:"#1C2027", border:"none",
               borderRadius:8, padding:"7px 12px", cursor:"pointer", fontWeight:700, fontSize:12 }}>
             Installieren
           </button>
@@ -6191,6 +6191,2397 @@ function ProjektInfoStrip({ projekt }) {
   );
 }
 
+
+// ════════════════════════════════════════════════════════════════════════════
+// AUFGABEN-SYSTEM (ersetzt Betonfelder als eigenständigen Tab)
+// Typen: beton | schalung | bewehrung | abdichtung | estrich | allgemein | mangel
+// ════════════════════════════════════════════════════════════════════════════
+
+const AUFGABEN_TYPEN = {
+  beton:      { label:"Betonage",    icon:"🏗️", farbe:"#F5C400" },
+  schalung:   { label:"Schalung",    icon:"🪵",  farbe:"#C2410C" },
+  bewehrung:  { label:"Bewehrung",   icon:"🔩",  farbe:"#4A9EE0" },
+  abdichtung: { label:"Abdichtung",  icon:"💧",  farbe:"#0891B2" },
+  estrich:    { label:"Estrich",     icon:"🪣",  farbe:"#7C3AED" },
+  allgemein:  { label:"Allgemein",   icon:"📋",  farbe:"#64748B" },
+  mangel:     { label:"Mangel",      icon:"⚠️",  farbe:"#DC2626" },
+};
+
+const AUFGABEN_STATUS = {
+  offen:         { label:"Offen",       icon:"○",  farbe:"#64748B", bg:"var(--surface2)" },
+  in_arbeit:     { label:"In Arbeit",   icon:"◑",  farbe:"#F5C400", bg:"var(--ybg)" },
+  abgeschlossen: { label:"Fertig",      icon:"●",  farbe:"#15803D", bg:"var(--gbg)" },
+  blockiert:     { label:"Blockiert",   icon:"✕",  farbe:"#DC2626", bg:"var(--rbg)" },
+};
+
+const AUFGABEN_PRIO = {
+  niedrig:  { label:"Niedrig",  icon:"↓", farbe:"#64748B" },
+  mittel:   { label:"Mittel",   icon:"→", farbe:"#F5C400" },
+  hoch:     { label:"Hoch",     icon:"↑", farbe:"#EA580C" },
+  kritisch: { label:"Kritisch", icon:"‼", farbe:"#DC2626" },
+};
+
+function leereAufgabe() {
+  return {
+    id:           Date.now(),
+    titel:        "",
+    typ:          "allgemein",
+    status:       "offen",
+    prioritaet:   "mittel",
+    faellig_am:   "",
+    zustaendig:   "",
+    beschreibung: "",
+    fotos:        [],
+    ist_mangel:   false,
+    plan_x:       null,
+    plan_y:       null,
+    // Betonfeld-Felder
+    m2:           0,
+    betonsorte:   "",
+    festigkeit:   null,
+    // Kosten
+    budget_pos:   "",
+    created_at:   new Date().toISOString(),
+  };
+}
+
+// ─── Aufgaben-Karte ───────────────────────────────────────────────────────────
+function AufgabenKarte({ aufgabe, onClick, kolonnen }) {
+  const typ    = AUFGABEN_TYPEN[aufgabe.typ]    || AUFGABEN_TYPEN.allgemein;
+  const status = AUFGABEN_STATUS[aufgabe.status] || AUFGABEN_STATUS.offen;
+  const prio   = AUFGABEN_PRIO[aufgabe.prioritaet] || AUFGABEN_PRIO.mittel;
+  const ueberfaellig = aufgabe.faellig_am &&
+    new Date(aufgabe.faellig_am) < new Date() &&
+    aufgabe.status !== "abgeschlossen";
+
+  return (
+    <div onClick={onClick}
+      style={{ background:"var(--surface)", borderRadius:14, padding:"14px 16px",
+        marginBottom:10, cursor:"pointer",
+        borderLeft:`4px solid ${typ.farbe}`,
+        border:`1.5px solid var(--border)`,
+        borderLeftWidth:4, borderLeftColor:typ.farbe,
+        boxShadow:"0 2px 8px rgba(0,0,0,0.05)" }}>
+      <div style={{ display:"flex", justifyContent:"space-between",
+        alignItems:"flex-start", marginBottom:6 }}>
+        <div style={{ flex:1 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:3 }}>
+            <span style={{ fontSize:14 }}>{typ.icon}</span>
+            <span style={{ color:"var(--text)", fontWeight:700, fontSize:14 }}>
+              {aufgabe.titel || "Unbenannte Aufgabe"}
+            </span>
+          </div>
+          {aufgabe.beschreibung && (
+            <div style={{ color:"var(--muted)", fontSize:12, lineHeight:1.4,
+              overflow:"hidden", display:"-webkit-box",
+              WebkitLineClamp:2, WebkitBoxOrient:"vertical" }}>
+              {aufgabe.beschreibung}
+            </div>
+          )}
+        </div>
+        <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end",
+          gap:4, marginLeft:8, flexShrink:0 }}>
+          <div style={{ background:status.bg, color:status.farbe,
+            borderRadius:20, padding:"2px 8px", fontSize:10, fontWeight:700 }}>
+            {status.icon} {status.label}
+          </div>
+          <div style={{ color:prio.farbe, fontSize:10, fontWeight:700 }}>
+            {prio.icon} {prio.label}
+          </div>
+        </div>
+      </div>
+      <div style={{ display:"flex", gap:8, flexWrap:"wrap", alignItems:"center" }}>
+        {aufgabe.faellig_am && (
+          <div style={{ color: ueberfaellig ? "var(--red)" : "var(--muted)",
+            fontSize:11, fontWeight: ueberfaellig ? 700 : 400 }}>
+            📅 {new Date(aufgabe.faellig_am).toLocaleDateString("de-DE")}
+            {ueberfaellig && " · Überfällig!"}
+          </div>
+        )}
+        {aufgabe.zustaendig && (
+          <div style={{ color:"var(--muted)", fontSize:11 }}>👤 {aufgabe.zustaendig}</div>
+        )}
+        {aufgabe.m2 > 0 && (
+          <div style={{ color:"var(--muted)", fontSize:11 }}>📐 {aufgabe.m2} m²</div>
+        )}
+        {aufgabe.fotos?.length > 0 && (
+          <div style={{ color:"var(--blue)", fontSize:11 }}>📷 {aufgabe.fotos.length}</div>
+        )}
+        {aufgabe.ist_mangel && (
+          <div style={{ background:"var(--rbg)", color:"var(--red)",
+            borderRadius:20, padding:"2px 8px", fontSize:10, fontWeight:700 }}>
+            ⚠️ Mangel
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Aufgaben-Formular ────────────────────────────────────────────────────────
+function AufgabenFormular({ initial, kolonnen, onSave, onClose }) {
+  const [a,       setA]       = useState(initial || leereAufgabe());
+  const [bilder,  setBilder]  = useState([]);
+  const [planMode,setPlanMode]= useState(false);
+  const fileRef               = useRef(null);
+  const planRef               = useRef(null);
+
+  function handleBild(e) {
+    Array.from(e.target.files).forEach(file => {
+      const r = new FileReader();
+      r.onload = ev => setA(p => ({ ...p, fotos:[...p.fotos, ev.target.result] }));
+      r.readAsDataURL(file);
+    });
+  }
+
+  function handlePlanKlick(e) {
+    if (!planRef.current || !planMode) return;
+    const rect = planRef.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width  * 100).toFixed(1);
+    const y = ((e.clientY - rect.top)  / rect.height * 100).toFixed(1);
+    setA(p => ({ ...p, plan_x:Number(x), plan_y:Number(y) }));
+    setPlanMode(false);
+  }
+
+  const valid = a.titel.trim().length > 0;
+
+  return (
+    <div style={{ position:"fixed", inset:0,
+      background:"rgba(15,23,42,0.7)", backdropFilter:"blur(4px)",
+      zIndex:500, display:"flex", alignItems:"flex-end",
+      justifyContent:"center" }}>
+      <div style={{ background:"var(--surface)", borderRadius:"20px 20px 0 0",
+        padding:22, width:"100%", maxWidth:520,
+        maxHeight:"92vh", overflowY:"auto",
+        boxShadow:"0 -4px 30px rgba(0,0,0,0.15)" }}>
+
+        <div style={{ display:"flex", justifyContent:"space-between",
+          alignItems:"center", marginBottom:18 }}>
+          <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:17 }}>
+            {initial ? "✏️ Aufgabe bearbeiten" : "➕ Neue Aufgabe"}
+          </div>
+          <button onClick={onClose}
+            style={{ background:"none", border:"none", color:"var(--muted)",
+              fontSize:24, cursor:"pointer" }}>✕</button>
+        </div>
+
+        {/* Typ */}
+        <div style={{ marginBottom:14 }}>
+          <Label>Aufgabentyp</Label>
+          <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginTop:6 }}>
+            {Object.entries(AUFGABEN_TYPEN).map(([key, t]) => (
+              <button key={key} onClick={() => setA(p=>({...p, typ:key,
+                ist_mangel:key==="mangel"}))}
+                style={{ background: a.typ===key ? t.farbe+"22" : "var(--surface2)",
+                  border:`1.5px solid ${a.typ===key ? t.farbe : "var(--border)"}`,
+                  borderRadius:20, padding:"6px 12px", cursor:"pointer",
+                  fontSize:12, fontWeight: a.typ===key ? 700 : 400,
+                  color: a.typ===key ? t.farbe : "var(--muted)",
+                  fontFamily:"inherit" }}>
+                {t.icon} {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Titel */}
+        <div style={{ marginBottom:13 }}>
+          <Label>Titel *</Label>
+          <input value={a.titel} onChange={e=>setA(p=>({...p,titel:e.target.value}))}
+            placeholder="z.B. Bodenplatte B1 betonieren" style={inputStyle()} />
+        </div>
+
+        {/* Status + Priorität */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:13 }}>
+          <div>
+            <Label>Status</Label>
+            <select value={a.status} onChange={e=>setA(p=>({...p,status:e.target.value}))}
+              style={{ ...inputStyle(), padding:"11px 12px" }}>
+              {Object.entries(AUFGABEN_STATUS).map(([k,s]) => (
+                <option key={k} value={k}>{s.icon} {s.label}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <Label>Priorität</Label>
+            <select value={a.prioritaet} onChange={e=>setA(p=>({...p,prioritaet:e.target.value}))}
+              style={{ ...inputStyle(), padding:"11px 12px" }}>
+              {Object.entries(AUFGABEN_PRIO).map(([k,s]) => (
+                <option key={k} value={k}>{s.icon} {s.label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Zuständig + Fällig */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:13 }}>
+          <div>
+            <Label>Zuständig</Label>
+            <select value={a.zustaendig} onChange={e=>setA(p=>({...p,zustaendig:e.target.value}))}
+              style={{ ...inputStyle(), padding:"11px 12px" }}>
+              <option value="">— auswählen —</option>
+              {kolonnen.map(k => (
+                <option key={k.id} value={k.name}>{k.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <Label>Fällig am</Label>
+            <input type="date" value={a.faellig_am}
+              onChange={e=>setA(p=>({...p,faellig_am:e.target.value}))}
+              style={{ ...inputStyle(), padding:"11px 12px" }} />
+          </div>
+        </div>
+
+        {/* Beschreibung */}
+        <div style={{ marginBottom:13 }}>
+          <Label>Beschreibung</Label>
+          <textarea rows={3} value={a.beschreibung}
+            onChange={e=>setA(p=>({...p,beschreibung:e.target.value}))}
+            placeholder="Details zur Aufgabe…"
+            style={{ width:"100%", background:"var(--surface2)", color:"var(--text)",
+              border:"1.5px solid var(--border)", borderRadius:10, padding:10,
+              fontSize:13, resize:"none", boxSizing:"border-box", fontFamily:"inherit" }} />
+        </div>
+
+        {/* Beton-spezifisch */}
+        {a.typ === "beton" && (
+          <div style={{ background:"var(--ybg)", borderRadius:12, padding:14,
+            marginBottom:14, border:"1px solid var(--yellow)" }}>
+            <div style={{ color:"var(--ydark)", fontWeight:700, fontSize:12,
+              marginBottom:10 }}>🏗️ Betonage-Details</div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+              <div>
+                <Label>Fläche (m²)</Label>
+                <input type="number" value={a.m2||""}
+                  onChange={e=>setA(p=>({...p,m2:Number(e.target.value)}))}
+                  placeholder="0" style={inputStyle()} />
+              </div>
+              <div>
+                <Label>Betonsorte</Label>
+                <input value={a.betonsorte||""}
+                  onChange={e=>setA(p=>({...p,betonsorte:e.target.value}))}
+                  placeholder="C25/30" style={inputStyle()} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Mangel-spezifisch */}
+        {a.ist_mangel && (
+          <div style={{ background:"var(--rbg)", borderRadius:12, padding:14,
+            marginBottom:14, border:"1px solid var(--red)" }}>
+            <div style={{ color:"var(--red)", fontWeight:700, fontSize:12,
+              marginBottom:10 }}>⚠️ Mangel-Details</div>
+            <div style={{ marginBottom:10 }}>
+              <Label>Verursacher / Gewerk</Label>
+              <input value={a.mangel_verursacher||""}
+                onChange={e=>setA(p=>({...p,mangel_verursacher:e.target.value}))}
+                placeholder="z.B. Elektriker, Maler…" style={inputStyle()} />
+            </div>
+            {/* Planverortung */}
+            {a.plan_bild_url ? (
+              <div>
+                <Label>Planverortung</Label>
+                <div ref={planRef} onClick={handlePlanKlick}
+                  style={{ position:"relative", borderRadius:10, overflow:"hidden",
+                    cursor: planMode ? "crosshair" : "default",
+                    border:"2px solid var(--red)", marginTop:6 }}>
+                  <img src={a.plan_bild_url} alt="Plan"
+                    style={{ width:"100%", display:"block" }} />
+                  {a.plan_x !== null && a.plan_y !== null && (
+                    <div style={{ position:"absolute",
+                      left:`${a.plan_x}%`, top:`${a.plan_y}%`,
+                      transform:"translate(-50%,-50%)",
+                      width:24, height:24, borderRadius:12,
+                      background:"var(--red)", border:"2px solid #fff",
+                      display:"flex", alignItems:"center", justifyContent:"center",
+                      fontSize:12, color:"#fff", fontWeight:700 }}>!</div>
+                  )}
+                  {planMode && (
+                    <div style={{ position:"absolute", inset:0,
+                      background:"rgba(220,38,38,0.1)",
+                      display:"flex", alignItems:"center", justifyContent:"center" }}>
+                      <div style={{ color:"var(--red)", fontWeight:700,
+                        background:"var(--surface)", borderRadius:8,
+                        padding:"6px 12px", fontSize:12 }}>
+                        Auf Plan tippen zum Verorten
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <button onClick={() => setPlanMode(true)}
+                  style={{ marginTop:8, background:"var(--red)", color:"#fff",
+                    border:"none", borderRadius:8, padding:"6px 14px",
+                    cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>
+                  📍 {a.plan_x ? "Neu verorten" : "Auf Plan verorten"}
+                </button>
+              </div>
+            ) : (
+              <div>
+                <Label>Grundriss hochladen (optional)</Label>
+                <input type="file" accept="image/*"
+                  onChange={e => {
+                    const f = e.target.files[0];
+                    if (!f) return;
+                    const r = new FileReader();
+                    r.onload = ev => setA(p=>({...p,plan_bild_url:ev.target.result}));
+                    r.readAsDataURL(f);
+                  }}
+                  style={{ marginTop:6, fontSize:12, color:"var(--muted)" }} />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Fotos */}
+        <div style={{ marginBottom:16 }}>
+          <Label>Fotos ({a.fotos?.length || 0})</Label>
+          <input ref={fileRef} type="file" accept="image/*" multiple
+            style={{ display:"none" }} onChange={handleBild} />
+          <button onClick={() => fileRef.current.click()}
+            style={{ background:"var(--surface2)", color:"var(--muted)",
+              border:"1.5px dashed var(--border)", borderRadius:10,
+              padding:"8px 16px", cursor:"pointer", fontSize:12,
+              fontFamily:"inherit", marginTop:6 }}>
+            📷 Fotos hinzufügen
+          </button>
+          {a.fotos?.length > 0 && (
+            <div style={{ display:"flex", gap:6, marginTop:8, flexWrap:"wrap" }}>
+              {a.fotos.map((url, i) => (
+                <div key={i} style={{ position:"relative" }}>
+                  <img src={url} alt="" style={{ width:56, height:56,
+                    borderRadius:8, objectFit:"cover" }} />
+                  <button onClick={() => setA(p=>({...p,
+                    fotos:p.fotos.filter((_,j)=>j!==i)}))}
+                    style={{ position:"absolute", top:-4, right:-4,
+                      width:18, height:18, borderRadius:9,
+                      background:"var(--red)", color:"#fff", border:"none",
+                      cursor:"pointer", fontSize:10, padding:0 }}>✕</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div style={{ display:"flex", gap:10 }}>
+          <button onClick={onClose}
+            style={{ flex:1, background:"var(--surface2)", color:"var(--muted)",
+              border:"1.5px solid var(--border)", borderRadius:12, padding:14,
+              cursor:"pointer", fontFamily:"inherit" }}>Abbrechen</button>
+          <button onClick={() => valid && onSave(a)} disabled={!valid}
+            style={{ flex:2, background: valid ? "var(--yellow)" : "var(--surface2)",
+              color: valid ? "#1a1200" : "var(--muted)",
+              border:"none", borderRadius:12, padding:14, fontWeight:800,
+              cursor: valid ? "pointer" : "default", fontSize:15,
+              fontFamily:"inherit" }}>
+            💾 Speichern
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Aufgaben-View (Haupt-Tab) ────────────────────────────────────────────────
+function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected }) {
+  const [ansicht,     setAnsicht]     = useState("liste");  // liste | kanban
+  const [filter,      setFilter]      = useState("alle");
+  const [neuAufgabe,  setNeuAufgabe]  = useState(false);
+  const [editAufgabe, setEditAufgabe] = useState(null);
+  const [detail,      setDetail]      = useState(null);
+
+  const gefiltert = aufgaben.filter(a => {
+    if (filter === "alle")      return true;
+    if (filter === "maengel")   return a.ist_mangel;
+    if (filter === "offen")     return a.status === "offen";
+    if (filter === "kritisch")  return a.prioritaet === "kritisch";
+    return a.typ === filter;
+  });
+
+  function handleSave(a) {
+    if (editAufgabe) {
+      setAufgaben(prev => prev.map(x => x.id===a.id ? a : x));
+    } else {
+      setAufgaben(prev => [a, ...prev]);
+    }
+    setNeuAufgabe(false);
+    setEditAufgabe(null);
+  }
+
+  function statusWechsel(id, neuerStatus) {
+    setAufgaben(prev => prev.map(a =>
+      a.id === id ? { ...a, status: neuerStatus } : a
+    ));
+  }
+
+  const stats = {
+    gesamt:        aufgaben.length,
+    offen:         aufgaben.filter(a=>a.status==="offen").length,
+    in_arbeit:     aufgaben.filter(a=>a.status==="in_arbeit").length,
+    abgeschlossen: aufgaben.filter(a=>a.status==="abgeschlossen").length,
+    maengel:       aufgaben.filter(a=>a.ist_mangel && a.status!=="abgeschlossen").length,
+    ueberfaellig:  aufgaben.filter(a=>a.faellig_am &&
+      new Date(a.faellig_am)<new Date() && a.status!=="abgeschlossen").length,
+  };
+
+  return (
+    <div>
+      {/* Stats */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)",
+        gap:8, marginBottom:14 }}>
+        {[
+          ["Offen",       stats.offen,         "var(--muted)"],
+          ["In Arbeit",   stats.in_arbeit,      "var(--yellow)"],
+          ["Fertig",      stats.abgeschlossen,  "var(--green)"],
+          ["Mängel",      stats.maengel,        "var(--red)"],
+          ["Überfällig",  stats.ueberfaellig,   "var(--orange)"],
+          ["Gesamt",      stats.gesamt,         "var(--text)"],
+        ].map(([l,v,c]) => (
+          <div key={l} style={{ background:"var(--surface)", borderRadius:12,
+            padding:"10px 12px", border:"1.5px solid var(--border)",
+            position:"relative", overflow:"hidden" }}>
+            <div style={{ position:"absolute", top:0, left:0, right:0,
+              height:3, background:c }} />
+            <div style={{ color:"var(--muted)", fontSize:10,
+              fontWeight:700, textTransform:"uppercase", marginBottom:4 }}>{l}</div>
+            <div style={{ color:"var(--text)", fontWeight:900,
+              fontSize:22 }}>{v}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Toolbar */}
+      <div style={{ display:"flex", justifyContent:"space-between",
+        alignItems:"center", marginBottom:10 }}>
+        <div style={{ display:"flex", gap:6, overflowX:"auto" }}>
+          {[
+            ["alle","Alle"],
+            ["maengel","⚠️ Mängel"],
+            ["offen","Offen"],
+            ["kritisch","Kritisch"],
+            ["beton","🏗️"],
+            ["schalung","🪵"],
+            ["bewehrung","🔩"],
+          ].map(([k,l]) => (
+            <FilterBtn key={k} active={filter===k}
+              onClick={() => setFilter(k)}>{l}</FilterBtn>
+          ))}
+        </div>
+        <button onClick={() => setNeuAufgabe(true)}
+          style={{ background:"var(--yellow)", color:"#1a1200", border:"none",
+            borderRadius:10, padding:"8px 14px", fontWeight:700,
+            cursor:"pointer", fontSize:13, fontFamily:"inherit",
+            flexShrink:0, marginLeft:8 }}>
+          + Aufgabe
+        </button>
+      </div>
+
+      {/* Kanban / Liste Toggle */}
+      <div style={{ display:"flex", gap:6, marginBottom:12 }}>
+        {[["liste","☰ Liste"],["kanban","⊞ Kanban"]].map(([v,l]) => (
+          <button key={v} onClick={() => setAnsicht(v)}
+            style={{ background: ansicht===v ? "var(--surface)" : "transparent",
+              color: ansicht===v ? "var(--text)" : "var(--muted)",
+              border:`1px solid ${ansicht===v ? "var(--border)" : "transparent"}`,
+              borderRadius:8, padding:"5px 12px", cursor:"pointer",
+              fontSize:12, fontFamily:"inherit",
+              fontWeight: ansicht===v ? 700 : 400 }}>{l}</button>
+        ))}
+      </div>
+
+      {/* Liste */}
+      {ansicht === "liste" && (
+        <div>
+          {gefiltert.length === 0 && (
+            <div style={{ textAlign:"center", padding:"40px 20px",
+              color:"var(--muted)" }}>
+              <div style={{ fontSize:40, marginBottom:8 }}>✅</div>
+              <div>Keine Aufgaben gefunden</div>
+            </div>
+          )}
+          {gefiltert.map(a => (
+            <AufgabenKarte key={a.id} aufgabe={a} kolonnen={kolonnen}
+              onClick={() => setEditAufgabe(a)} />
+          ))}
+        </div>
+      )}
+
+      {/* Kanban */}
+      {ansicht === "kanban" && (
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:10 }}>
+          {Object.entries(AUFGABEN_STATUS).map(([statusKey, statusCfg]) => {
+            const spalte = gefiltert.filter(a => a.status === statusKey);
+            return (
+              <div key={statusKey} style={{ background:"var(--surface2)",
+                borderRadius:12, padding:10,
+                border:"1px solid var(--border)" }}>
+                <div style={{ display:"flex", justifyContent:"space-between",
+                  alignItems:"center", marginBottom:8 }}>
+                  <div style={{ color:statusCfg.farbe, fontWeight:700, fontSize:12 }}>
+                    {statusCfg.icon} {statusCfg.label}
+                  </div>
+                  <div style={{ background:statusCfg.bg, color:statusCfg.farbe,
+                    borderRadius:10, padding:"1px 7px", fontSize:11,
+                    fontWeight:700 }}>{spalte.length}</div>
+                </div>
+                {spalte.map(a => (
+                  <div key={a.id} onClick={() => setEditAufgabe(a)}
+                    style={{ background:"var(--surface)", borderRadius:10,
+                      padding:"10px 12px", marginBottom:6, cursor:"pointer",
+                      borderLeft:`3px solid ${AUFGABEN_TYPEN[a.typ]?.farbe || "var(--muted)"}`,
+                      boxShadow:"0 1px 4px rgba(0,0,0,0.06)" }}>
+                    <div style={{ color:"var(--text)", fontWeight:600, fontSize:12 }}>
+                      {AUFGABEN_TYPEN[a.typ]?.icon} {a.titel}
+                    </div>
+                    {a.zustaendig && (
+                      <div style={{ color:"var(--muted)", fontSize:10, marginTop:3 }}>
+                        👤 {a.zustaendig}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {(neuAufgabe || editAufgabe) && (
+        <AufgabenFormular
+          initial={editAufgabe}
+          kolonnen={kolonnen}
+          onSave={handleSave}
+          onClose={() => { setNeuAufgabe(false); setEditAufgabe(null); }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Mängel-View ──────────────────────────────────────────────────────────────
+function MaengelView({ aufgaben, setAufgaben, kolonnen }) {
+  const maengel = aufgaben.filter(a => a.ist_mangel);
+  const [neuMangel, setNeuMangel] = useState(false);
+  const [edit,      setEdit]      = useState(null);
+
+  function handleSave(a) {
+    const mitMangel = { ...a, ist_mangel:true, typ:"mangel" };
+    if (edit) {
+      setAufgaben(prev => prev.map(x => x.id===mitMangel.id ? mitMangel : x));
+    } else {
+      setAufgaben(prev => [mitMangel, ...prev]);
+    }
+    setNeuMangel(false); setEdit(null);
+  }
+
+  const offen     = maengel.filter(m=>m.status!=="abgeschlossen").length;
+  const behoben   = maengel.filter(m=>m.status==="abgeschlossen").length;
+
+  return (
+    <div>
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr",
+        gap:8, marginBottom:16 }}>
+        {[
+          ["Gesamt",    maengel.length, "var(--muted)"],
+          ["Offen",     offen,          "var(--red)"],
+          ["Behoben",   behoben,        "var(--green)"],
+        ].map(([l,v,c]) => (
+          <div key={l} style={{ background:"var(--surface)", borderRadius:12,
+            padding:"12px 14px", border:"1.5px solid var(--border)",
+            position:"relative", overflow:"hidden" }}>
+            <div style={{ position:"absolute", top:0, left:0, right:0,
+              height:3, background:c }} />
+            <div style={{ color:"var(--muted)", fontSize:10, fontWeight:700,
+              textTransform:"uppercase", marginBottom:4 }}>{l}</div>
+            <div style={{ color:"var(--text)", fontWeight:900, fontSize:22 }}>{v}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display:"flex", justifyContent:"space-between",
+        alignItems:"center", marginBottom:12 }}>
+        <div style={{ color:"var(--text)", fontWeight:700, fontSize:15 }}>
+          Mängelliste
+        </div>
+        <button onClick={() => setNeuMangel(true)}
+          style={{ background:"var(--red)", color:"#fff", border:"none",
+            borderRadius:10, padding:"8px 14px", fontWeight:700,
+            cursor:"pointer", fontSize:13, fontFamily:"inherit" }}>
+          + Mangel
+        </button>
+      </div>
+
+      {maengel.length === 0 && (
+        <div style={{ textAlign:"center", padding:"40px 20px", color:"var(--muted)" }}>
+          <div style={{ fontSize:40, marginBottom:8 }}>✅</div>
+          <div style={{ fontWeight:700, color:"var(--text)", marginBottom:4 }}>
+            Keine Mängel erfasst
+          </div>
+        </div>
+      )}
+
+      {maengel.map(m => (
+        <div key={m.id} onClick={() => setEdit(m)}
+          style={{ background:"var(--surface)", borderRadius:14,
+            padding:"14px 16px", marginBottom:10, cursor:"pointer",
+            borderLeft:"4px solid var(--red)",
+            border:"1.5px solid var(--border)",
+            borderLeftWidth:4, borderLeftColor:"var(--red)" }}>
+          <div style={{ display:"flex", justifyContent:"space-between",
+            alignItems:"flex-start", marginBottom:6 }}>
+            <div style={{ flex:1 }}>
+              <div style={{ color:"var(--text)", fontWeight:700, fontSize:14 }}>
+                {m.titel}
+              </div>
+              {m.mangel_verursacher && (
+                <div style={{ color:"var(--muted)", fontSize:11, marginTop:2 }}>
+                  🔧 {m.mangel_verursacher}
+                </div>
+              )}
+              {m.beschreibung && (
+                <div style={{ color:"var(--text2)", fontSize:12, marginTop:4,
+                  lineHeight:1.4 }}>{m.beschreibung}</div>
+              )}
+            </div>
+            <div style={{ background: AUFGABEN_STATUS[m.status]?.bg,
+              color: AUFGABEN_STATUS[m.status]?.farbe,
+              borderRadius:20, padding:"2px 8px", fontSize:10, fontWeight:700,
+              marginLeft:8, flexShrink:0 }}>
+              {AUFGABEN_STATUS[m.status]?.label}
+            </div>
+          </div>
+
+          {/* Plan-Preview */}
+          {m.plan_bild_url && m.plan_x !== null && (
+            <div style={{ position:"relative", borderRadius:8, overflow:"hidden",
+              height:80, marginTop:8 }}>
+              <img src={m.plan_bild_url} alt="Plan"
+                style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+              <div style={{ position:"absolute",
+                left:`${m.plan_x}%`, top:`${m.plan_y}%`,
+                transform:"translate(-50%,-50%)",
+                width:20, height:20, borderRadius:10,
+                background:"var(--red)", border:"2px solid #fff",
+                display:"flex", alignItems:"center", justifyContent:"center",
+                fontSize:10, color:"#fff", fontWeight:700 }}>!</div>
+            </div>
+          )}
+
+          {/* Fotos */}
+          {m.fotos?.length > 0 && (
+            <div style={{ display:"flex", gap:5, marginTop:8 }}>
+              {m.fotos.slice(0,3).map((url,i) => (
+                <img key={i} src={url} alt="" style={{ width:44, height:44,
+                  borderRadius:6, objectFit:"cover" }} />
+              ))}
+              {m.fotos.length > 3 && (
+                <div style={{ width:44, height:44, borderRadius:6,
+                  background:"var(--surface2)", display:"flex",
+                  alignItems:"center", justifyContent:"center",
+                  color:"var(--muted)", fontSize:11, fontWeight:700 }}>
+                  +{m.fotos.length-3}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ))}
+
+      {(neuMangel || edit) && (
+        <AufgabenFormular
+          initial={edit ? edit : { ...leereAufgabe(), typ:"mangel", ist_mangel:true }}
+          kolonnen={kolonnen}
+          onSave={handleSave}
+          onClose={() => { setNeuMangel(false); setEdit(null); }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Kommunikation-View ───────────────────────────────────────────────────────
+function KommunikationView({ aufgaben, setAufgaben, aktiveProfil }) {
+  const [ausgewählt, setAusgewählt] = useState(null);
+  const [neuerText,  setNeuerText]  = useState("");
+
+  // Alle Kommentare aus allen Aufgaben zusammenführen
+  const alleKommentare = aufgaben
+    .flatMap(a => (a.kommentare||[]).map(k => ({ ...k, aufgabe_titel:a.titel, aufgabe_id:a.id })))
+    .sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+
+  function kommentarSenden(aufgabeId) {
+    if (!neuerText.trim()) return;
+    const neuerKommentar = {
+      id:         Date.now(),
+      text:       neuerText,
+      autor:      aktiveProfil?.vorname || "Ich",
+      created_at: new Date().toISOString(),
+    };
+    setAufgaben(prev => prev.map(a =>
+      a.id === aufgabeId
+        ? { ...a, kommentare:[...(a.kommentare||[]), neuerKommentar] }
+        : a
+    ));
+    setNeuerText("");
+  }
+
+  return (
+    <div>
+      <div style={{ color:"var(--text)", fontWeight:700, fontSize:15, marginBottom:14 }}>
+        💬 Kommunikation
+      </div>
+
+      {/* Aufgabe auswählen */}
+      <div style={{ marginBottom:16 }}>
+        <Label>Aufgabe kommentieren</Label>
+        <select value={ausgewählt||""} onChange={e=>setAusgewählt(Number(e.target.value))}
+          style={{ ...inputStyle(), marginTop:6, padding:"11px 12px" }}>
+          <option value="">— Aufgabe wählen —</option>
+          {aufgaben.map(a => (
+            <option key={a.id} value={a.id}>
+              {AUFGABEN_TYPEN[a.typ]?.icon} {a.titel}
+            </option>
+          ))}
+        </select>
+        {ausgewählt && (
+          <div style={{ display:"flex", gap:8, marginTop:8 }}>
+            <input value={neuerText}
+              onChange={e=>setNeuerText(e.target.value)}
+              placeholder="Kommentar schreiben…"
+              onKeyDown={e=>e.key==="Enter"&&kommentarSenden(ausgewählt)}
+              style={{ ...inputStyle(), flex:1 }} />
+            <button onClick={() => kommentarSenden(ausgewählt)}
+              style={{ background:"var(--yellow)", color:"#1a1200",
+                border:"none", borderRadius:10, padding:"0 16px",
+                cursor:"pointer", fontWeight:700, fontFamily:"inherit",
+                flexShrink:0 }}>↑</button>
+          </div>
+        )}
+      </div>
+
+      {/* Alle Kommentare */}
+      {alleKommentare.length === 0 ? (
+        <div style={{ textAlign:"center", padding:"40px 20px", color:"var(--muted)" }}>
+          <div style={{ fontSize:40, marginBottom:8 }}>💬</div>
+          <div>Noch keine Kommentare</div>
+        </div>
+      ) : alleKommentare.map(k => (
+        <div key={k.id} style={{ background:"var(--surface)", borderRadius:12,
+          padding:"12px 14px", marginBottom:8,
+          border:"1.5px solid var(--border)" }}>
+          <div style={{ display:"flex", justifyContent:"space-between",
+            alignItems:"flex-start", marginBottom:4 }}>
+            <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+              <div style={{ width:28, height:28, borderRadius:14,
+                background:"var(--ybg)", display:"flex", alignItems:"center",
+                justifyContent:"center", fontSize:11, fontWeight:800,
+                color:"var(--ydark)", flexShrink:0 }}>
+                {k.autor?.[0]?.toUpperCase() || "?"}
+              </div>
+              <div>
+                <div style={{ color:"var(--text)", fontWeight:700, fontSize:13 }}>
+                  {k.autor}
+                </div>
+                <div style={{ color:"var(--muted)", fontSize:10 }}>
+                  📋 {k.aufgabe_titel}
+                </div>
+              </div>
+            </div>
+            <div style={{ color:"var(--muted)", fontSize:10 }}>
+              {new Date(k.created_at).toLocaleString("de-DE",{
+                day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"
+              })}
+            </div>
+          </div>
+          <div style={{ color:"var(--text2)", fontSize:13, lineHeight:1.5,
+            paddingLeft:36 }}>{k.text}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Kosten-View ──────────────────────────────────────────────────────────────
+function KostenView({ projekt, aufgaben, kolonnen, zeitbuchungen }) {
+  const [budgetPos, setBudgetPos] = useState(projekt?.budget_positionen || [
+    { id:1, bezeichnung:"Betonarbeiten",    budget:0, einheit:"m²" },
+    { id:2, bezeichnung:"Schalung",         budget:0, einheit:"m²" },
+    { id:3, bezeichnung:"Bewehrung",        budget:0, einheit:"t"  },
+    { id:4, bezeichnung:"Sonstige Arbeit",  budget:0, einheit:"h"  },
+    { id:5, bezeichnung:"Material",         budget:0, einheit:"€"  },
+  ]);
+  const [editPos, setEditPos] = useState(null);
+  const [stundensatz, setStundensatz] = useState(55); // €/h Default
+
+  // Ist-Kosten aus Zeitbuchungen berechnen
+  const stundenGesamt = (zeitbuchungen||[])
+    .filter(z => z.status === "abgeschlossen")
+    .reduce((s,z) => s + (z.netto_minuten||0)/60, 0);
+
+  const istArbeit = stundenGesamt * stundensatz;
+  const budgetGesamt = budgetPos.reduce((s,p) => s + (p.budget||0), 0);
+  const istGesamt = istArbeit; // Materialkosten kämen dazu
+  const restBudget = budgetGesamt - istGesamt;
+  const auslastung = budgetGesamt > 0
+    ? Math.min(Math.round(istGesamt/budgetGesamt*100), 100) : 0;
+
+  return (
+    <div>
+      {/* Übersicht */}
+      <div style={{ background:"var(--surface)", borderRadius:16, padding:18,
+        marginBottom:16, border:"1.5px solid var(--border)" }}>
+        <div style={{ color:"var(--text)", fontWeight:700, fontSize:15,
+          marginBottom:14 }}>💰 Kostenübersicht</div>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10,
+          marginBottom:14 }}>
+          {[
+            ["Budget gesamt",  `${budgetGesamt.toLocaleString("de-DE")} €`, "var(--text)"],
+            ["Ist bisher",     `${istGesamt.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,".").replace(".",",")} €`, auslastung>80?"var(--red)":"var(--green)"],
+            ["Rest-Budget",    `${restBudget.toFixed(0)} €`, restBudget<0?"var(--red)":"var(--green)"],
+            ["Stunden",        `${stundenGesamt.toFixed(1)} h`, "var(--blue)"],
+          ].map(([l,v,c]) => (
+            <div key={l} style={{ background:"var(--surface2)", borderRadius:12,
+              padding:"12px 14px", border:"1px solid var(--border)" }}>
+              <div style={{ color:"var(--muted)", fontSize:10, fontWeight:700,
+                textTransform:"uppercase", marginBottom:4 }}>{l}</div>
+              <div style={{ color:c, fontWeight:900, fontSize:18 }}>{v}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Fortschrittsbalken */}
+        <div style={{ marginBottom:4 }}>
+          <div style={{ display:"flex", justifyContent:"space-between",
+            fontSize:11, color:"var(--muted)", marginBottom:4 }}>
+            <span>Budget-Auslastung</span>
+            <span style={{ fontWeight:700,
+              color: auslastung>90 ? "var(--red)" : "var(--text)" }}>
+              {auslastung}%
+            </span>
+          </div>
+          <div style={{ background:"var(--surface2)", borderRadius:6,
+            height:10, overflow:"hidden",
+            border:"1px solid var(--border)" }}>
+            <div style={{ height:"100%", borderRadius:6,
+              background: auslastung>90 ? "var(--red)"
+                : auslastung>70 ? "var(--orange)" : "var(--green)",
+              width:`${auslastung}%`, transition:"width 0.5s" }} />
+          </div>
+        </div>
+      </div>
+
+      {/* Stundensatz */}
+      <div style={{ background:"var(--surface)", borderRadius:12, padding:14,
+        marginBottom:14, border:"1.5px solid var(--border)" }}>
+        <Label>Stundensatz (€/h)</Label>
+        <input type="number" value={stundensatz}
+          onChange={e=>setStundensatz(Number(e.target.value))}
+          style={{ ...inputStyle(), marginTop:6 }} />
+        <div style={{ color:"var(--muted)", fontSize:11, marginTop:4 }}>
+          Basis für Ist-Kostenberechnung aus GPS-Zeiterfassung
+        </div>
+      </div>
+
+      {/* Budget-Positionen */}
+      <div style={{ color:"var(--text)", fontWeight:700, fontSize:14,
+        marginBottom:10 }}>Budget-Positionen</div>
+      {budgetPos.map((pos,i) => (
+        <div key={pos.id} style={{ background:"var(--surface)", borderRadius:12,
+          padding:"14px 16px", marginBottom:8,
+          border:"1.5px solid var(--border)" }}>
+          <div style={{ display:"flex", justifyContent:"space-between",
+            alignItems:"center", marginBottom:6 }}>
+            <div style={{ color:"var(--text)", fontWeight:600, fontSize:13 }}>
+              {pos.bezeichnung}
+            </div>
+            <div style={{ color:"var(--yellow)", fontWeight:800, fontSize:14 }}>
+              {(pos.budget||0).toLocaleString("de-DE")} €
+            </div>
+          </div>
+          <div style={{ display:"flex", gap:8 }}>
+            <input type="number" value={pos.budget||""}
+              onChange={e => setBudgetPos(prev => prev.map((p,j) =>
+                j===i ? { ...p, budget:Number(e.target.value) } : p))}
+              placeholder="0"
+              style={{ flex:1, ...inputStyle(), padding:"8px 10px", fontSize:12 }} />
+            <div style={{ color:"var(--muted)", fontSize:12, padding:"8px 0",
+              flexShrink:0 }}>{pos.einheit}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// USP 1: KI-TAGESABSCHLUSS
+// Diktat → KI generiert Bericht + Aufgaben + Mängel automatisch
+// ════════════════════════════════════════════════════════════════════════════
+
+async function kiTagesabschluss(diktat, projekt, kolonnen, wetter) {
+  const heute = new Date().toLocaleDateString("de-DE");
+  const wetterInfo = wetter
+    ? `${wetter.temp}°C, Wind ${wetter.wind}km/h, Niederschlag ${wetter.rain}mm`
+    : "keine Wetterdaten";
+
+  const prompt = `Du bist ein erfahrener Polier-Assistent. Analysiere dieses Diktat vom Tagesabschluss und extrahiere strukturierte Daten.
+
+Datum: ${heute}
+Projekt: ${projekt?.name || ""}
+Wetter heute: ${wetterInfo}
+Kolonnen: ${kolonnen.map(k=>k.name).join(", ")}
+
+Diktat des Poliers:
+"${diktat}"
+
+Antworte NUR mit diesem JSON (kein Markdown, keine Erklärungen):
+{
+  "bericht": {
+    "taetigkeit": "Professionelle Beschreibung der heutigen Tätigkeiten (3-4 Sätze, VOB-konform)",
+    "besonderheiten": "Besonderheiten, Probleme, Vorkommnisse (oder leerer String)",
+    "material": "Erwähnte Materiallieferungen (oder leerer String)",
+    "arbeiter": 0
+  },
+  "neue_aufgaben": [
+    {
+      "titel": "Aufgabentitel",
+      "typ": "beton|schalung|bewehrung|abdichtung|allgemein",
+      "prioritaet": "niedrig|mittel|hoch|kritisch",
+      "beschreibung": "Details"
+    }
+  ],
+  "neue_maengel": [
+    {
+      "titel": "Mangelbeschreibung",
+      "mangel_verursacher": "Wer hat den Mangel verursacht",
+      "prioritaet": "mittel|hoch|kritisch"
+    }
+  ],
+  "wetter_warnung": "Warnung wenn morgen kritisches Wetter für geplante Arbeiten (oder leerer String)"
+}`;
+
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1500,
+      messages: [{ role:"user", content:prompt }],
+    }),
+  });
+  const data = await res.json();
+  const text = data.content?.find(b=>b.type==="text")?.text || "{}";
+  try {
+    return JSON.parse(text.trim());
+  } catch {
+    return null;
+  }
+}
+
+function KITagesabschlussButton({ projekt, kolonnen, wetter, onErgebnis }) {
+  const [offen,    setOffen]    = useState(false);
+  const [diktat,   setDiktat]   = useState("");
+  const [laden,    setLaden]    = useState(false);
+  const [ergebnis, setErgebnis] = useState(null);
+  const [aufnahme, setAufnahme] = useState(false);
+  const srRef = useRef(null);
+
+  function startDiktat() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return;
+    if (!srRef.current) {
+      const er = new SR();
+      er.lang = "de-DE"; er.continuous = true; er.interimResults = false;
+      er.onresult = e => {
+        const t = Array.from(e.results).map(r=>r[0].transcript).join(" ");
+        setDiktat(t);
+      };
+      er.onend = () => setAufnahme(false);
+      srRef.current = er;
+    }
+    if (aufnahme) { srRef.current.stop(); setAufnahme(false); }
+    else { srRef.current.start(); setAufnahme(true); }
+  }
+
+  async function analysieren() {
+    if (!diktat.trim()) return;
+    setLaden(true);
+    const result = await kiTagesabschluss(diktat, projekt, kolonnen, wetter);
+    setErgebnis(result);
+    setLaden(false);
+  }
+
+  function uebernehmen() {
+    onErgebnis(ergebnis);
+    setOffen(false);
+    setDiktat("");
+    setErgebnis(null);
+  }
+
+  return (
+    <>
+      <button onClick={() => setOffen(true)}
+        style={{ background:"var(--yellow)", color:"#1a1200", border:"none",
+          borderRadius:12, padding:"10px 18px", fontWeight:800, cursor:"pointer",
+          fontSize:14, fontFamily:"inherit", display:"flex",
+          alignItems:"center", gap:8 }}>
+        🤖 KI-Tagesabschluss
+      </button>
+
+      {offen && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(15,23,42,0.8)",
+          backdropFilter:"blur(4px)", zIndex:600,
+          display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
+          <div style={{ background:"var(--surface)", borderRadius:"20px 20px 0 0",
+            padding:22, width:"100%", maxWidth:520, maxHeight:"92vh",
+            overflowY:"auto", boxShadow:"0 -4px 30px rgba(0,0,0,0.2)" }}>
+
+            <div style={{ display:"flex", justifyContent:"space-between",
+              alignItems:"center", marginBottom:16 }}>
+              <div style={{ fontWeight:800, fontSize:17, color:"var(--text)" }}>
+                🤖 KI-Tagesabschluss
+              </div>
+              <button onClick={() => { setOffen(false); setErgebnis(null); }}
+                style={{ background:"none", border:"none", color:"var(--muted)",
+                  fontSize:24, cursor:"pointer" }}>✕</button>
+            </div>
+
+            {!ergebnis ? (
+              <>
+                <div style={{ color:"var(--text2)", fontSize:13, marginBottom:14,
+                  lineHeight:1.6 }}>
+                  Beschreibe kurz was heute auf der Baustelle passiert ist.
+                  Die KI erstellt automatisch den Tagesbericht, neue Aufgaben und Mängel.
+                </div>
+
+                <div style={{ position:"relative", marginBottom:14 }}>
+                  <textarea rows={6} value={diktat}
+                    onChange={e=>setDiktat(e.target.value)}
+                    placeholder='z.B. "Heute Bodenplatte B1 fertig betoniert, 8 Mann, Kolonne Huber. Elektriker hat Schalung beschädigt, muss morgen repariert werden. Bewehrung C1 fange ich morgen an..."'
+                    style={{ width:"100%", background: aufnahme ? "#0f1f4a" : "var(--surface2)",
+                      color:"var(--text)",
+                      border:`1.5px solid ${aufnahme ? "var(--blue)" : "var(--border)"}`,
+                      borderRadius:12, padding:12, fontSize:13, resize:"none",
+                      boxSizing:"border-box", fontFamily:"inherit",
+                      transition:"border-color 0.2s" }} />
+                  <button onClick={startDiktat}
+                    style={{ position:"absolute", bottom:10, right:10,
+                      background: aufnahme ? "var(--red)" : "var(--surface)",
+                      color: aufnahme ? "#fff" : "var(--muted)",
+                      border:`1px solid ${aufnahme ? "var(--red)" : "var(--border)"}`,
+                      borderRadius:20, padding:"4px 12px", cursor:"pointer",
+                      fontSize:12, fontFamily:"inherit" }}>
+                    {aufnahme ? "⏹ Stopp" : "🎤 Diktieren"}
+                  </button>
+                </div>
+
+                <button onClick={analysieren}
+                  disabled={!diktat.trim() || laden}
+                  style={{ width:"100%",
+                    background: diktat.trim() && !laden ? "var(--yellow)" : "var(--surface2)",
+                    color: diktat.trim() && !laden ? "#1a1200" : "var(--muted)",
+                    border:"none", borderRadius:12, padding:15, fontWeight:800,
+                    fontSize:15, cursor: diktat.trim() ? "pointer" : "default",
+                    fontFamily:"inherit" }}>
+                  {laden ? "⏳ KI analysiert…" : "✨ Analysieren & Vorschlag erstellen"}
+                </button>
+              </>
+            ) : (
+              <>
+                {/* Bericht-Vorschau */}
+                <div style={{ background:"var(--gbg)", borderRadius:12, padding:14,
+                  marginBottom:12, border:"1px solid var(--green)" }}>
+                  <div style={{ color:"var(--green)", fontWeight:700, fontSize:12,
+                    marginBottom:8 }}>📋 Tagesbericht</div>
+                  <div style={{ color:"var(--text)", fontSize:13,
+                    lineHeight:1.6 }}>{ergebnis.bericht?.taetigkeit}</div>
+                  {ergebnis.bericht?.besonderheiten && (
+                    <div style={{ color:"var(--text2)", fontSize:12,
+                      marginTop:6 }}>⚠️ {ergebnis.bericht.besonderheiten}</div>
+                  )}
+                </div>
+
+                {/* Neue Aufgaben */}
+                {ergebnis.neue_aufgaben?.length > 0 && (
+                  <div style={{ marginBottom:12 }}>
+                    <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:12,
+                      marginBottom:8 }}>
+                      ✅ {ergebnis.neue_aufgaben.length} neue Aufgaben erkannt
+                    </div>
+                    {ergebnis.neue_aufgaben.map((a,i) => (
+                      <div key={i} style={{ background:"var(--ybg)", borderRadius:10,
+                        padding:"8px 12px", marginBottom:6,
+                        border:"1px solid var(--yellow)" }}>
+                        <div style={{ color:"var(--text)", fontWeight:600, fontSize:12 }}>
+                          {AUFGABEN_TYPEN[a.typ]?.icon} {a.titel}
+                        </div>
+                        <div style={{ color:"var(--muted)", fontSize:11 }}>
+                          {AUFGABEN_PRIO[a.prioritaet]?.icon} {AUFGABEN_PRIO[a.prioritaet]?.label}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Neue Mängel */}
+                {ergebnis.neue_maengel?.length > 0 && (
+                  <div style={{ marginBottom:12 }}>
+                    <div style={{ color:"var(--red)", fontWeight:700, fontSize:12,
+                      marginBottom:8 }}>
+                      ⚠️ {ergebnis.neue_maengel.length} Mängel erkannt
+                    </div>
+                    {ergebnis.neue_maengel.map((m,i) => (
+                      <div key={i} style={{ background:"var(--rbg)", borderRadius:10,
+                        padding:"8px 12px", marginBottom:6,
+                        border:"1px solid var(--red)" }}>
+                        <div style={{ color:"var(--red)", fontWeight:600, fontSize:12 }}>
+                          {m.titel}
+                        </div>
+                        {m.mangel_verursacher && (
+                          <div style={{ color:"var(--muted)", fontSize:11 }}>
+                            🔧 {m.mangel_verursacher}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Wetter-Warnung */}
+                {ergebnis.wetter_warnung && (
+                  <div style={{ background:"var(--obg)", borderRadius:10, padding:12,
+                    marginBottom:12, border:"1px solid var(--orange)" }}>
+                    <div style={{ color:"var(--orange)", fontWeight:700, fontSize:12 }}>
+                      🌧️ Wetter-Warnung
+                    </div>
+                    <div style={{ color:"var(--text)", fontSize:12, marginTop:4 }}>
+                      {ergebnis.wetter_warnung}
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ display:"flex", gap:10 }}>
+                  <button onClick={() => setErgebnis(null)}
+                    style={{ flex:1, background:"var(--surface2)", color:"var(--muted)",
+                      border:"1.5px solid var(--border)", borderRadius:12, padding:13,
+                      cursor:"pointer", fontFamily:"inherit" }}>
+                    ← Zurück
+                  </button>
+                  <button onClick={uebernehmen}
+                    style={{ flex:2, background:"var(--green)", color:"#fff",
+                      border:"none", borderRadius:12, padding:13, fontWeight:800,
+                      cursor:"pointer", fontSize:15, fontFamily:"inherit" }}>
+                    ✅ Alles übernehmen
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// USP 3: DIGITALE UNTERSCHRIFT + REVISIONSSICHERER PDF-EXPORT
+// ════════════════════════════════════════════════════════════════════════════
+
+function UnterschriftPad({ label, onSave }) {
+  const canvasRef  = useRef(null);
+  const [zeichnen, setZeichnen] = useState(false);
+  const [hatZeichen, setHatZeichen] = useState(false);
+  const lastPos = useRef(null);
+
+  function getPos(e) {
+    const rect = canvasRef.current.getBoundingClientRect();
+    const src  = e.touches ? e.touches[0] : e;
+    return { x: src.clientX - rect.left, y: src.clientY - rect.top };
+  }
+
+  function start(e) {
+    e.preventDefault();
+    setZeichnen(true);
+    lastPos.current = getPos(e);
+  }
+  function draw(e) {
+    e.preventDefault();
+    if (!zeichnen) return;
+    const ctx  = canvasRef.current.getContext("2d");
+    const pos  = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(lastPos.current.x, lastPos.current.y);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.strokeStyle = "#0B1120";
+    ctx.lineWidth   = 2.5;
+    ctx.lineCap     = "round";
+    ctx.stroke();
+    lastPos.current = pos;
+    setHatZeichen(true);
+  }
+  function stop(e) { e.preventDefault(); setZeichnen(false); }
+
+  function loeschen() {
+    const canvas = canvasRef.current;
+    canvasRef.current.getContext("2d").clearRect(0,0,canvas.width,canvas.height);
+    setHatZeichen(false);
+  }
+
+  function speichern() {
+    if (!hatZeichen) return;
+    onSave(canvasRef.current.toDataURL("image/png"));
+  }
+
+  return (
+    <div style={{ marginBottom:16 }}>
+      <div style={{ color:"var(--muted)", fontSize:11, fontWeight:600,
+        marginBottom:6 }}>{label}</div>
+      <div style={{ position:"relative", border:"1.5px solid var(--border)",
+        borderRadius:12, background:"#fff", overflow:"hidden" }}>
+        <canvas ref={canvasRef} width={360} height={100}
+          style={{ display:"block", width:"100%", touchAction:"none",
+            cursor:"crosshair" }}
+          onMouseDown={start} onMouseMove={draw} onMouseUp={stop}
+          onTouchStart={start} onTouchMove={draw} onTouchEnd={stop} />
+        {!hatZeichen && (
+          <div style={{ position:"absolute", inset:0, display:"flex",
+            alignItems:"center", justifyContent:"center", pointerEvents:"none" }}>
+            <span style={{ color:"#ccc", fontSize:13 }}>Hier unterschreiben</span>
+          </div>
+        )}
+      </div>
+      <div style={{ display:"flex", gap:8, marginTop:6 }}>
+        <button onClick={loeschen}
+          style={{ background:"var(--surface2)", color:"var(--muted)",
+            border:"1px solid var(--border)", borderRadius:8,
+            padding:"5px 12px", cursor:"pointer", fontSize:12,
+            fontFamily:"inherit" }}>
+          Löschen
+        </button>
+        <button onClick={speichern} disabled={!hatZeichen}
+          style={{ background: hatZeichen ? "var(--green)" : "var(--surface2)",
+            color: hatZeichen ? "#fff" : "var(--muted)",
+            border:"none", borderRadius:8, padding:"5px 14px",
+            cursor: hatZeichen ? "pointer" : "default", fontSize:12,
+            fontWeight:700, fontFamily:"inherit" }}>
+          ✓ Übernehmen
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function RevisionssichererExport({ bericht, projekt, eigeneFirma, wetter,
+  aufgaben, maengel, datum }) {
+
+  const [offen,        setOffen]        = useState(false);
+  const [sigPolier,    setSigPolier]    = useState(null);
+  const [sigBauleiter, setSigBauleiter] = useState(null);
+  const [exportiert,   setExportiert]   = useState(false);
+
+  const hash = btoa(
+    JSON.stringify({ datum, projekt_id:projekt?.id,
+      bericht_id:bericht?.id, ts:Date.now() })
+  ).slice(0,16).toUpperCase();
+
+  function exportPDF() {
+    const offeneMaengel = (maengel||[]).filter(m=>m.status!=="abgeschlossen");
+    const html = `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"/>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:Arial,sans-serif; font-size:11pt; color:#1a1a1a; }
+.page { width:210mm; padding:14mm 18mm; }
+.header { display:flex; justify-content:space-between; align-items:flex-start;
+  border-bottom:3px solid #F5C400; padding-bottom:10px; margin-bottom:14px; }
+.logo { font-size:22pt; font-weight:900; letter-spacing:-1px; }
+.logo span { color:#F5C400; }
+.firma { font-size:9pt; color:#666; margin-top:3px; }
+.doc-title { text-align:right; }
+.doc-title h1 { font-size:14pt; font-weight:bold; }
+.doc-title .meta { font-size:9pt; color:#666; margin-top:3px; }
+.hash-badge { background:#1a1a1a; color:#F5C400; padding:4px 10px;
+  border-radius:4px; font-size:9pt; font-family:monospace; margin-top:4px; display:inline-block; }
+.section { margin-bottom:14px; }
+.section-title { font-size:10pt; font-weight:bold; color:#F5C400;
+  border-left:3px solid #F5C400; padding-left:8px; margin-bottom:8px;
+  text-transform:uppercase; letter-spacing:0.5px; }
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+.field { background:#f8f8f8; border-radius:5px; padding:8px 10px; }
+.field-label { font-size:8pt; color:#888; text-transform:uppercase; }
+.field-value { font-size:11pt; font-weight:bold; margin-top:2px; }
+.text-block { background:#f8f8f8; border-radius:5px; padding:10px 12px;
+  font-size:11pt; line-height:1.6; min-height:40px; }
+.mangel-row { background:#fff0f0; border-left:3px solid #DC2626;
+  padding:8px 12px; margin-bottom:6px; border-radius:0 5px 5px 0; }
+.sig-area { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:10px; }
+.sig-box { }
+.sig-label { font-size:9pt; color:#666; margin-bottom:4px; }
+.sig-img { border:1px solid #ccc; border-radius:5px; height:80px;
+  display:flex; align-items:center; justify-content:center; }
+.sig-img img { max-height:76px; max-width:100%; }
+.sig-name { font-size:8pt; color:#888; margin-top:4px; text-align:center; }
+.footer { border-top:1px solid #ddd; margin-top:16px; padding-top:8px;
+  font-size:7pt; color:#aaa; display:flex; justify-content:space-between; }
+.revision-stamp { background:#1a1a1a; color:#F5C400; padding:6px 12px;
+  border-radius:4px; font-size:8pt; font-family:monospace; text-align:center; }
+</style></head><body><div class="page">
+
+<div class="header">
+  <div>
+    <div class="logo"><span>★</span> POLARIS</div>
+    <div class="firma">${eigeneFirma?.name||""}  ·  ${eigeneFirma?.strasse||""}, ${eigeneFirma?.plz||""} ${eigeneFirma?.ort||""}</div>
+    <div class="firma">${eigeneFirma?.telefon||""}  ·  ${eigeneFirma?.email||""}</div>
+  </div>
+  <div class="doc-title">
+    <h1>Tagesbericht</h1>
+    <div class="meta">${datum||new Date().toLocaleDateString("de-DE")}</div>
+    <div class="meta" style="font-weight:bold">${projekt?.name||""}</div>
+    <div class="meta">${projekt?.projektnummer||""}</div>
+    <div class="hash-badge">DOC-${hash}</div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Baustellendaten</div>
+  <div class="grid3">
+    <div class="field"><div class="field-label">Baustelle</div><div class="field-value">${projekt?.name||"—"}</div></div>
+    <div class="field"><div class="field-label">Bauleiter</div><div class="field-value">${projekt?.bauleiter||"—"}</div></div>
+    <div class="field"><div class="field-label">Auftraggeber</div><div class="field-value">${projekt?.auftraggeber||"—"}</div></div>
+  </div>
+</div>
+
+${wetter ? `<div class="section">
+  <div class="section-title">Witterung</div>
+  <div class="grid3">
+    <div class="field"><div class="field-label">Temperatur</div><div class="field-value">${wetter.temp}°C</div></div>
+    <div class="field"><div class="field-label">Wind</div><div class="field-value">${wetter.wind} km/h</div></div>
+    <div class="field"><div class="field-label">Niederschlag</div><div class="field-value">${wetter.rain} mm</div></div>
+  </div>
+</div>` : ""}
+
+<div class="section">
+  <div class="section-title">Tätigkeiten</div>
+  <div class="text-block">${bericht?.taetigkeit||"—"}</div>
+</div>
+
+${bericht?.besonderheiten ? `<div class="section">
+  <div class="section-title">Besonderheiten</div>
+  <div class="text-block">${bericht.besonderheiten}</div>
+</div>` : ""}
+
+${offeneMaengel.length > 0 ? `<div class="section">
+  <div class="section-title">Offene Mängel (${offeneMaengel.length})</div>
+  ${offeneMaengel.map(m=>`<div class="mangel-row">
+    <strong>${m.titel}</strong>
+    ${m.mangel_verursacher ? ` · ${m.mangel_verursacher}` : ""}
+    · Status: ${m.status}
+  </div>`).join("")}
+</div>` : ""}
+
+<div class="section">
+  <div class="section-title">Unterschriften</div>
+  <div class="sig-area">
+    <div class="sig-box">
+      <div class="sig-label">Polier</div>
+      <div class="sig-img">
+        ${sigPolier ? `<img src="${sigPolier}" />` : "<span style='color:#ccc'>Nicht unterschrieben</span>"}
+      </div>
+      <div class="sig-name">${eigeneFirma?.geschaeftsfuehrer||"Polier"} · ${datum||new Date().toLocaleDateString("de-DE")}</div>
+    </div>
+    <div class="sig-box">
+      <div class="sig-label">Bauleiter</div>
+      <div class="sig-img">
+        ${sigBauleiter ? `<img src="${sigBauleiter}" />` : "<span style='color:#ccc'>Nicht unterschrieben</span>"}
+      </div>
+      <div class="sig-name">${projekt?.bauleiter||"Bauleiter"} · ${datum||new Date().toLocaleDateString("de-DE")}</div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <span>Erstellt mit Polaris · ${new Date().toLocaleString("de-DE")} · Revisionssicher</span>
+  <div class="revision-stamp">DOC-${hash}</div>
+</div>
+
+</div></body></html>`;
+
+    const win = window.open("","_blank","width=900,height=700");
+    if (!win) return;
+    win.document.write(html);
+    win.document.close();
+    win.onload = () => { win.focus(); win.print(); };
+    setExportiert(true);
+  }
+
+  return (
+    <>
+      <button onClick={() => setOffen(true)}
+        style={{ background:"var(--surface2)", color:"var(--text)",
+          border:"1.5px solid var(--border)", borderRadius:10,
+          padding:"8px 14px", fontWeight:700, cursor:"pointer",
+          fontSize:13, fontFamily:"inherit",
+          display:"flex", alignItems:"center", gap:6 }}>
+        ✍️ Unterschreiben & Export
+      </button>
+
+      {offen && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(15,23,42,0.8)",
+          backdropFilter:"blur(4px)", zIndex:600,
+          display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
+          <div style={{ background:"var(--surface)", borderRadius:"20px 20px 0 0",
+            padding:22, width:"100%", maxWidth:520, maxHeight:"92vh",
+            overflowY:"auto", boxShadow:"0 -4px 30px rgba(0,0,0,0.2)" }}>
+
+            <div style={{ display:"flex", justifyContent:"space-between",
+              alignItems:"center", marginBottom:16 }}>
+              <div style={{ fontWeight:800, fontSize:17, color:"var(--text)" }}>
+                ✍️ Digitale Unterschrift
+              </div>
+              <button onClick={() => setOffen(false)}
+                style={{ background:"none", border:"none", color:"var(--muted)",
+                  fontSize:24, cursor:"pointer" }}>✕</button>
+            </div>
+
+            {/* Revisions-Hash */}
+            <div style={{ background:"#1a1a1a", borderRadius:10, padding:"10px 14px",
+              marginBottom:16, display:"flex", justifyContent:"space-between",
+              alignItems:"center" }}>
+              <div>
+                <div style={{ color:"#F5C400", fontWeight:700, fontSize:12 }}>
+                  Revisionssicheres Dokument
+                </div>
+                <div style={{ color:"#888", fontSize:11, marginTop:2 }}>
+                  Eindeutige Dokument-ID
+                </div>
+              </div>
+              <div style={{ color:"#F5C400", fontFamily:"monospace",
+                fontSize:14, fontWeight:800 }}>DOC-{hash}</div>
+            </div>
+
+            <UnterschriftPad label="Unterschrift Polier" onSave={setSigPolier} />
+            {sigPolier && (
+              <div style={{ marginBottom:12 }}>
+                <div style={{ color:"var(--green)", fontSize:12, fontWeight:600,
+                  marginBottom:4 }}>✓ Polier unterschrieben</div>
+                <img src={sigPolier} alt="Unterschrift Polier"
+                  style={{ height:50, border:"1px solid var(--border)",
+                    borderRadius:8, background:"#fff" }} />
+              </div>
+            )}
+
+            <UnterschriftPad label="Unterschrift Bauleiter" onSave={setSigBauleiter} />
+            {sigBauleiter && (
+              <div style={{ marginBottom:16 }}>
+                <div style={{ color:"var(--green)", fontSize:12, fontWeight:600,
+                  marginBottom:4 }}>✓ Bauleiter unterschrieben</div>
+                <img src={sigBauleiter} alt="Unterschrift Bauleiter"
+                  style={{ height:50, border:"1px solid var(--border)",
+                    borderRadius:8, background:"#fff" }} />
+              </div>
+            )}
+
+            <button onClick={exportPDF}
+              style={{ width:"100%", background:"var(--yellow)", color:"#1a1200",
+                border:"none", borderRadius:12, padding:15, fontWeight:800,
+                fontSize:15, cursor:"pointer", fontFamily:"inherit" }}>
+              📄 Revisionssicheres PDF exportieren
+            </button>
+
+            {exportiert && (
+              <div style={{ background:"var(--gbg)", borderRadius:10, padding:10,
+                marginTop:10, color:"var(--green)", fontSize:12, fontWeight:600,
+                textAlign:"center" }}>
+                ✅ PDF erstellt · DOC-{hash} · {new Date().toLocaleString("de-DE")}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// ANGEBOTS-TOOL (Bauleiter + Administrator)
+// ════════════════════════════════════════════════════════════════════════════
+
+// ─── Admin: Einheitspreise & LV-Vorlagen ─────────────────────────────────
+const DEFAULT_EINHEITSPREISE = [
+  { id:1, gewerk:"Betonage",     einheit:"m²", preis:85,  beschreibung:"Beton C25/30 inkl. Einbau" },
+  { id:2, gewerk:"Betonage",     einheit:"m³", preis:220, beschreibung:"Beton C30/37 inkl. Einbau" },
+  { id:3, gewerk:"Schalung",     einheit:"m²", preis:35,  beschreibung:"Schaltafel stellen/abheben" },
+  { id:4, gewerk:"Bewehrung",    einheit:"t",  preis:1200,beschreibung:"Betonstahl BSt 500 S" },
+  { id:5, gewerk:"Abdichtung",   einheit:"m²", preis:45,  beschreibung:"Bitumenschweißbahn 2-lagig" },
+  { id:6, gewerk:"Estrich",      einheit:"m²", preis:28,  beschreibung:"Zementestrich ZE 20, 6cm" },
+  { id:7, gewerk:"Erdarbeiten",  einheit:"m³", preis:18,  beschreibung:"Aushub/Verfüllung" },
+  { id:8, gewerk:"Allgemein",    einheit:"h",  preis:55,  beschreibung:"Stundenverrechnungssatz" },
+];
+
+const DEFAULT_LV_VORLAGEN = [
+  {
+    id:1, name:"Bodenplatte Standard", gewerk:"Betonage",
+    positionen:[
+      { bez:"Schalung stellen", einheit:"m²", menge:0, ep_id:3 },
+      { bez:"Bewehrung verlegen", einheit:"t", menge:0, ep_id:4 },
+      { bez:"Beton einbauen C25/30", einheit:"m²", menge:0, ep_id:1 },
+    ]
+  },
+  {
+    id:2, name:"Kellerabdichtung", gewerk:"Abdichtung",
+    positionen:[
+      { bez:"Abdichtung 2-lagig", einheit:"m²", menge:0, ep_id:5 },
+      { bez:"Beton WU C30/37", einheit:"m³", menge:0, ep_id:2 },
+    ]
+  },
+];
+
+function AdminParameterView({ einheitspreise, setEinheitspreise, lvVorlagen, setLvVorlagen }) {
+  const [aktiv,    setAktiv]    = useState("preise"); // preise | vorlagen
+  const [neuPreis, setNeuPreis] = useState(null);
+  const [neuVorlage,setNeuVorlage] = useState(null);
+  const [editPreis, setEditPreis] = useState(null);
+
+  function preisLoeschen(id) {
+    setEinheitspreise(prev => prev.filter(p => p.id !== id));
+  }
+
+  function preisSpeichern(p) {
+    if (p.id && einheitspreise.find(x=>x.id===p.id)) {
+      setEinheitspreise(prev => prev.map(x => x.id===p.id ? p : x));
+    } else {
+      setEinheitspreise(prev => [...prev, { ...p, id:Date.now() }]);
+    }
+    setNeuPreis(null); setEditPreis(null);
+  }
+
+  return (
+    <div>
+      <div style={{ color:"var(--text)", fontWeight:700, fontSize:15, marginBottom:14 }}>
+        ⚙️ Angebots-Parameter
+      </div>
+
+      {/* Tab-Toggle */}
+      <div style={{ display:"flex", gap:6, marginBottom:16 }}>
+        {[["preise","💰 Einheitspreise"],["vorlagen","📋 LV-Vorlagen"]].map(([k,l]) => (
+          <button key={k} onClick={() => setAktiv(k)}
+            style={{ flex:1, background: aktiv===k ? "var(--yellow)" : "var(--surface2)",
+              color: aktiv===k ? "#1a1200" : "var(--muted)",
+              border:`1.5px solid ${aktiv===k ? "var(--yellow)" : "var(--border)"}`,
+              borderRadius:10, padding:10, fontWeight: aktiv===k ? 700 : 400,
+              cursor:"pointer", fontSize:13, fontFamily:"inherit" }}>{l}</button>
+        ))}
+      </div>
+
+      {/* EINHEITSPREISE */}
+      {aktiv === "preise" && (
+        <div>
+          <div style={{ display:"flex", justifyContent:"space-between",
+            alignItems:"center", marginBottom:10 }}>
+            <div style={{ color:"var(--muted)", fontSize:12 }}>
+              {einheitspreise.length} Positionen
+            </div>
+            <button onClick={() => setNeuPreis({ gewerk:"", einheit:"m²", preis:0, beschreibung:"" })}
+              style={{ background:"var(--yellow)", color:"#1a1200", border:"none",
+                borderRadius:10, padding:"7px 14px", fontWeight:700,
+                cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>
+              + Position
+            </button>
+          </div>
+
+          {einheitspreise.map(p => (
+            <div key={p.id} style={{ background:"var(--surface)", borderRadius:12,
+              padding:"12px 14px", marginBottom:8,
+              border:"1.5px solid var(--border)" }}>
+              <div style={{ display:"flex", justifyContent:"space-between",
+                alignItems:"flex-start" }}>
+                <div style={{ flex:1 }}>
+                  <div style={{ color:"var(--text)", fontWeight:700, fontSize:13 }}>
+                    {p.gewerk} · {p.beschreibung}
+                  </div>
+                  <div style={{ color:"var(--muted)", fontSize:12, marginTop:2 }}>
+                    {p.einheit} · {p.preis.toLocaleString("de-DE")} €/{p.einheit}
+                  </div>
+                </div>
+                <div style={{ display:"flex", gap:6 }}>
+                  <button onClick={() => setEditPreis(p)}
+                    style={{ background:"var(--surface2)", border:"1px solid var(--border)",
+                      color:"var(--muted)", borderRadius:8, padding:"4px 10px",
+                      cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>✏️</button>
+                  <button onClick={() => preisLoeschen(p.id)}
+                    style={{ background:"var(--rbg)", border:"1px solid var(--red)",
+                      color:"var(--red)", borderRadius:8, padding:"4px 10px",
+                      cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>✕</button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* LV-VORLAGEN */}
+      {aktiv === "vorlagen" && (
+        <div>
+          <div style={{ display:"flex", justifyContent:"space-between",
+            alignItems:"center", marginBottom:10 }}>
+            <div style={{ color:"var(--muted)", fontSize:12 }}>
+              {lvVorlagen.length} Vorlagen
+            </div>
+            <button onClick={() => setNeuVorlage({ name:"", gewerk:"", positionen:[] })}
+              style={{ background:"var(--yellow)", color:"#1a1200", border:"none",
+                borderRadius:10, padding:"7px 14px", fontWeight:700,
+                cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>
+              + Vorlage
+            </button>
+          </div>
+
+          {lvVorlagen.map(v => (
+            <div key={v.id} style={{ background:"var(--surface)", borderRadius:12,
+              padding:"12px 14px", marginBottom:8,
+              border:"1.5px solid var(--border)" }}>
+              <div style={{ display:"flex", justifyContent:"space-between",
+                alignItems:"center", marginBottom:6 }}>
+                <div style={{ color:"var(--text)", fontWeight:700, fontSize:13 }}>
+                  {v.name}
+                </div>
+                <button onClick={() => setLvVorlagen(prev => prev.filter(x=>x.id!==v.id))}
+                  style={{ background:"var(--rbg)", border:"1px solid var(--red)",
+                    color:"var(--red)", borderRadius:8, padding:"4px 10px",
+                    cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>✕</button>
+              </div>
+              {v.positionen.map((pos,i) => (
+                <div key={i} style={{ color:"var(--muted)", fontSize:11,
+                  padding:"3px 0", borderBottom:"1px solid var(--border)" }}>
+                  {pos.bez} · {pos.einheit}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Preis-Formular */}
+      {(neuPreis || editPreis) && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(15,23,42,0.8)",
+          backdropFilter:"blur(4px)", zIndex:600,
+          display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
+          <div style={{ background:"var(--surface)", borderRadius:"20px 20px 0 0",
+            padding:22, width:"100%", maxWidth:480 }}>
+            <PreisFormular
+              initial={editPreis || neuPreis}
+              onSave={preisSpeichern}
+              onClose={() => { setNeuPreis(null); setEditPreis(null); }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Vorlagen-Formular */}
+      {neuVorlage && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(15,23,42,0.8)",
+          backdropFilter:"blur(4px)", zIndex:600,
+          display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
+          <div style={{ background:"var(--surface)", borderRadius:"20px 20px 0 0",
+            padding:22, width:"100%", maxWidth:480, maxHeight:"80vh",
+            overflowY:"auto" }}>
+            <VorlageFormular
+              initial={neuVorlage}
+              einheitspreise={einheitspreise}
+              onSave={v => { setLvVorlagen(prev=>[...prev,{...v,id:Date.now()}]); setNeuVorlage(null); }}
+              onClose={() => setNeuVorlage(null)}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PreisFormular({ initial, onSave, onClose }) {
+  const [p, setP] = useState(initial || { gewerk:"", einheit:"m²", preis:0, beschreibung:"" });
+  return (
+    <div>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+        <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:16 }}>
+          {initial?.id ? "✏️ Preis bearbeiten" : "➕ Neuer Einheitspreis"}
+        </div>
+        <button onClick={onClose} style={{ background:"none", border:"none",
+          color:"var(--muted)", fontSize:24, cursor:"pointer" }}>✕</button>
+      </div>
+      {[["Gewerk","gewerk","z.B. Betonage"],["Beschreibung","beschreibung","z.B. Beton C25/30 inkl. Einbau"]].map(([l,k,ph]) => (
+        <div key={k} style={{ marginBottom:12 }}>
+          <Label>{l}</Label>
+          <input value={p[k]||""} onChange={e=>setP(x=>({...x,[k]:e.target.value}))}
+            placeholder={ph} style={inputStyle()} />
+        </div>
+      ))}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:16 }}>
+        <div>
+          <Label>Einheit</Label>
+          <select value={p.einheit} onChange={e=>setP(x=>({...x,einheit:e.target.value}))}
+            style={{ ...inputStyle(), padding:"11px 12px" }}>
+            {["m²","m³","m","t","h","Stk","pau"].map(u=><option key={u}>{u}</option>)}
+          </select>
+        </div>
+        <div>
+          <Label>Einheitspreis (€)</Label>
+          <input type="number" value={p.preis||""} onChange={e=>setP(x=>({...x,preis:Number(e.target.value)}))}
+            placeholder="0" style={inputStyle()} />
+        </div>
+      </div>
+      <div style={{ display:"flex", gap:10 }}>
+        <button onClick={onClose} style={{ flex:1, background:"var(--surface2)",
+          color:"var(--muted)", border:"1.5px solid var(--border)", borderRadius:12,
+          padding:13, cursor:"pointer", fontFamily:"inherit" }}>Abbrechen</button>
+        <button onClick={() => p.gewerk && p.beschreibung && onSave(p)}
+          style={{ flex:2, background:"var(--yellow)", color:"#1a1200",
+            border:"none", borderRadius:12, padding:13, fontWeight:800,
+            cursor:"pointer", fontFamily:"inherit" }}>💾 Speichern</button>
+      </div>
+    </div>
+  );
+}
+
+function VorlageFormular({ initial, einheitspreise, onSave, onClose }) {
+  const [v, setV] = useState(initial || { name:"", gewerk:"", positionen:[] });
+
+  function addPosition() {
+    setV(x => ({ ...x, positionen:[...x.positionen,
+      { bez:"", einheit:"m²", menge:0, ep_id:null }] }));
+  }
+  function updatePos(i, key, val) {
+    setV(x => ({ ...x, positionen:x.positionen.map((p,j) =>
+      j===i ? { ...p, [key]:val } : p) }));
+  }
+
+  return (
+    <div>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+        <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:16 }}>📋 Neue LV-Vorlage</div>
+        <button onClick={onClose} style={{ background:"none", border:"none",
+          color:"var(--muted)", fontSize:24, cursor:"pointer" }}>✕</button>
+      </div>
+      <div style={{ marginBottom:12 }}>
+        <Label>Vorlagenname</Label>
+        <input value={v.name} onChange={e=>setV(x=>({...x,name:e.target.value}))}
+          placeholder="z.B. Bodenplatte Standard" style={inputStyle()} />
+      </div>
+      <div style={{ marginBottom:16 }}>
+        <Label>Gewerk</Label>
+        <input value={v.gewerk} onChange={e=>setV(x=>({...x,gewerk:e.target.value}))}
+          placeholder="z.B. Betonage" style={inputStyle()} />
+      </div>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+        <Label>Positionen</Label>
+        <button onClick={addPosition}
+          style={{ background:"var(--surface2)", color:"var(--text)",
+            border:"1px solid var(--border)", borderRadius:8, padding:"4px 10px",
+            cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>+ Position</button>
+      </div>
+      {v.positionen.map((pos,i) => (
+        <div key={i} style={{ background:"var(--surface2)", borderRadius:10,
+          padding:10, marginBottom:8, border:"1px solid var(--border)" }}>
+          <input value={pos.bez} onChange={e=>updatePos(i,"bez",e.target.value)}
+            placeholder="Bezeichnung" style={{ ...inputStyle(), marginBottom:6 }} />
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>
+            <select value={pos.einheit} onChange={e=>updatePos(i,"einheit",e.target.value)}
+              style={{ ...inputStyle(), padding:"8px 10px", fontSize:12 }}>
+              {["m²","m³","m","t","h","Stk","pau"].map(u=><option key={u}>{u}</option>)}
+            </select>
+            <select value={pos.ep_id||""} onChange={e=>updatePos(i,"ep_id",Number(e.target.value))}
+              style={{ ...inputStyle(), padding:"8px 10px", fontSize:12 }}>
+              <option value="">Kein EP</option>
+              {einheitspreise.map(ep=>(
+                <option key={ep.id} value={ep.id}>{ep.gewerk}: {ep.preis}€/{ep.einheit}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      ))}
+      <div style={{ display:"flex", gap:10, marginTop:16 }}>
+        <button onClick={onClose} style={{ flex:1, background:"var(--surface2)",
+          color:"var(--muted)", border:"1.5px solid var(--border)", borderRadius:12,
+          padding:13, cursor:"pointer", fontFamily:"inherit" }}>Abbrechen</button>
+        <button onClick={() => v.name && onSave(v)}
+          style={{ flex:2, background:"var(--yellow)", color:"#1a1200",
+            border:"none", borderRadius:12, padding:13, fontWeight:800,
+            cursor:"pointer", fontFamily:"inherit" }}>💾 Vorlage speichern</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Bauleiter: Angebots-View ─────────────────────────────────────────────
+function AngebotView({ projekt, aufgaben, einheitspreise, lvVorlagen, eigeneFirma }) {
+  const [angebote,    setAngebote]    = useState([]);
+  const [aktAngebot,  setAktAngebot]  = useState(null);
+  const [neuAngebot,  setNeuAngebot]  = useState(false);
+
+  function neuesAngebot() {
+    const a = {
+      id:           Date.now(),
+      titel:        `Angebot ${new Date().toLocaleDateString("de-DE")}`,
+      empfaenger:   projekt?.auftraggeber || "",
+      datum:        new Date().toISOString().slice(0,10),
+      gueltig_bis:  new Date(Date.now()+30*864e5).toISOString().slice(0,10),
+      positionen:   [],
+      rabatt:       0,
+      mwst:         19,
+      status:       "entwurf",
+    };
+    setAngebote(prev=>[a,...prev]);
+    setAktAngebot(a);
+  }
+
+  if (aktAngebot) {
+    return <AngebotEditor
+      angebot={aktAngebot}
+      onSave={a => { setAngebote(prev=>prev.map(x=>x.id===a.id?a:x)); setAktAngebot(a); }}
+      onClose={() => setAktAngebot(null)}
+      aufgaben={aufgaben}
+      einheitspreise={einheitspreise}
+      lvVorlagen={lvVorlagen}
+      projekt={projekt}
+      eigeneFirma={eigeneFirma}
+    />;
+  }
+
+  return (
+    <div>
+      <div style={{ display:"flex", justifyContent:"space-between",
+        alignItems:"center", marginBottom:14 }}>
+        <div style={{ color:"var(--text)", fontWeight:700, fontSize:15 }}>
+          📄 Angebote
+        </div>
+        <button onClick={neuesAngebot}
+          style={{ background:"var(--yellow)", color:"#1a1200", border:"none",
+            borderRadius:10, padding:"8px 16px", fontWeight:700,
+            cursor:"pointer", fontSize:13, fontFamily:"inherit" }}>
+          + Angebot
+        </button>
+      </div>
+
+      {angebote.length === 0 && (
+        <div style={{ textAlign:"center", padding:"48px 20px", color:"var(--muted)" }}>
+          <div style={{ fontSize:48, marginBottom:12 }}>📄</div>
+          <div style={{ fontWeight:700, color:"var(--text)", marginBottom:6 }}>
+            Noch keine Angebote
+          </div>
+          <div style={{ fontSize:13 }}>
+            Erstelle ein Angebot aus Aufgaben oder LV-Vorlagen.
+          </div>
+        </div>
+      )}
+
+      {angebote.map(a => {
+        const netto   = a.positionen.reduce((s,p)=>s+(p.menge||0)*(p.ep||0),0);
+        const gesamt  = netto * (1 - (a.rabatt||0)/100) * (1 + (a.mwst||19)/100);
+        const STATUS  = { entwurf:"📝 Entwurf", versendet:"📤 Versendet",
+          angenommen:"✅ Angenommen", abgelehnt:"❌ Abgelehnt" };
+        return (
+          <div key={a.id} onClick={() => setAktAngebot(a)}
+            style={{ background:"var(--surface)", borderRadius:14,
+              padding:"16px 18px", marginBottom:10, cursor:"pointer",
+              border:"1.5px solid var(--border)",
+              boxShadow:"0 2px 8px rgba(0,0,0,0.05)" }}>
+            <div style={{ display:"flex", justifyContent:"space-between",
+              alignItems:"flex-start" }}>
+              <div>
+                <div style={{ color:"var(--text)", fontWeight:700, fontSize:14 }}>
+                  {a.titel}
+                </div>
+                <div style={{ color:"var(--muted)", fontSize:12, marginTop:2 }}>
+                  {a.empfaenger} · {new Date(a.datum).toLocaleDateString("de-DE")}
+                </div>
+              </div>
+              <div style={{ textAlign:"right" }}>
+                <div style={{ color:"var(--yellow)", fontWeight:800, fontSize:16 }}>
+                  {gesamt.toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2})} €
+                </div>
+                <div style={{ color:"var(--muted)", fontSize:11, marginTop:2 }}>
+                  {STATUS[a.status] || a.status}
+                </div>
+              </div>
+            </div>
+            <div style={{ color:"var(--muted)", fontSize:12, marginTop:6 }}>
+              {a.positionen.length} Position{a.positionen.length!==1?"en":""}
+              · Gültig bis {new Date(a.gueltig_bis).toLocaleDateString("de-DE")}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Angebots-Editor ─────────────────────────────────────────────────────────
+function AngebotEditor({ angebot, onSave, onClose, aufgaben, einheitspreise, lvVorlagen, projekt, eigeneFirma }) {
+  const [a,         setA]         = useState(angebot);
+  const [ansicht,   setAnsicht]   = useState("positionen"); // positionen | einstellungen
+  const [vonVorlage,setVonVorlage]= useState(false);
+  const [vonAufgabe,setVonAufgabe]= useState(false);
+
+  const netto   = a.positionen.reduce((s,p)=>s+(p.menge||0)*(p.ep||0),0);
+  const rabattBetrag = netto * (a.rabatt||0)/100;
+  const nettoNachRabatt = netto - rabattBetrag;
+  const mwstBetrag = nettoNachRabatt * (a.mwst||19)/100;
+  const bruttoGesamt = nettoNachRabatt + mwstBetrag;
+
+  function addPosition(pos) {
+    setA(x => ({ ...x, positionen:[...x.positionen, { ...pos, id:Date.now() }] }));
+  }
+
+  function updatePos(id, key, val) {
+    setA(x => ({ ...x, positionen:x.positionen.map(p =>
+      p.id===id ? { ...p, [key]:key==="menge"||key==="ep" ? Number(val) : val } : p) }));
+  }
+
+  function removePos(id) {
+    setA(x => ({ ...x, positionen:x.positionen.filter(p=>p.id!==id) }));
+  }
+
+  function vorlageLaden(vorlage) {
+    const neuPos = vorlage.positionen.map(p => {
+      const ep = einheitspreise.find(e=>e.id===p.ep_id);
+      return { id:Date.now()+Math.random(), bez:p.bez,
+        einheit:p.einheit, menge:0, ep:ep?.preis||0 };
+    });
+    setA(x => ({ ...x, positionen:[...x.positionen, ...neuPos] }));
+    setVonVorlage(false);
+  }
+
+  function aufgabeImportieren(aufgabe) {
+    const typ   = aufgabe.typ;
+    const ep    = einheitspreise.find(e =>
+      e.gewerk.toLowerCase().includes(typ) || typ.includes(e.gewerk.toLowerCase())
+    );
+    addPosition({
+      bez:      aufgabe.titel,
+      einheit:  aufgabe.m2 ? "m²" : "h",
+      menge:    aufgabe.m2 || 0,
+      ep:       ep?.preis || 0,
+    });
+    setVonAufgabe(false);
+  }
+
+  function exportPDF() {
+    const html = `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"/>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
+.page { width:210mm; padding:14mm 18mm; }
+.header { display:flex; justify-content:space-between; align-items:flex-start;
+  border-bottom:3px solid #F5C400; padding-bottom:12px; margin-bottom:16px; }
+.logo { font-size:22pt; font-weight:900; letter-spacing:-1px; }
+.logo span { color:#F5C400; }
+.firma-info { font-size:9pt; color:#666; margin-top:3px; line-height:1.5; }
+.angebot-title { text-align:right; }
+.angebot-title h1 { font-size:16pt; font-weight:900; }
+.angebot-title .meta { font-size:9pt; color:#666; margin-top:3px; }
+.empfaenger { background:#f8f8f8; border-radius:6px; padding:12px 14px; margin-bottom:16px; }
+.empfaenger-label { font-size:8pt; color:#888; margin-bottom:4px; }
+.table { width:100%; border-collapse:collapse; margin-bottom:16px; }
+.table th { background:#1a1a1a; color:#F5C400; padding:8px 10px;
+  text-align:left; font-size:9pt; }
+.table th:last-child, .table td:last-child { text-align:right; }
+.table td { padding:8px 10px; border-bottom:1px solid #eee; font-size:10pt; }
+.table tr:nth-child(even) td { background:#f8f8f8; }
+.summen { margin-left:auto; width:260px; }
+.summen-row { display:flex; justify-content:space-between;
+  padding:5px 0; font-size:10pt; }
+.summen-row.gesamt { border-top:2px solid #1a1a1a; margin-top:4px;
+  padding-top:8px; font-weight:900; font-size:12pt; }
+.summen-row.gesamt span:last-child { color:#F5C400; }
+.footer-text { background:#f8f8f8; border-radius:6px; padding:10px 14px;
+  font-size:9pt; color:#666; margin-top:16px; line-height:1.6; }
+.footer { border-top:1px solid #ddd; margin-top:14px; padding-top:6px;
+  font-size:7pt; color:#aaa; display:flex; justify-content:space-between; }
+</style></head><body><div class="page">
+
+<div class="header">
+  <div>
+    <div class="logo"><span>★</span> ${eigeneFirma?.name||"Polaris"}</div>
+    <div class="firma-info">
+      ${eigeneFirma?.strasse||""} · ${eigeneFirma?.plz||""} ${eigeneFirma?.ort||""}<br>
+      Tel: ${eigeneFirma?.telefon||""} · ${eigeneFirma?.email||""}<br>
+      ${eigeneFirma?.steuernummer ? "St-Nr: "+eigeneFirma.steuernummer : ""}
+    </div>
+  </div>
+  <div class="angebot-title">
+    <h1>Angebot</h1>
+    <div class="meta">Datum: ${new Date(a.datum).toLocaleDateString("de-DE")}</div>
+    <div class="meta">Gültig bis: ${new Date(a.gueltig_bis).toLocaleDateString("de-DE")}</div>
+    <div class="meta" style="font-weight:bold">Projekt: ${projekt?.name||""}</div>
+    <div class="meta">${projekt?.projektnummer||""}</div>
+  </div>
+</div>
+
+<div class="empfaenger">
+  <div class="empfaenger-label">ANGEBOT FÜR</div>
+  <strong>${a.empfaenger||"—"}</strong>
+</div>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th style="width:5%">Pos.</th>
+      <th style="width:45%">Bezeichnung</th>
+      <th style="width:10%">Menge</th>
+      <th style="width:10%">Einheit</th>
+      <th style="width:15%">EP (€)</th>
+      <th style="width:15%">GP (€)</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${a.positionen.map((p,i) => `
+    <tr>
+      <td>${i+1}</td>
+      <td>${p.bez}</td>
+      <td>${(p.menge||0).toLocaleString("de-DE")}</td>
+      <td>${p.einheit}</td>
+      <td>${(p.ep||0).toLocaleString("de-DE",{minimumFractionDigits:2})}</td>
+      <td><strong>${((p.menge||0)*(p.ep||0)).toLocaleString("de-DE",{minimumFractionDigits:2})}</strong></td>
+    </tr>`).join("")}
+  </tbody>
+</table>
+
+<div class="summen">
+  <div class="summen-row"><span>Nettobetrag</span><span>${netto.toLocaleString("de-DE",{minimumFractionDigits:2})} €</span></div>
+  ${a.rabatt > 0 ? `<div class="summen-row"><span>Rabatt ${a.rabatt}%</span><span>- ${rabattBetrag.toLocaleString("de-DE",{minimumFractionDigits:2})} €</span></div>` : ""}
+  <div class="summen-row"><span>Netto nach Rabatt</span><span>${nettoNachRabatt.toLocaleString("de-DE",{minimumFractionDigits:2})} €</span></div>
+  <div class="summen-row"><span>MwSt. ${a.mwst}%</span><span>${mwstBetrag.toLocaleString("de-DE",{minimumFractionDigits:2})} €</span></div>
+  <div class="summen-row gesamt"><span>Gesamtbetrag</span><span>${bruttoGesamt.toLocaleString("de-DE",{minimumFractionDigits:2})} €</span></div>
+</div>
+
+<div class="footer-text">
+  Dieses Angebot ist gültig bis ${new Date(a.gueltig_bis).toLocaleDateString("de-DE")}.
+  Alle Preise verstehen sich zzgl. ${a.mwst}% MwSt.
+  Zahlungsbedingungen: 14 Tage netto.
+</div>
+
+<div class="footer">
+  <span>Erstellt mit Polaris · ${new Date().toLocaleString("de-DE")}</span>
+  <span>${eigeneFirma?.name||""}</span>
+</div>
+
+</div></body></html>`;
+
+    const win = window.open("","_blank","width=900,height=700");
+    if (!win) return;
+    win.document.write(html);
+    win.document.close();
+    win.onload = () => { win.focus(); win.print(); };
+  }
+
+  function exportCSV() {
+    const rows = [
+      ["Pos.","Bezeichnung","Menge","Einheit","EP (€)","GP (€)"],
+      ...a.positionen.map((p,i) => [
+        i+1, p.bez, p.menge||0, p.einheit,
+        (p.ep||0).toFixed(2), ((p.menge||0)*(p.ep||0)).toFixed(2)
+      ]),
+      ["","","","","Netto:", netto.toFixed(2)],
+      ["","","","","MwSt "+a.mwst+"%:", mwstBetrag.toFixed(2)],
+      ["","","","","GESAMT:", bruttoGesamt.toFixed(2)],
+    ];
+    const csv = rows.map(r => r.map(v => `"${v}"`).join(";")).join("
+");
+    const blob = new Blob(["﻿"+csv], { type:"text/csv;charset=utf-8;" });
+    const url  = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url; link.download = ("Angebot_"+a.titel.replace(/ /g,"_")+".csv");
+    link.click(); URL.revokeObjectURL(url);
+  }
+
+  return (
+    <div>
+      {/* Header */}
+      <div style={{ background:"var(--surface)", padding:"14px 16px",
+        borderBottom:"1px solid var(--border)", position:"sticky", top:0,
+        zIndex:10, display:"flex", justifyContent:"space-between",
+        alignItems:"center" }}>
+        <button onClick={onClose}
+          style={{ background:"var(--surface2)", border:"1.5px solid var(--border)",
+            color:"var(--text)", borderRadius:10, padding:"7px 14px",
+            cursor:"pointer", fontSize:16, fontFamily:"inherit" }}>‹</button>
+        <div style={{ color:"var(--text)", fontWeight:700, fontSize:14,
+          flex:1, textAlign:"center", margin:"0 10px" }}>{a.titel}</div>
+        <div style={{ display:"flex", gap:6 }}>
+          <button onClick={exportCSV}
+            style={{ background:"var(--surface2)", color:"var(--text)",
+              border:"1.5px solid var(--border)", borderRadius:8,
+              padding:"6px 10px", cursor:"pointer", fontSize:12,
+              fontFamily:"inherit" }}>📊 CSV</button>
+          <button onClick={exportPDF}
+            style={{ background:"var(--yellow)", color:"#1a1200", border:"none",
+              borderRadius:8, padding:"6px 12px", fontWeight:700,
+              cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>📄 PDF</button>
+        </div>
+      </div>
+
+      <div style={{ padding:"16px 14px 100px" }}>
+        {/* Summen-Banner */}
+        <div style={{ background:"#1a1a1a", borderRadius:14, padding:"14px 18px",
+          marginBottom:16, display:"flex", justifyContent:"space-between",
+          alignItems:"center" }}>
+          <div>
+            <div style={{ color:"#888", fontSize:11 }}>Angebotssumme (brutto)</div>
+            <div style={{ color:"#F5C400", fontWeight:900, fontSize:26, marginTop:2 }}>
+              {bruttoGesamt.toLocaleString("de-DE",{minimumFractionDigits:2})} €
+            </div>
+          </div>
+          <div style={{ textAlign:"right" }}>
+            <div style={{ color:"#888", fontSize:11 }}>Netto</div>
+            <div style={{ color:"#fff", fontWeight:700, fontSize:14 }}>
+              {netto.toLocaleString("de-DE",{minimumFractionDigits:2})} €
+            </div>
+            <div style={{ color:"#888", fontSize:11, marginTop:2 }}>
+              MwSt. {mwstBetrag.toLocaleString("de-DE",{minimumFractionDigits:2})} €
+            </div>
+          </div>
+        </div>
+
+        {/* Tab-Toggle */}
+        <div style={{ display:"flex", gap:6, marginBottom:14 }}>
+          {[["positionen","📋 Positionen"],["einstellungen","⚙️ Einstellungen"]].map(([k,l]) => (
+            <button key={k} onClick={() => setAnsicht(k)}
+              style={{ flex:1, background: ansicht===k ? "var(--yellow)" : "var(--surface2)",
+                color: ansicht===k ? "#1a1200" : "var(--muted)",
+                border:`1.5px solid ${ansicht===k ? "var(--yellow)" : "var(--border)"}`,
+                borderRadius:10, padding:9, fontWeight: ansicht===k ? 700 : 400,
+                cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>{l}</button>
+          ))}
+        </div>
+
+        {/* POSITIONEN */}
+        {ansicht === "positionen" && (
+          <div>
+            {/* Import-Buttons */}
+            <div style={{ display:"flex", gap:8, marginBottom:12 }}>
+              <button onClick={() => setVonVorlage(true)}
+                style={{ flex:1, background:"var(--bbg)", color:"var(--blue)",
+                  border:"1.5px solid var(--blue)", borderRadius:10, padding:"9px 0",
+                  cursor:"pointer", fontSize:12, fontWeight:700,
+                  fontFamily:"inherit" }}>📋 Aus Vorlage</button>
+              <button onClick={() => setVonAufgabe(true)}
+                style={{ flex:1, background:"var(--gbg)", color:"var(--green)",
+                  border:"1.5px solid var(--green)", borderRadius:10, padding:"9px 0",
+                  cursor:"pointer", fontSize:12, fontWeight:700,
+                  fontFamily:"inherit" }}>✅ Aus Aufgaben</button>
+              <button onClick={() => addPosition({ bez:"", einheit:"m²", menge:0, ep:0 })}
+                style={{ flex:1, background:"var(--surface2)", color:"var(--text)",
+                  border:"1.5px solid var(--border)", borderRadius:10, padding:"9px 0",
+                  cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>+ Manuell</button>
+            </div>
+
+            {/* Positionen */}
+            {a.positionen.length === 0 && (
+              <div style={{ textAlign:"center", padding:"32px 20px", color:"var(--muted)",
+                fontSize:13 }}>
+                Noch keine Positionen · Aus Vorlage oder Aufgaben importieren
+              </div>
+            )}
+            {a.positionen.map((pos, i) => (
+              <div key={pos.id} style={{ background:"var(--surface)", borderRadius:12,
+                padding:"12px 14px", marginBottom:8,
+                border:"1.5px solid var(--border)" }}>
+                <div style={{ display:"flex", justifyContent:"space-between",
+                  alignItems:"center", marginBottom:6 }}>
+                  <div style={{ color:"var(--muted)", fontSize:11,
+                    fontWeight:700 }}>Pos. {i+1}</div>
+                  <button onClick={() => removePos(pos.id)}
+                    style={{ background:"var(--rbg)", color:"var(--red)",
+                      border:"none", borderRadius:6, padding:"2px 8px",
+                      cursor:"pointer", fontSize:11, fontFamily:"inherit" }}>✕</button>
+                </div>
+                <input value={pos.bez}
+                  onChange={e=>updatePos(pos.id,"bez",e.target.value)}
+                  placeholder="Bezeichnung"
+                  style={{ ...inputStyle(), marginBottom:8, fontSize:13 }} />
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:6 }}>
+                  <div>
+                    <div style={{ color:"var(--muted)", fontSize:10,
+                      marginBottom:3 }}>Menge</div>
+                    <input type="number" value={pos.menge||""}
+                      onChange={e=>updatePos(pos.id,"menge",e.target.value)}
+                      style={{ ...inputStyle(), padding:"8px 10px", fontSize:12 }} />
+                  </div>
+                  <div>
+                    <div style={{ color:"var(--muted)", fontSize:10, marginBottom:3 }}>Einheit</div>
+                    <select value={pos.einheit}
+                      onChange={e=>updatePos(pos.id,"einheit",e.target.value)}
+                      style={{ ...inputStyle(), padding:"8px 10px", fontSize:12 }}>
+                      {["m²","m³","m","t","h","Stk","pau"].map(u=><option key={u}>{u}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <div style={{ color:"var(--muted)", fontSize:10, marginBottom:3 }}>
+                      EP (€/{pos.einheit})
+                    </div>
+                    <input type="number" value={pos.ep||""}
+                      onChange={e=>updatePos(pos.id,"ep",e.target.value)}
+                      style={{ ...inputStyle(), padding:"8px 10px", fontSize:12 }} />
+                  </div>
+                </div>
+                <div style={{ textAlign:"right", marginTop:6,
+                  color:"var(--yellow)", fontWeight:800, fontSize:14 }}>
+                  {((pos.menge||0)*(pos.ep||0)).toLocaleString("de-DE",
+                    {minimumFractionDigits:2})} €
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* EINSTELLUNGEN */}
+        {ansicht === "einstellungen" && (
+          <div>
+            {[
+              ["Titel","titel","Angebot Bodenplatte"],
+              ["Empfänger","empfaenger","Auftraggeber GmbH"],
+            ].map(([l,k,ph]) => (
+              <div key={k} style={{ marginBottom:12 }}>
+                <Label>{l}</Label>
+                <input value={a[k]||""} onChange={e=>setA(x=>({...x,[k]:e.target.value}))}
+                  placeholder={ph} style={inputStyle()} />
+              </div>
+            ))}
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12 }}>
+              <div>
+                <Label>Angebotsdatum</Label>
+                <input type="date" value={a.datum}
+                  onChange={e=>setA(x=>({...x,datum:e.target.value}))}
+                  style={inputStyle()} />
+              </div>
+              <div>
+                <Label>Gültig bis</Label>
+                <input type="date" value={a.gueltig_bis}
+                  onChange={e=>setA(x=>({...x,gueltig_bis:e.target.value}))}
+                  style={inputStyle()} />
+              </div>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12 }}>
+              <div>
+                <Label>Rabatt (%)</Label>
+                <input type="number" value={a.rabatt||0}
+                  onChange={e=>setA(x=>({...x,rabatt:Number(e.target.value)}))}
+                  style={inputStyle()} min="0" max="100" />
+              </div>
+              <div>
+                <Label>MwSt (%)</Label>
+                <select value={a.mwst||19}
+                  onChange={e=>setA(x=>({...x,mwst:Number(e.target.value)}))}
+                  style={{ ...inputStyle(), padding:"11px 12px" }}>
+                  <option value={19}>19% (Standard)</option>
+                  <option value={7}>7% (ermäßigt)</option>
+                  <option value={0}>0% (steuerbefreit)</option>
+                </select>
+              </div>
+            </div>
+            <div style={{ marginBottom:12 }}>
+              <Label>Status</Label>
+              <select value={a.status}
+                onChange={e=>setA(x=>({...x,status:e.target.value}))}
+                style={{ ...inputStyle(), padding:"11px 12px" }}>
+                {[["entwurf","📝 Entwurf"],["versendet","📤 Versendet"],
+                  ["angenommen","✅ Angenommen"],["abgelehnt","❌ Abgelehnt"]
+                ].map(([k,l])=><option key={k} value={k}>{l}</option>)}
+              </select>
+            </div>
+            <button onClick={() => onSave(a)}
+              style={{ width:"100%", background:"var(--yellow)", color:"#1a1200",
+                border:"none", borderRadius:12, padding:14, fontWeight:800,
+                cursor:"pointer", fontSize:14, fontFamily:"inherit" }}>
+              💾 Angebot speichern
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Vorlage Modal */}
+      {vonVorlage && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(15,23,42,0.8)",
+          zIndex:700, display:"flex", alignItems:"flex-end",
+          justifyContent:"center" }}>
+          <div style={{ background:"var(--surface)", borderRadius:"20px 20px 0 0",
+            padding:22, width:"100%", maxWidth:480, maxHeight:"70vh",
+            overflowY:"auto" }}>
+            <div style={{ display:"flex", justifyContent:"space-between",
+              alignItems:"center", marginBottom:14 }}>
+              <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:16 }}>
+                📋 LV-Vorlage laden
+              </div>
+              <button onClick={() => setVonVorlage(false)}
+                style={{ background:"none", border:"none", color:"var(--muted)",
+                  fontSize:24, cursor:"pointer" }}>✕</button>
+            </div>
+            {lvVorlagen.length === 0 && (
+              <div style={{ color:"var(--muted)", textAlign:"center", padding:24 }}>
+                Keine Vorlagen vorhanden · Administrator anlegen lassen
+              </div>
+            )}
+            {lvVorlagen.map(v => (
+              <div key={v.id} onClick={() => vorlageLaden(v)}
+                style={{ background:"var(--surface2)", borderRadius:12,
+                  padding:"12px 14px", marginBottom:8, cursor:"pointer",
+                  border:"1.5px solid var(--border)" }}>
+                <div style={{ color:"var(--text)", fontWeight:700 }}>{v.name}</div>
+                <div style={{ color:"var(--muted)", fontSize:12, marginTop:3 }}>
+                  {v.positionen.length} Positionen · {v.gewerk}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Aufgaben Modal */}
+      {vonAufgabe && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(15,23,42,0.8)",
+          zIndex:700, display:"flex", alignItems:"flex-end",
+          justifyContent:"center" }}>
+          <div style={{ background:"var(--surface)", borderRadius:"20px 20px 0 0",
+            padding:22, width:"100%", maxWidth:480, maxHeight:"70vh",
+            overflowY:"auto" }}>
+            <div style={{ display:"flex", justifyContent:"space-between",
+              alignItems:"center", marginBottom:14 }}>
+              <div style={{ color:"var(--green)", fontWeight:700, fontSize:16 }}>
+                ✅ Aus Aufgaben importieren
+              </div>
+              <button onClick={() => setVonAufgabe(false)}
+                style={{ background:"none", border:"none", color:"var(--muted)",
+                  fontSize:24, cursor:"pointer" }}>✕</button>
+            </div>
+            {aufgaben.length === 0 && (
+              <div style={{ color:"var(--muted)", textAlign:"center", padding:24 }}>
+                Keine Aufgaben vorhanden
+              </div>
+            )}
+            {aufgaben.map(aufg => (
+              <div key={aufg.id} onClick={() => aufgabeImportieren(aufg)}
+                style={{ background:"var(--surface2)", borderRadius:12,
+                  padding:"12px 14px", marginBottom:8, cursor:"pointer",
+                  border:"1.5px solid var(--border)",
+                  borderLeftWidth:4,
+                  borderLeftColor:AUFGABEN_TYPEN[aufg.typ]?.farbe||"var(--muted)" }}>
+                <div style={{ color:"var(--text)", fontWeight:700 }}>
+                  {AUFGABEN_TYPEN[aufg.typ]?.icon} {aufg.titel}
+                </div>
+                <div style={{ color:"var(--muted)", fontSize:12, marginTop:3 }}>
+                  {aufg.m2 ? aufg.m2+" m²" : ""} · {AUFGABEN_TYPEN[aufg.typ]?.label}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const MOCK_PROJEKTE = [
   {
     id: 1,
@@ -6260,15 +8651,15 @@ function ProjektListe({ projekte, onSelect, onNeu }) {
   return (
     <div style={{ background:"var(--bg)", minHeight:"100vh", fontFamily:"'Segoe UI', system-ui, sans-serif", color:"var(--text)" }}>
       {/* Header */}
-      <div style={{ background: C.bgMid, padding:"18px 18px 14px", borderBottom:`2px solid ${C.gelb}` }}>
-        <div style={{ color: C.gelb, fontWeight:800, fontSize:22, letterSpacing:-0.5 }}>★ POLARIS</div>
-        <div style={{ color: C.muted, fontSize:12, marginTop:2 }}>Baustellenmanagement</div>
+      <div style={{ background: "var(--surface)", padding:"18px 18px 14px", borderBottom:`2px solid ${'var(--yellow)'}` }}>
+        <div style={{ color: "var(--yellow)", fontWeight:800, fontSize:22, letterSpacing:-0.5 }}>★ POLARIS</div>
+        <div style={{ color: "var(--muted)", fontSize:12, marginTop:2 }}>Baustellenmanagement</div>
       </div>
 
       <div style={{ padding:"20px 16px 100px" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
-          <div style={{ color: C.text, fontWeight:700, fontSize:16 }}>Meine Baustellen</div>
-          <div style={{ background: C.bgMid, color: C.muted, fontSize:12, padding:"4px 10px", borderRadius:20 }}>
+          <div style={{ color: "var(--text)", fontWeight:700, fontSize:16 }}>Meine Baustellen</div>
+          <div style={{ background: "var(--surface)", color: "var(--muted)", fontSize:12, padding:"4px 10px", borderRadius:20 }}>
             {projekte.length} Projekte
           </div>
         </div>
@@ -6280,38 +8671,38 @@ function ProjektListe({ projekte, onSelect, onNeu }) {
           const delayed = p.felder.filter(f=>f.status!=="done" && f.geplant && new Date(f.geplant)<new Date()).length;
           return (
             <div key={p.id} onClick={() => onSelect(p.id)}
-              style={{ background: C.bgMid, borderRadius:14, padding:"16px 18px", marginBottom:12,
-                border:`2px solid ${C.bgFaint}`, cursor:"pointer",
+              style={{ background: "var(--surface)", borderRadius:14, padding:"16px 18px", marginBottom:12,
+                border:`2px solid ${'var(--border)'}`, cursor:"pointer",
                 borderLeft:`4px solid ${p.farbe}` }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
                 <div style={{ flex:1 }}>
-                  <div style={{ color: C.text, fontWeight:700, fontSize:15 }}>{p.name}</div>
-                  <div style={{ color: C.muted, fontSize:12, marginTop:3 }}>📍 {p.adresse}</div>
+                  <div style={{ color: "var(--text)", fontWeight:700, fontSize:15 }}>{p.name}</div>
+                  <div style={{ color: "var(--muted)", fontSize:12, marginTop:3 }}>📍 {p.adresse}</div>
                   <div style={{ display:"flex", gap:10, marginTop:6, flexWrap:"wrap" }}>
                     <Chip icon={PROJEKTTYPEN[p.typ]?.icon||"🏗️"} label={PROJEKTTYPEN[p.typ]?.label||p.typ} />
                     <Chip icon="🔢" label={p.projektnummer} />
                     <Chip icon="👤" label={p.bauleiter} />
                   </div>
                 </div>
-                <div style={{ color: C.muted, fontSize:22, marginLeft:10 }}>›</div>
+                <div style={{ color: "var(--muted)", fontSize:22, marginLeft:10 }}>›</div>
               </div>
               {/* Progress */}
               {total > 0 && (
                 <div style={{ marginTop:12 }}>
                   <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
-                    <div style={{ color: C.muted, fontSize:11 }}>{done}/{total} {PROJEKTTYPEN[p.typ]?.fortschrittLabel||"Felder fertig"}</div>
+                    <div style={{ color: "var(--muted)", fontSize:11 }}>{done}/{total} {PROJEKTTYPEN[p.typ]?.fortschrittLabel||"Felder fertig"}</div>
                     <div style={{ display:"flex", gap:8 }}>
-                      {delayed > 0 && <div style={{ color: C.rot, fontSize:11 }}>⚠️ {delayed} Verzug</div>}
+                      {delayed > 0 && <div style={{ color: "var(--red)", fontSize:11 }}>⚠️ {delayed} Verzug</div>}
                       <div style={{ color: p.farbe, fontSize:11, fontWeight:700 }}>{pct}%</div>
                     </div>
                   </div>
-                  <div style={{ background: C.bgFaint, borderRadius:4, height:6 }}>
+                  <div style={{ background: "var(--border)", borderRadius:4, height:6 }}>
                     <div style={{ background: p.farbe, width:`${pct}%`, height:"100%", borderRadius:4, transition:"width 0.5s" }} />
                   </div>
                 </div>
               )}
               {total === 0 && (
-                <div style={{ color: C.muted, fontSize:12, marginTop:8 }}>Noch keine Betonfelder angelegt</div>
+                <div style={{ color: "var(--muted)", fontSize:12, marginTop:8 }}>Noch keine Betonfelder angelegt</div>
               )}
             </div>
           );
@@ -6319,10 +8710,10 @@ function ProjektListe({ projekte, onSelect, onNeu }) {
 
         {/* Neues Projekt */}
         <div onClick={onNeu}
-          style={{ border:`2px dashed ${C.gelb}`, borderRadius:14, padding:"20px",
-            textAlign:"center", cursor:"pointer", background: C.bgMid, marginTop:4 }}>
+          style={{ border:`2px dashed ${'var(--yellow)'}`, borderRadius:14, padding:"20px",
+            textAlign:"center", cursor:"pointer", background: "var(--surface)", marginTop:4 }}>
           <div style={{ fontSize:28 }}>➕</div>
-          <div style={{ color: C.gelb, fontWeight:700, marginTop:6 }}>Neue Baustelle anlegen</div>
+          <div style={{ color: "var(--yellow)", fontWeight:700, marginTop:6 }}>Neue Baustelle anlegen</div>
         </div>
       </div>
     </div>
@@ -6345,30 +8736,37 @@ function ProjektFormular({ initial, onSave, onClose, subs = [] }) {
   }
 
   return (
-    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:500,
+    <div style={{ position:"fixed", inset:0, background:"rgba(15,23,42,0.7)",
+      backdropFilter:"blur(4px)", zIndex:500,
       display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
-      <div style={{ background: C.bgMid, borderRadius:"16px 16px 0 0", padding:22,
-        width:"100%", maxWidth:520, maxHeight:"92vh", overflowY:"auto" }}>
+      <div style={{ background:"var(--surface)", borderRadius:"20px 20px 0 0", padding:22,
+        width:"100%", maxWidth:520, maxHeight:"92vh", overflowY:"auto",
+        boxShadow:"0 -4px 30px rgba(0,0,0,0.15)" }}>
 
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:18 }}>
-          <div style={{ color: C.gelb, fontWeight:700, fontSize:17 }}>
+        <div style={{ display:"flex", justifyContent:"space-between",
+          alignItems:"center", marginBottom:18 }}>
+          <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:17 }}>
             {initial?.name ? "✏️ Baustelle bearbeiten" : "➕ Neue Baustelle"}
           </div>
-          <button onClick={onClose} style={{ background:"none", border:"none", color: C.muted, fontSize:24, cursor:"pointer" }}>✕</button>
+          <button onClick={onClose}
+            style={{ background:"none", border:"none", color:"var(--muted)",
+              fontSize:24, cursor:"pointer" }}>✕</button>
         </div>
 
-        {/* Projekttyp-Auswahl – zuerst! */}
+        {/* Projekttyp */}
         <div style={{ marginBottom:18 }}>
           <Label>Projekttyp *</Label>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginTop:6 }}>
             {Object.entries(PROJEKTTYPEN).map(([key, cfg]) => (
               <div key={key} onClick={() => setP(prev=>({...prev, typ:key}))}
-                style={{ background: p.typ===key ? C.bgLight : C.bgFaint,
-                  border:`2px solid ${p.typ===key ? C.gelb : "transparent"}`,
-                  borderRadius:10, padding:"10px 12px", cursor:"pointer",
-                  display:"flex", alignItems:"center", gap:8 }}>
+                style={{ background: p.typ===key ? "var(--ybg)" : "var(--surface2)",
+                  border:`2px solid ${p.typ===key ? "var(--yellow)" : "var(--border)"}`,
+                  borderRadius:12, padding:"12px 12px", cursor:"pointer",
+                  display:"flex", alignItems:"center", gap:8,
+                  transition:"all 0.15s" }}>
                 <span style={{ fontSize:20 }}>{cfg.icon}</span>
-                <span style={{ color: p.typ===key ? C.text : C.muted, fontSize:12, fontWeight: p.typ===key ? 700 : 400 }}>
+                <span style={{ color: p.typ===key ? "var(--text)" : "var(--muted)",
+                  fontSize:12, fontWeight: p.typ===key ? 700 : 400 }}>
                   {cfg.label}
                 </span>
               </div>
@@ -6377,11 +8775,11 @@ function ProjektFormular({ initial, onSave, onClose, subs = [] }) {
         </div>
 
         {[
-          ["Projektname *",    "name",          "Neubau Wohnanlage Nord"],
-          ["Adresse",          "adresse",       "Musterstraße 1, 80331 München"],
-          ["Projektnummer",    "projektnummer", "PRJ-2025-001"],
-          ["Bauleiter",        "bauleiter",     "Max Mustermann"],
-          ["Auftraggeber",     "auftraggeber",  "Muster GmbH"],
+          ["Projektname *",  "name",          "Neubau Wohnanlage Nord"],
+          ["Adresse",        "adresse",       "Musterstraße 1, 80331 München"],
+          ["Projektnummer",  "projektnummer", "PRJ-2025-001"],
+          ["Bauleiter",      "bauleiter",     "Max Mustermann"],
+          ["Auftraggeber",   "auftraggeber",  "Muster GmbH"],
         ].map(([label, key, ph]) => (
           <div key={key} style={{ marginBottom:13 }}>
             <Label>{label}</Label>
@@ -6396,14 +8794,17 @@ function ProjektFormular({ initial, onSave, onClose, subs = [] }) {
           <div style={{ display:"flex", gap:10, marginTop:6 }}>
             {FARBEN.map(f => (
               <div key={f} onClick={() => setP(prev=>({...prev,farbe:f}))}
-                style={{ width:32, height:32, borderRadius:16, background:f, cursor:"pointer",
-                  border:`3px solid ${p.farbe===f ? "#fff" : "transparent"}`,
-                  boxShadow: p.farbe===f ? `0 0 0 2px ${f}` : "none" }} />
+                style={{ width:36, height:36, borderRadius:18, background:f,
+                  cursor:"pointer",
+                  border:`3px solid ${p.farbe===f ? "var(--surface)" : "transparent"}`,
+                  boxShadow: p.farbe===f ? `0 0 0 2px ${f}` : "none",
+                  transition:"transform 0.15s",
+                  transform: p.farbe===f ? "scale(1.2)" : "scale(1)" }} />
             ))}
           </div>
         </div>
 
-        {/* Sub-Zuweisung */}
+        {/* Subunternehmer */}
         {subs.filter(s=>s.status==="aktiv").length > 0 && (
           <div style={{ marginBottom:20 }}>
             <Label>Subunternehmer zuweisen</Label>
@@ -6412,20 +8813,28 @@ function ProjektFormular({ initial, onSave, onClose, subs = [] }) {
                 const aktiv = (p.subIds||[]).includes(s.id);
                 return (
                   <div key={s.id} onClick={() => toggleSub(s.id)}
-                    style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
-                      background: aktiv ? "#1A2040" : C.bgFaint,
-                      border:`1.5px solid ${aktiv ? C.blau : "transparent"}`,
-                      borderRadius:9, padding:"10px 12px", cursor:"pointer" }}>
+                    style={{ display:"flex", justifyContent:"space-between",
+                      alignItems:"center",
+                      background: aktiv ? "var(--bbg)" : "var(--surface2)",
+                      border:`1.5px solid ${aktiv ? "var(--blue)" : "var(--border)"}`,
+                      borderRadius:10, padding:"10px 12px", cursor:"pointer" }}>
                     <div>
-                      <div style={{ color: C.text, fontSize:13, fontWeight: aktiv ? 700 : 400 }}>{s.name}</div>
-                      <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginTop:4 }}>
-                        {s.gewerke.map(k => {
+                      <div style={{ color:"var(--text)", fontSize:13,
+                        fontWeight: aktiv ? 700 : 400 }}>{s.name}</div>
+                      <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginTop:3 }}>
+                        {(s.gewerke||[]).map(k => {
                           const g = ALLE_GEWERKE.find(x=>x.key===k);
-                          return g ? <span key={k} style={{ color: C.muted, fontSize:10 }}>{g.icon} {g.label}</span> : null;
+                          return g ? (
+                            <span key={k} style={{ color:"var(--muted)", fontSize:10 }}>
+                              {g.icon} {g.label}
+                            </span>
+                          ) : null;
                         })}
                       </div>
                     </div>
-                    <div style={{ fontSize:18 }}>{aktiv ? "🔵" : "⚪"}</div>
+                    <div style={{ fontSize:16, color: aktiv ? "var(--blue)" : "var(--muted)" }}>
+                      {aktiv ? "✓" : "○"}
+                    </div>
                   </div>
                 );
               })}
@@ -6435,13 +8844,18 @@ function ProjektFormular({ initial, onSave, onClose, subs = [] }) {
 
         <div style={{ display:"flex", gap:10 }}>
           <button onClick={onClose}
-            style={{ flex:1, background: C.bgFaint, color: C.muted, border:"none", borderRadius:10, padding:13, cursor:"pointer" }}>
+            style={{ flex:1, background:"var(--surface2)", color:"var(--muted)",
+              border:"1.5px solid var(--border)", borderRadius:12, padding:14,
+              cursor:"pointer", fontFamily:"inherit" }}>
             Abbrechen
           </button>
           <button onClick={() => valid && onSave(p)} disabled={!valid}
-            style={{ flex:2, background: valid ? C.gelb : C.bgFaint,
-              color: valid ? "#1C2027" : C.muted,
-              border:"none", borderRadius:10, padding:13, fontWeight:700, cursor:"pointer", fontSize:15 }}>
+            style={{ flex:2,
+              background: valid ? "var(--yellow)" : "var(--surface2)",
+              color: valid ? "#1a1200" : "var(--muted)",
+              border:"none", borderRadius:12, padding:14, fontWeight:800,
+              cursor: valid ? "pointer" : "default", fontSize:15,
+              fontFamily:"inherit" }}>
             💾 Speichern
           </button>
         </div>
@@ -6450,38 +8864,53 @@ function ProjektFormular({ initial, onSave, onClose, subs = [] }) {
   );
 }
 
-// ─── Projekt-Header (innerhalb einer Baustelle) ──────────────────────────────
+// ─── Projekt-Header ──────────────────────────────────────────────────────────
 function ProjektHeader({ projekt, onBack, onEdit, sbConnected }) {
   const [menuOpen, setMenuOpen] = useState(false);
   return (
-    <div style={{ background: C.bgMid, padding:"12px 16px", display:"flex", justifyContent:"space-between",
-      alignItems:"center", borderBottom:`3px solid ${projekt.farbe}`, position:"sticky", top:0, zIndex:50 }}>
+    <div style={{ background:"var(--surface)", padding:"12px 16px",
+      display:"flex", justifyContent:"space-between", alignItems:"center",
+      borderBottom:`3px solid ${projekt.farbe}`, position:"sticky", top:0, zIndex:50,
+      boxShadow:"0 2px 8px rgba(0,0,0,0.08)" }}>
       <div style={{ display:"flex", alignItems:"center", gap:12 }}>
         <button onClick={onBack}
-          style={{ background: C.bgLight, border:`1.5px solid ${C.bgFaint}`, color: C.text, borderRadius:10,
-            padding:"8px 14px", cursor:"pointer", fontSize:18, fontWeight:700,
-            boxShadow:"0 1px 4px rgba(0,0,0,0.08)" }}>‹</button>
+          style={{ background:"var(--surface2)", border:"1.5px solid var(--border)",
+            color:"var(--text)", borderRadius:10, padding:"8px 14px",
+            cursor:"pointer", fontSize:18, fontWeight:700, fontFamily:"inherit" }}>‹</button>
         <div>
-          <div style={{ color: C.text, fontWeight:800, fontSize:14, maxWidth:180,
-            overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{projekt.name}</div>
-          <div style={{ color: C.muted, fontSize:10 }}>{projekt.projektnummer} · {projekt.bauleiter}</div>
+          <div style={{ color:"var(--text)", fontWeight:800, fontSize:14,
+            maxWidth:180, overflow:"hidden", textOverflow:"ellipsis",
+            whiteSpace:"nowrap" }}>{projekt.name}</div>
+          <div style={{ color:"var(--muted)", fontSize:10 }}>
+            {projekt.projektnummer} · {projekt.bauleiter}
+          </div>
         </div>
       </div>
       <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-        <div style={{ background: sbConnected ? C.gruen : C.bgFaint, width:7, height:7, borderRadius:4 }} />
-        <button onClick={() => { setMenuOpen(true); }}
-          style={{ background: C.bgFaint, border:"none", color: C.text, borderRadius:8,
-            padding:"6px 10px", cursor:"pointer", fontSize:16 }}>⋯</button>
+        <div style={{ background: sbConnected ? "var(--green)" : "var(--muted)",
+          width:7, height:7, borderRadius:4 }} />
+        <button onClick={() => setMenuOpen(true)}
+          style={{ background:"var(--surface2)", border:"1px solid var(--border)",
+            color:"var(--text)", borderRadius:8, padding:"6px 10px",
+            cursor:"pointer", fontSize:16, fontFamily:"inherit" }}>⋯</button>
       </div>
       {menuOpen && (
-        <div style={{ position:"fixed", inset:0, zIndex:600 }} onClick={() => setMenuOpen(false)}>
-          <div style={{ position:"absolute", top:56, right:14, background: C.bgLight,
-            borderRadius:12, padding:8, minWidth:180, border:`1px solid ${C.bgFaint}` }}
+        <div style={{ position:"fixed", inset:0, zIndex:600 }}
+          onClick={() => setMenuOpen(false)}>
+          <div style={{ position:"absolute", top:56, right:14,
+            background:"var(--surface)", borderRadius:14, padding:8,
+            minWidth:200, border:"1.5px solid var(--border)",
+            boxShadow:"0 8px 24px rgba(0,0,0,0.15)" }}
             onClick={e => e.stopPropagation()}>
-            <MenuItem icon="✏️" label="Baustelle bearbeiten" onClick={() => { onEdit(); setMenuOpen(false); }} />
-            <MenuItem icon={PROJEKTTYPEN[projekt.typ]?.icon||"🏗️"} label={PROJEKTTYPEN[projekt.typ]?.label||"Unbekannt"} onClick={() => setMenuOpen(false)} muted />
-            <MenuItem icon="📋" label={`Auftraggeber: ${projekt.auftraggeber}`} onClick={() => setMenuOpen(false)} muted />
-            <MenuItem icon="📍" label={projekt.adresse} onClick={() => setMenuOpen(false)} muted small />
+            <MenuItem icon="✏️" label="Baustelle bearbeiten"
+              onClick={() => { onEdit(); setMenuOpen(false); }} />
+            <MenuItem icon={PROJEKTTYPEN[projekt.typ]?.icon||"🏗️"}
+              label={PROJEKTTYPEN[projekt.typ]?.label||"Unbekannt"}
+              onClick={() => setMenuOpen(false)} muted />
+            <MenuItem icon="📋" label={`AG: ${projekt.auftraggeber}`}
+              onClick={() => setMenuOpen(false)} muted />
+            <MenuItem icon="📍" label={projekt.adresse}
+              onClick={() => setMenuOpen(false)} muted small />
           </div>
         </div>
       )}
@@ -6492,10 +8921,11 @@ function ProjektHeader({ projekt, onBack, onEdit, sbConnected }) {
 function MenuItem({ icon, label, onClick, muted, small }) {
   return (
     <div onClick={onClick}
-      style={{ display:"flex", gap:10, alignItems:"center", padding:"10px 12px",
-        borderRadius:8, cursor:"pointer" }}>
+      style={{ display:"flex", gap:10, alignItems:"center", padding:"11px 12px",
+        borderRadius:10, cursor:"pointer" }}>
       <span style={{ fontSize:16 }}>{icon}</span>
-      <span style={{ color: muted ? C.muted : C.text, fontSize: small ? 11 : 13 }}>{label}</span>
+      <span style={{ color: muted ? "var(--muted)" : "var(--text)",
+        fontSize: small ? 11 : 13 }}>{label}</span>
     </div>
   );
 }
@@ -6514,6 +8944,10 @@ export default function PolierApp() {
   const [eigeneFirma,   setEigeneFirma] = useState(MOCK_EIGENE_FIRMA);
   const [subs,          setSubs]        = useState(MOCK_SUBS);
   const [homeTab,       setHomeTab]     = useState("projekte");
+  const [aufgaben,      setAufgaben]    = useState([]);
+  const [zeitbuchungen, setZeitbuchungen] = useState([]);
+  const [einheitspreise,setEinheitspreise]= useState(DEFAULT_EINHEITSPREISE);
+  const [lvVorlagen,    setLvVorlagen]    = useState(DEFAULT_LV_VORLAGEN);
   const pwa  = usePWA();
   const push = usePushNotifications(projekte, eigeneFirma);
   const offline = useOfflineSync(pwa.online === false ? false : true, sbConnected);
@@ -6621,14 +9055,10 @@ export default function PolierApp() {
   }
 
   function handleOnboardingComplete(firma, ersterPolier) {
-    // Firma-Daten übernehmen
     setEigeneFirma(prev => ({ ...prev, ...firma }));
-    // Erster Polier als Vorarbeiter in eine neue Kolonne
-    if (ersterPolier.name) {
-      // Wird beim Anlegen der ersten Baustelle verfügbar
-    }
     setOnboardingDone(true);
-    setNeuProjekt(true); // Direkt zur Baustellen-Anlage springen
+    // Direkt das Neue-Baustelle-Formular öffnen
+    setTimeout(() => setNeuProjekt(true), 100);
   }
 
   // Onboarding anzeigen wenn noch nicht abgeschlossen
@@ -6678,18 +9108,46 @@ export default function PolierApp() {
   if (!aktivId) {
     return (
       <>
-        <div style={{ background:"var(--bg)", minHeight:"100vh", fontFamily:"'Segoe UI', system-ui, sans-serif", color:"var(--text)" }}>
+        <div style={{ background:"var(--bg)", minHeight:"100vh",
+          fontFamily:"'Segoe UI', system-ui, sans-serif", color:"var(--text)" }}>
+
           {/* Header */}
-          <div style={{ background: C.bgMid, padding:"16px 18px 0", borderBottom:`2px solid ${C.gelb}` }}>
-            <div style={{ color: C.gelb, fontWeight:800, fontSize:20, letterSpacing:-0.5, marginBottom:12 }}>★ POLARIS</div>
+          <div style={{ background:"var(--surface)", padding:"16px 18px 0",
+            borderBottom:"2px solid var(--yellow)",
+            boxShadow:"0 2px 8px rgba(0,0,0,0.06)" }}>
+            <div style={{ display:"flex", justifyContent:"space-between",
+              alignItems:"flex-start", marginBottom:12 }}>
+              <div>
+                <div style={{ fontWeight:900, fontSize:20, letterSpacing:-1,
+                  color:"var(--text)", lineHeight:1 }}>
+                  <span style={{ color:"var(--yellow)" }}>★</span> POLARIS
+                </div>
+                <div style={{ fontSize:10, color:"var(--muted)", fontWeight:600,
+                  letterSpacing:2, textTransform:"uppercase", marginTop:2 }}>
+                  Baustellenmanagement
+                </div>
+              </div>
+              <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+                <RollenBadge rolle={aktiveRolle} />
+                <ThemeToggle dark={theme.dark} toggle={theme.toggle} />
+                <button onClick={abmelden}
+                  style={{ width:36, height:36, borderRadius:10,
+                    background:"var(--surface2)", border:"1.5px solid var(--border2)",
+                    cursor:"pointer", fontSize:14, display:"flex",
+                    alignItems:"center", justifyContent:"center", fontFamily:"inherit" }}
+                  title="Abmelden">🚪</button>
+              </div>
+            </div>
             {/* Home Tabs */}
             <div style={{ display:"flex", gap:0 }}>
               {[["projekte","🏗️","Baustellen"],["firmen","🏢","Unternehmen"]].map(([id,icon,label]) => (
                 <button key={id} onClick={() => setHomeTab(id)}
-                  style={{ flex:1, background:"none", border:"none", cursor:"pointer", padding:"10px 0 12px", fontFamily:"inherit",
+                  style={{ flex:1, background:"none", border:"none", cursor:"pointer",
+                    padding:"10px 0 12px", fontFamily:"inherit",
                     borderBottom:`3px solid ${homeTab===id ? "var(--yellow)" : "transparent"}` }}>
                   <div style={{ fontSize:22 }}>{icon}</div>
-                  <div style={{ color: homeTab===id ? "#0F172A" : C.muted, fontSize:12, marginTop:2,
+                  <div style={{ color: homeTab===id ? "var(--text)" : "var(--muted)",
+                    fontSize:12, marginTop:2,
                     fontWeight: homeTab===id ? 700 : 400 }}>{label}</div>
                 </button>
               ))}
@@ -6699,12 +9157,28 @@ export default function PolierApp() {
           <div style={{ padding:"16px 14px 100px" }}>
             {homeTab === "projekte" && (
               <>
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
-                  <div style={{ color: C.text, fontWeight:700, fontSize:15 }}>Meine Baustellen</div>
-                  <div style={{ background: C.bgMid, color: C.muted, fontSize:12, padding:"4px 10px", borderRadius:20 }}>
-                    {projekte.length} Projekte
+                <div style={{ display:"flex", justifyContent:"space-between",
+                  alignItems:"center", marginBottom:14 }}>
+                  <div style={{ color:"var(--text)", fontWeight:700, fontSize:15 }}>
+                    Meine Baustellen
+                  </div>
+                  <div style={{ background:"var(--surface2)", color:"var(--muted)",
+                    fontSize:12, padding:"4px 10px", borderRadius:20,
+                    border:"1px solid var(--border)" }}>
+                    {projekte.length} {projekte.length === 1 ? "Projekt" : "Projekte"}
                   </div>
                 </div>
+
+                {projekte.length === 0 && (
+                  <div style={{ textAlign:"center", padding:"40px 20px",
+                    color:"var(--muted)", fontSize:14 }}>
+                    <div style={{ fontSize:48, marginBottom:12 }}>🏗️</div>
+                    <div style={{ fontWeight:700, color:"var(--text)", marginBottom:8 }}>
+                      Noch keine Baustellen
+                    </div>
+                    <div>Leg deine erste Baustelle an um loszulegen.</div>
+                  </div>
+                )}
 
                 {projekte.map(p => {
                   const eltern  = p.felder.filter(f=>!f.parentId);
@@ -6712,60 +9186,75 @@ export default function PolierApp() {
                   const total   = eltern.length;
                   const pct     = total > 0 ? Math.round(done/total*100) : 0;
                   const delayed = eltern.filter(f=>f.status!=="done" && f.geplant && new Date(f.geplant)<new Date()).length;
-                  // Subs für dieses Projekt
                   const projSubs = subs.filter(s => (p.subIds||[]).includes(s.id));
                   return (
                     <div key={p.id} onClick={() => { setAktivId(p.id); setTab("dashboard"); }}
-                      style={{ background:"var(--surface)", borderRadius:16, padding:"18px 20px", marginBottom:14,
+                      style={{ background:"var(--surface)", borderRadius:16,
+                        padding:"18px 20px", marginBottom:14,
                         border:"1.5px solid var(--border)", cursor:"pointer",
                         borderLeft:`5px solid ${p.farbe}`,
                         boxShadow:"0 2px 12px rgba(0,0,0,0.06)" }}>
-                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+                      <div style={{ display:"flex", justifyContent:"space-between",
+                        alignItems:"flex-start" }}>
                         <div style={{ flex:1 }}>
-                          <div style={{ color: C.text, fontWeight:700, fontSize:15 }}>{p.name}</div>
-                          <div style={{ color: C.muted, fontSize:12, marginTop:2 }}>📍 {p.adresse}</div>
-                          <div style={{ display:"flex", gap:8, marginTop:6, flexWrap:"wrap" }}>
+                          <div style={{ color:"var(--text)", fontWeight:700,
+                            fontSize:15 }}>{p.name}</div>
+                          <div style={{ color:"var(--muted)", fontSize:12,
+                            marginTop:2 }}>📍 {p.adresse}</div>
+                          <div style={{ display:"flex", gap:8, marginTop:6,
+                            flexWrap:"wrap" }}>
                             <Chip icon={PROJEKTTYPEN[p.typ]?.icon||"🏗️"} label={PROJEKTTYPEN[p.typ]?.label||p.typ} />
                             <Chip icon="🔢" label={p.projektnummer} />
                             <Chip icon="👤" label={p.bauleiter} />
                           </div>
-                          {projSubs.length > 0 && (
-                            <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginTop:6 }}>
-                              {projSubs.map(s => (
-                                <div key={s.id} style={{ background:"#1A2040", color: C.blau,
-                                  fontSize:10, padding:"2px 8px", borderRadius:10, border:`1px solid ${C.blau}44` }}>
-                                  🏢 {s.name}
-                                </div>
-                              ))}
-                            </div>
-                          )}
                         </div>
-                        <div style={{ color: C.muted, fontSize:22, marginLeft:8 }}>›</div>
+                        <div style={{ color:"var(--muted)", fontSize:22,
+                          marginLeft:8 }}>›</div>
                       </div>
                       {total > 0 && (
                         <div style={{ marginTop:12 }}>
-                          <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
-                            <div style={{ color: C.muted, fontSize:11 }}>{done}/{total} {PROJEKTTYPEN[p.typ]?.fortschrittLabel||"fertig"}</div>
+                          <div style={{ display:"flex", justifyContent:"space-between",
+                            marginBottom:4 }}>
+                            <div style={{ color:"var(--muted)", fontSize:11 }}>
+                              {done}/{total} {PROJEKTTYPEN[p.typ]?.fortschrittLabel||"fertig"}
+                            </div>
                             <div style={{ display:"flex", gap:8 }}>
-                              {delayed > 0 && <div style={{ color: C.rot, fontSize:11 }}>⚠️ {delayed} Verzug</div>}
-                              <div style={{ color: p.farbe, fontSize:11, fontWeight:700 }}>{pct}%</div>
+                              {delayed > 0 && (
+                                <div style={{ color:"var(--red)", fontSize:11 }}>
+                                  ⚠️ {delayed} Verzug
+                                </div>
+                              )}
+                              <div style={{ color: p.farbe, fontSize:11,
+                                fontWeight:700 }}>{pct}%</div>
                             </div>
                           </div>
-                          <div style={{ background: C.bgFaint, borderRadius:4, height:6 }}>
-                            <div style={{ background: p.farbe, width:`${pct}%`, height:"100%", borderRadius:4, transition:"width 0.5s" }} />
+                          <div style={{ background:"var(--surface2)", borderRadius:4,
+                            height:6, border:"1px solid var(--border)" }}>
+                            <div style={{ background: p.farbe, width:`${pct}%`,
+                              height:"100%", borderRadius:4,
+                              transition:"width 0.5s" }} />
                           </div>
                         </div>
                       )}
-                      {total === 0 && <div style={{ color: C.muted, fontSize:12, marginTop:8 }}>Noch keine Felder angelegt</div>}
+                      {total === 0 && (
+                        <div style={{ color:"var(--muted)", fontSize:12,
+                          marginTop:8 }}>Noch keine Felder angelegt</div>
+                      )}
                     </div>
                   );
                 })}
 
+                {/* Neue Baustelle */}
                 <div onClick={() => setNeuProjekt(true)}
-                  style={{ border:`2px dashed ${C.gelb}`, borderRadius:16, padding:"24px",
-                    textAlign:"center", cursor:"pointer", background:"var(--ybg)", boxShadow:"0 2px 8px rgba(245,196,0,0.15)" }}>
-                  <div style={{ fontSize:32 }}>➕</div>
-                  <div style={{ color:"var(--ydark)", fontWeight:700, marginTop:8, fontSize:15 }}>Neue Baustelle anlegen</div>
+                  style={{ border:"2px dashed var(--yellow)", borderRadius:16,
+                    padding:"28px 24px", textAlign:"center", cursor:"pointer",
+                    background:"var(--ybg)",
+                    boxShadow:"0 2px 8px rgba(245,196,0,0.12)" }}>
+                  <div style={{ fontSize:36 }}>➕</div>
+                  <div style={{ color:"var(--ydark)", fontWeight:700,
+                    marginTop:10, fontSize:15 }}>
+                    Neue Baustelle anlegen
+                  </div>
                 </div>
               </>
             )}
@@ -6796,17 +9285,19 @@ export default function PolierApp() {
   // ── Baustellen-Ansicht ──
   // Rollenbasierte Tabs
   const ALLE_TABS = [
-    { id:"dashboard",  icon:"📊",  label:"Übersicht", rollen:["administrator","bauleiter","polier","vorarbeiter"] },
-    { id:"felder",     icon:"🏗️", label:"Felder",    rollen:["administrator","bauleiter","polier","vorarbeiter"] },
-    { id:"gantt",      icon:"📅",  label:"Zeitplan",  rollen:["administrator","bauleiter","polier"] },
-    { id:"editor",     icon:"✏️",  label:"Editor",    rollen:["administrator","polier"] },
-    { id:"scanner",    icon:"📷",  label:"Scanner",   rollen:["administrator","polier"] },
-    { id:"wetter",     icon:"🌤️", label:"Wetter",    rollen:["administrator","bauleiter","polier","vorarbeiter"] },
-    { id:"kolonnen",   icon:"👷",  label:"Kolonnen",  rollen:["administrator","bauleiter","polier","vorarbeiter"] },
-    { id:"tagebuch",   icon:"📋",  label:"Tagebuch",  rollen:["administrator","polier","vorarbeiter"] },
-    { id:"zeiten",     icon:"⏱️",  label:"Zeiten",    rollen:["administrator","bauleiter","polier"] },
-    { id:"stempeln",   icon:"⏱️",  label:"Stempeln",  rollen:["administrator","polier","vorarbeiter"] },
-    { id:"nutzer",     icon:"👥",  label:"Nutzer",    rollen:["administrator"] },
+    { id:"dashboard",     icon:"📊",  label:"Übersicht",   rollen:["administrator","bauleiter","polier","vorarbeiter"] },
+    { id:"aufgaben",      icon:"✅",  label:"Aufgaben",    rollen:["administrator","bauleiter","polier","vorarbeiter"] },
+    { id:"maengel",       icon:"⚠️",  label:"Mängel",      rollen:["administrator","bauleiter","polier","vorarbeiter"] },
+    { id:"gantt",         icon:"📅",  label:"Zeitplan",    rollen:["administrator","bauleiter","polier"] },
+    { id:"kosten",        icon:"💰",  label:"Kosten",      rollen:["administrator","bauleiter","polier"] },
+    { id:"scanner",       icon:"📷",  label:"Scanner",     rollen:["administrator","polier"] },
+    { id:"wetter",        icon:"🌤️", label:"Wetter",      rollen:["administrator","bauleiter","polier","vorarbeiter"] },
+    { id:"kolonnen",      icon:"👷",  label:"Kolonnen",    rollen:["administrator","bauleiter","polier","vorarbeiter"] },
+    { id:"tagebuch",      icon:"📋",  label:"Tagebuch",    rollen:["administrator","polier","vorarbeiter"] },
+    { id:"stempeln",      icon:"⏱️",  label:"Stempeln",    rollen:["administrator","polier","vorarbeiter","facharbeiter"] },
+    { id:"angebot",       icon:"📄",  label:"Angebot",     rollen:["administrator","bauleiter","polier"] },
+    { id:"admin_params",  icon:"⚙️",  label:"Parameter",   rollen:["administrator"] },
+    { id:"nutzer",        icon:"👥",  label:"Nutzer",      rollen:["administrator"] },
   ];
   const TABS = ALLE_TABS.filter(t => !aktiveRolle || t.rollen.includes(aktiveRolle));
 
@@ -6872,11 +9363,16 @@ export default function PolierApp() {
             berichte={berichte} setBerichte={setBerichte} sbConnected={sbConnected}
             projekt={projekt} eigeneFirma={eigeneFirma} kolonnen={kolonnen}
             offlineSpeichern={offline.speichereOffline}
+            aufgaben={aufgaben} setAufgaben={setAufgaben}
           />}
-        {tab === "zeiten"    && <ZeiterfassungView projekt={projekt} />}
-        {tab === "stempeln"  && <StempeluhrView profil={aktiveProfil} projekte={projekte} session={auth.session} />}
-        {tab === "nutzer"    && <NutzerVerwaltungView session={auth.session} />}
+        {tab === "aufgaben"      && <AufgabenView aufgaben={aufgaben} setAufgaben={setAufgaben} kolonnen={kolonnen} sbConnected={sbConnected} />}
+        {tab === "maengel"       && <MaengelView aufgaben={aufgaben} setAufgaben={setAufgaben} kolonnen={kolonnen} />}
+        {tab === "kosten"        && <KostenView projekt={projekt} aufgaben={aufgaben} kolonnen={kolonnen} zeitbuchungen={zeitbuchungen} />}
+        {tab === "zeiten"        && <ZeiterfassungView projekt={projekt} />}
+        {tab === "stempeln"      && <StempeluhrView profil={aktiveProfil} projekte={projekte} session={auth.session} />}
+        {tab === "nutzer"        && <NutzerVerwaltungView session={auth.session} />}
       </div>
+      </PlanGuard>
 
       {/* ── BOTTOM NAV ── */}
       <div style={{ position:"fixed", bottom:0, left:0, right:0,
