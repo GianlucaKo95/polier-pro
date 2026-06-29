@@ -2071,13 +2071,15 @@ const PUSH_VAPID_PUBLIC = "BEl62iUYgUivxIkv69yViEuiBIa40Hi-GJVabpPADEaLJCO1a6-Fq
 
 async function pushBerechtigung() {
   if (!("Notification" in window) || !("serviceWorker" in navigator)) return false;
-  const result = await Notification.requestPermission();
+  if (typeof Notification === "undefined") return;
+    const result = await Notification.requestPermission();
   return result === "granted";
 }
 
 async function pushAbonnieren() {
   try {
-    const reg = await navigator.serviceWorker.ready;
+    if (!navigator.serviceWorker) return;
+  const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: PUSH_VAPID_PUBLIC,
@@ -2089,7 +2091,8 @@ async function pushAbonnieren() {
 }
 
 function lokaleNotification(titel, text, tag) {
-  if (Notification.permission !== "granted") return;
+  if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+  if (typeof Notification === "undefined") return;
   new Notification(titel, {
     body:  text,
     icon:  "/icons/icon-192.png",
@@ -2100,7 +2103,9 @@ function lokaleNotification(titel, text, tag) {
 }
 
 function usePushNotifications(projekte, eigeneFirma) {
-  const [erlaubt, setErlaubt] = useState(Notification.permission === "granted");
+  const [erlaubt, setErlaubt] = useState(
+    typeof Notification !== "undefined" ? Notification.permission === "granted" : false
+  );
 
   useEffect(() => {
     if (!erlaubt) return;
@@ -8848,8 +8853,10 @@ export default function PolierApp() {
   const [zeigeRegistrierung, setZeigeRegistrierung] = useState(false);
   const [firma,              setFirma]              = useState(null);
 
-  // Einladungs-Token aus URL erkennen
-  const einladungsToken = new URLSearchParams(window.location.search).get("einladung");
+  // Einladungs-Token aus URL erkennen (sicher)
+  const einladungsToken = typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search).get("einladung")
+    : null;
 
   // Firma laden wenn eingeloggt
   useEffect(() => {
