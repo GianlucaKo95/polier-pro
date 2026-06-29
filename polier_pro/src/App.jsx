@@ -6890,101 +6890,6 @@ function MaengelView({ aufgaben, setAufgaben, kolonnen }) {
   const [neuerText,  setNeuerText]  = useState("");
 
   // Alle Kommentare aus allen Aufgaben zusammenführen
-  const alleKommentare = aufgaben
-    .flatMap(a => (a.kommentare||[]).map(k => ({ ...k, aufgabe_titel:a.titel, aufgabe_id:a.id })))
-    .sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
-
-  function kommentarSenden(aufgabeId) {
-    if (!neuerText.trim()) return;
-    const neuerKommentar = {
-      id:         Date.now(),
-      text:       neuerText,
-      autor:      aktiveProfil?.vorname || "Ich",
-      created_at: new Date().toISOString(),
-    };
-    setAufgaben(prev => prev.map(a =>
-      a.id === aufgabeId
-        ? { ...a, kommentare:[...(a.kommentare||[]), neuerKommentar] }
-        : a
-    ));
-    setNeuerText("");
-  }
-
-  return (
-    <div>
-      <div style={{ color:"var(--text)", fontWeight:700, fontSize:15, marginBottom:14 }}>
-        💬 Kommunikation
-      </div>
-
-      {/* Aufgabe auswählen */}
-      <div style={{ marginBottom:16 }}>
-        <Label>Aufgabe kommentieren</Label>
-        <select value={ausgewählt||""} onChange={e=>setAusgewählt(Number(e.target.value))}
-          style={{ ...inputStyle(), marginTop:6, padding:"11px 12px" }}>
-          <option value="">— Aufgabe wählen —</option>
-          {aufgaben.map(a => (
-            <option key={a.id} value={a.id}>
-              {AUFGABEN_TYPEN[a.typ]?.icon} {a.titel}
-            </option>
-          ))}
-        </select>
-        {ausgewählt && (
-          <div style={{ display:"flex", gap:8, marginTop:8 }}>
-            <input value={neuerText}
-              onChange={e=>setNeuerText(e.target.value)}
-              placeholder="Kommentar schreiben…"
-              onKeyDown={e=>e.key==="Enter"&&kommentarSenden(ausgewählt)}
-              style={{ ...inputStyle(), flex:1 }} />
-            <button onClick={() => kommentarSenden(ausgewählt)}
-              style={{ background:"var(--yellow)", color:"#1a1200",
-                border:"none", borderRadius:10, padding:"0 16px",
-                cursor:"pointer", fontWeight:700, fontFamily:"inherit",
-                flexShrink:0 }}>↑</button>
-          </div>
-        )}
-      </div>
-
-      {/* Alle Kommentare */}
-      {alleKommentare.length === 0 ? (
-        <div style={{ textAlign:"center", padding:"40px 20px", color:"var(--muted)" }}>
-          <div style={{ fontSize:40, marginBottom:8 }}>💬</div>
-          <div>Noch keine Kommentare</div>
-        </div>
-      ) : alleKommentare.map(k => (
-        <div key={k.id} style={{ background:"var(--surface)", borderRadius:12,
-          padding:"12px 14px", marginBottom:8,
-          border:"1.5px solid var(--border)" }}>
-          <div style={{ display:"flex", justifyContent:"space-between",
-            alignItems:"flex-start", marginBottom:4 }}>
-            <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-              <div style={{ width:28, height:28, borderRadius:14,
-                background:"var(--ybg)", display:"flex", alignItems:"center",
-                justifyContent:"center", fontSize:11, fontWeight:800,
-                color:"var(--ydark)", flexShrink:0 }}>
-                {k.autor?.[0]?.toUpperCase() || "?"}
-              </div>
-              <div>
-                <div style={{ color:"var(--text)", fontWeight:700, fontSize:13 }}>
-                  {k.autor}
-                </div>
-                <div style={{ color:"var(--muted)", fontSize:10 }}>
-                  📋 {k.aufgabe_titel}
-                </div>
-              </div>
-            </div>
-            <div style={{ color:"var(--muted)", fontSize:10 }}>
-              {new Date(k.created_at).toLocaleString("de-DE",{
-                day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"
-              })}
-            </div>
-          </div>
-          <div style={{ color:"var(--text2)", fontSize:13, lineHeight:1.5,
-            paddingLeft:36 }}>{k.text}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 // ─── Kosten-View ──────────────────────────────────────────────────────────────
 function KostenView({ projekt, aufgaben, kolonnen, zeitbuchungen }) {
@@ -8271,8 +8176,7 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
       ["","","","","MwSt "+a.mwst+"%:", mwstBetrag.toFixed(2)],
       ["","","","","GESAMT:", bruttoGesamt.toFixed(2)],
     ];
-    const csv = rows.map(r => r.map(v => `"${v}"`).join(";")).join("
-");
+    const csv = rows.map(r => r.map(v => '"'+v+'"').join(";")).join("\n");
     const blob = new Blob(["﻿"+csv], { type:"text/csv;charset=utf-8;" });
     const url  = URL.createObjectURL(blob);
     const link = document.createElement("a");
