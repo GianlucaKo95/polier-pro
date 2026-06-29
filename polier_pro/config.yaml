@@ -1,6 +1,6 @@
 name: "Polier Pro"
 description: "Baustellenmanagement fuer Poliere"
-version: "1.0.3"
+version: "1.0.5"
 slug: "polier_pro"
 init: false
 arch:
@@ -9,9 +9,9 @@ arch:
 startup: application
 boot: auto
 ports:
-  3000/tcp: 3001
+  8099/tcp: 3001
 ports_description:
-  3000/tcp: "Polier Pro Web-Interface"
+  8099/tcp: "Polier Pro Web-Interface"
 panel_icon: "mdi:hard-hat"
 panel_title: "Polier Pro"
 panel_admin: true
