@@ -2,42 +2,28 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Polaris</title>
-  <style>
-    body { background: #0B1120; color: #F0F4FF; font-family: system-ui; margin: 0; padding: 20px; }
-    #error-box { background: #1E293B; border: 2px solid #FF6B6B; border-radius: 10px;
-      padding: 16px; margin-top: 16px; display: none; word-break: break-all; font-size: 13px; }
-    #status { color: #F5C400; font-size: 20px; font-weight: 900; }
-  </style>
 </head>
 <body>
-  <div id="status">★ POLARIS lädt...</div>
-  <div id="error-box"></div>
+  <h1 id="status" style="color:orange;font-family:sans-serif">POLARIS laedt...</h1>
+  <div id="error-box" style="display:none;color:red;font-family:monospace;font-size:12px"></div>
   <div id="root"></div>
-
   <script>
-    // Fange ALLE Fehler vor React
+    document.body.style.background = "#111";
     window.onerror = function(msg, src, line, col, err) {
-      document.getElementById("status").textContent = "★ POLARIS – Fehler";
-      document.getElementById("status").style.color = "#FF6B6B";
-      var box = document.getElementById("error-box");
-      box.style.display = "block";
-      box.innerHTML = "<strong>" + msg + "</strong><br><br>" +
-        "Datei: " + src + "<br>" +
-        "Zeile: " + line + ":" + col + "<br><br>" +
-        (err && err.stack ? err.stack.substring(0,300) : "");
-      return false;
+      document.getElementById("status").innerHTML = "FEHLER: " + msg;
+      document.getElementById("status").style.color = "red";
+      document.getElementById("error-box").style.display = "block";
+      document.getElementById("error-box").textContent = src + ":" + line + " | " + (err ? err.stack : msg);
     };
     window.onunhandledrejection = function(e) {
-      document.getElementById("status").textContent = "★ POLARIS – Promise Fehler";
-      document.getElementById("status").style.color = "#FF6B6B";
-      var box = document.getElementById("error-box");
-      box.style.display = "block";
-      box.innerHTML = "<strong>Unhandled Promise:</strong><br>" + e.reason;
+      document.getElementById("status").innerHTML = "PROMISE FEHLER";
+      document.getElementById("status").style.color = "red";  
+      document.getElementById("error-box").style.display = "block";
+      document.getElementById("error-box").textContent = String(e.reason);
     };
   </script>
-
   <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>
