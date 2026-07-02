@@ -3,27 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#F5C400" />
   <title>Polaris</title>
 </head>
 <body>
-  <h1 id="status" style="color:orange;font-family:sans-serif">POLARIS laedt...</h1>
-  <div id="error-box" style="display:none;color:red;font-family:monospace;font-size:12px"></div>
   <div id="root"></div>
-  <script>
-    document.body.style.background = "#111";
-    window.onerror = function(msg, src, line, col, err) {
-      document.getElementById("status").innerHTML = "FEHLER: " + msg;
-      document.getElementById("status").style.color = "red";
-      document.getElementById("error-box").style.display = "block";
-      document.getElementById("error-box").textContent = src + ":" + line + " | " + (err ? err.stack : msg);
-    };
-    window.onunhandledrejection = function(e) {
-      document.getElementById("status").innerHTML = "PROMISE FEHLER";
-      document.getElementById("status").style.color = "red";  
-      document.getElementById("error-box").style.display = "block";
-      document.getElementById("error-box").textContent = String(e.reason);
-    };
-  </script>
   <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>

@@ -1,2 +1,2 @@
 #!/usr/bin/with-contenv bashio
-bashio::log.error "nginx exited with code $1"
+bashio::log.info "nginx stopped"
