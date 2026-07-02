@@ -1,12 +1,48 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Polaris Test</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Polaris</title>
+  <style>
+    body{background:#111;color:#fff;font-family:sans-serif;padding:20px;margin:0}
+    .ok{color:#4CAF50} .err{color:#f44336} .info{color:#FFC107}
+  </style>
 </head>
-<body style="background:navy;color:yellow;font-size:32px;padding:40px;font-family:sans-serif">
-<p>POLARIS v1.0.13</p>
-<p style="font-size:16px;color:white">nginx funktioniert!</p>
+<body>
+  <h2 class="info">&#9733; POLARIS Debug v1.0.16</h2>
+  <div id="log"></div>
+  <div id="root"></div>
+<script>
+function log(msg, cls) {
+  var d = document.createElement('div');
+  d.textContent = msg;
+  d.className = cls || 'info';
+  d.style.padding = '4px 0';
+  d.style.borderBottom = '1px solid #333';
+  document.getElementById('log').appendChild(d);
+}
+log('HTML geladen OK', 'ok');
+log('iOS: ' + navigator.userAgent.match(/OS ([\d_]+)/)?.[1]);
+log('Safari: ' + (navigator.userAgent.includes('Safari') ? 'ja' : 'nein'));
+
+window.onerror = function(msg, src, line, col, err) {
+  log('FEHLER: ' + msg, 'err');
+  log('Datei: ' + src + ' Z:' + line, 'err');
+  log('Stack: ' + (err ? err.stack : 'kein stack').substring(0,200), 'err');
+};
+window.onunhandledrejection = function(e) {
+  log('PROMISE: ' + String(e.reason), 'err');
+};
+</script>
+<script type="module">
+  log('Module script startet', 'ok');
+  try {
+    const { default: App } = await import('./assets/polaris-app.js');
+    log('App importiert OK', 'ok');
+  } catch(e) {
+    log('Import Fehler: ' + e.message, 'err');
+  }
+</script>
 </body>
 </html>
