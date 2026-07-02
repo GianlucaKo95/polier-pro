@@ -1,15 +1,14 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import PolierApp from "./App.jsx";
 
 try {
-  const { default: App } = await import("./App.jsx");
   ReactDOM.createRoot(document.getElementById("root")).render(
-    React.createElement(App)
+    React.createElement(PolierApp)
   );
 } catch(e) {
-  document.getElementById("status").textContent = "★ Import Fehler";
+  document.getElementById("status").textContent = "Fehler: " + e.message;
   document.getElementById("status").style.color = "#FF6B6B";
   var box = document.getElementById("error-box");
-  box.style.display = "block";
-  box.innerHTML = "<strong>Import Error:</strong><br>" + e.message + "<br><br>" + (e.stack||"kein Stack").substring(0,300);
+  if (box) { box.style.display = "block"; box.textContent = e.stack || e.message; }
 }
