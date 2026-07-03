@@ -595,8 +595,7 @@ function UnterfeldSchnellanlage({ parent, onAdd, onClose }) {
   }
 
   return (
-    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.85)", zIndex:400,
-      display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
+    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"var(--bg)", zIndex:400, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
       <div style={{ background: "var(--surface)", borderRadius:"16px 16px 0 0", padding:20,
         width:"100%", maxWidth:520, maxHeight:"90vh", overflowY:"auto" }}>
 
@@ -2016,8 +2015,7 @@ function KIBerichtButton({ onGenerated, projekt, kolonnen, wetter }) {
       </button>
 
       {offen && (
-        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.85)", zIndex:500,
-          display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
+        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"var(--bg)", zIndex:500, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
           <div style={{ background: "var(--surface)", borderRadius:"16px 16px 0 0", padding:22,
             width:"100%", maxWidth:520 }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
@@ -2435,7 +2433,7 @@ function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eigeneFirm
 
       {/* ── Detail-Ansicht ── */}
       {detail && (
-        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.9)", zIndex:300,
+        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"var(--bg)", zIndex:300,
           overflowY:"auto" }}>
           <div style={{ background: "var(--surface)", minHeight:"100vh", maxWidth:520, margin:"0 auto", padding:20 }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
@@ -2496,8 +2494,7 @@ function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eigeneFirm
 
       {/* ── Neuer Bericht Modal ── */}
       {open && (
-        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.8)", zIndex:200,
-          display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
+        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"var(--bg)", zIndex:200, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
           <div style={{ background: "var(--surface)", borderRadius:"16px 16px 0 0", padding:22,
             width:"100%", maxWidth:520, maxHeight:"92vh", overflowY:"auto" }}>
 
@@ -2993,8 +2990,7 @@ function FeldEditor({ feld, allFelder, onSave, onDelete, onClose, projektTyp, pr
   }
 
   return (
-    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(15,23,42,0.6)", zIndex:300,
-      display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
+    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"var(--bg)", zIndex:300, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
       <div style={{ background: "var(--surface)", borderRadius:"16px 16px 0 0", padding:20,
         width:"100%", maxWidth:520, maxHeight:"90vh", overflowY:"auto" }}>
 
@@ -7244,9 +7240,7 @@ function KITagesabschlussButton({ projekt, kolonnen, wetter, onErgebnis }) {
       </button>
 
       {offen && (
-        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(15,23,42,0.8)",
-          zIndex:600,
-          display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
+        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"var(--bg)", zIndex:600, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
           <div style={{ background:"var(--surface)", borderRadius:"20px 20px 0 0",
             padding:22, width:"100%", maxWidth:520, maxHeight:"92vh",
             overflowY:"auto", boxShadow:"0 -4px 30px rgba(0,0,0,0.2)" }}>
@@ -7641,9 +7635,7 @@ ${offeneMaengel.length > 0 ? `<div class="section">
       </button>
 
       {offen && (
-        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(15,23,42,0.8)",
-          zIndex:600,
-          display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
+        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"var(--bg)", zIndex:600, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
           <div style={{ background:"var(--surface)", borderRadius:"20px 20px 0 0",
             padding:22, width:"100%", maxWidth:520, maxHeight:"92vh",
             overflowY:"auto", boxShadow:"0 -4px 30px rgba(0,0,0,0.2)" }}>
@@ -7878,9 +7870,7 @@ function AdminParameterView({ einheitspreise, setEinheitspreise, lvVorlagen, set
 
       {/* Preis-Formular */}
       {(neuPreis || editPreis) && (
-        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(15,23,42,0.8)",
-          zIndex:600,
-          display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
+        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"var(--bg)", zIndex:600, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
           <div style={{ background:"var(--surface)", borderRadius:"20px 20px 0 0",
             padding:22, width:"100%", maxWidth:480 }}>
             <PreisFormular
@@ -7894,9 +7884,7 @@ function AdminParameterView({ einheitspreise, setEinheitspreise, lvVorlagen, set
 
       {/* Vorlagen-Formular */}
       {neuVorlage && (
-        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(15,23,42,0.8)",
-          zIndex:600,
-          display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
+        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"var(--bg)", zIndex:600, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
           <div style={{ background:"var(--surface)", borderRadius:"20px 20px 0 0",
             padding:22, width:"100%", maxWidth:480, maxHeight:"80vh",
             overflowY:"auto" }}>
@@ -8515,9 +8503,7 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
 
       {/* Vorlage Modal */}
       {vonVorlage && (
-        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(15,23,42,0.8)",
-          zIndex:700, display:"flex", alignItems:"flex-end",
-          justifyContent:"center" }}>
+        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"var(--bg)", zIndex:700, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
           <div style={{ background:"var(--surface)", borderRadius:"20px 20px 0 0",
             padding:22, width:"100%", maxWidth:480, maxHeight:"70vh",
             overflowY:"auto" }}>
@@ -8552,9 +8538,7 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
 
       {/* Aufgaben Modal */}
       {vonAufgabe && (
-        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(15,23,42,0.8)",
-          zIndex:700, display:"flex", alignItems:"flex-end",
-          justifyContent:"center" }}>
+        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"var(--bg)", zIndex:700, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
           <div style={{ background:"var(--surface)", borderRadius:"20px 20px 0 0",
             padding:22, width:"100%", maxWidth:480, maxHeight:"70vh",
             overflowY:"auto" }}>
@@ -8747,16 +8731,28 @@ function ProjektFormular({ initial, onSave, onClose, subs = [] }) {
     }));
   }
 
+  // Fullscreen statt Modal — vermeidet iOS position:fixed Probleme
   return (
     <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
-      background:"rgba(15,23,42,0.75)",
-      zIndex:500,
-      display:"flex", alignItems:"flex-end", justifyContent:"center",
-      WebkitOverflowScrolling:"touch" }}>
-      <div style={{ background:"var(--surface)", borderRadius:"20px 20px 0 0", padding:22,
-        width:"100%", maxWidth:520, maxHeight:"92vh", overflowY:"auto",
-        boxShadow:"0 -4px 30px rgba(0,0,0,0.15)",
-        WebkitOverflowScrolling:"touch" }}>
+      background:"var(--bg)", zIndex:500, overflowY:"auto",
+      WebkitOverflowScrolling:"touch",
+      fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
+
+      {/* Header */}
+      <div style={{ background:"var(--surface)", padding:"14px 18px",
+        borderBottom:"3px solid var(--yellow)", position:"sticky", top:0,
+        zIndex:10, display:"flex", justifyContent:"space-between",
+        alignItems:"center" }}>
+        <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:17 }}>
+          {initial?.name ? "✏️ Baustelle bearbeiten" : "➕ Neue Baustelle"}
+        </div>
+        <button onClick={onClose}
+          style={{ background:"var(--surface2)", border:"1px solid var(--border)",
+            color:"var(--text)", borderRadius:8, padding:"6px 14px",
+            cursor:"pointer", fontSize:14, fontFamily:"inherit" }}>✕</button>
+      </div>
+
+      <div style={{ padding:"20px 16px 100px" }}>
 
         <div style={{ display:"flex", justifyContent:"space-between",
           alignItems:"center", marginBottom:18 }}>
