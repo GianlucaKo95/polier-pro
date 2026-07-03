@@ -2435,7 +2435,7 @@ function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eigeneFirm
       {detail && (
         <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"var(--bg)", zIndex:300,
           overflowY:"auto" }}>
-          <div style={{ background: "var(--surface)", minHeight:"100vh", maxWidth:520, margin:"0 auto", padding:20 }}>
+          <div style={{ background: "var(--surface)", minHeight:"100dvh", maxWidth:520, margin:"0 auto", padding:20 }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
               <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:16 }}>📋 {detail.datum}</div>
               <button onClick={() => setDetail(null)}
@@ -4391,7 +4391,7 @@ function RegistrierungScreen({ auth, onZurueck }) {
   }
 
   return (
-    <div style={{ background:"var(--bg)", minHeight:"100vh",
+    <div style={{ background:"var(--bg)", minHeight:"100dvh",
       display:"flex", flexDirection:"column", alignItems:"center",
       justifyContent:"center", padding:"24px 20px",
       fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
@@ -4636,14 +4636,14 @@ function EinladungScreen({ token, onErfolg }) {
 
   if (laden && schritt === 0) return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"center",
-      minHeight:"100vh", background:"var(--bg)", color:"var(--muted)",
+      minHeight:"100dvh", background:"var(--bg)", color:"var(--muted)",
       fontFamily:"inherit" }}>
       ⏳ Einladung wird geprüft…
     </div>
   );
 
   return (
-    <div style={{ background:"var(--bg)", minHeight:"100vh",
+    <div style={{ background:"var(--bg)", minHeight:"100dvh",
       display:"flex", flexDirection:"column", alignItems:"center",
       justifyContent:"center", padding:"24px 20px",
       fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
@@ -4847,7 +4847,7 @@ function PlanGuard({ firma, kinder, ressource }) {
   if (!trial_abgelaufen && !abo_inaktiv) return kinder;
 
   return (
-    <div style={{ background:"var(--bg)", minHeight:"100vh",
+    <div style={{ background:"var(--bg)", minHeight:"100dvh",
       display:"flex", flexDirection:"column", alignItems:"center",
       justifyContent:"center", padding:24,
       fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
@@ -4979,7 +4979,7 @@ function OnboardingFlow({ onComplete }) {
   const pct = Math.round(((schritt + 1) / SCHRITTE.length) * 100);
 
   return (
-    <div style={{ background:"var(--bg)", minHeight:"100vh",
+    <div style={{ background:"var(--bg)", minHeight:"100dvh",
       fontFamily:"'Segoe UI', system-ui, sans-serif",
       display:"flex", flexDirection:"column" }}>
 
@@ -5607,7 +5607,7 @@ function LoginScreen({ auth, onDemoLogin, onRegistrieren }) {
   const [showPw,   setShowPw]   = useState(false);
 
   return (
-    <div style={{ background:"var(--bg)", minHeight:"100vh", display:"flex",
+    <div style={{ background:"var(--bg)", minHeight:"100dvh", display:"flex",
       flexDirection:"column", alignItems:"center", justifyContent:"center",
       padding:"24px 20px", fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
 
@@ -5709,7 +5709,7 @@ function PasswortSetzenScreen({ auth, type }) {
   const valid = password.length >= 8 && password === password2;
 
   return (
-    <div style={{ background:"var(--bg)", minHeight:"100vh", display:"flex",
+    <div style={{ background:"var(--bg)", minHeight:"100dvh", display:"flex",
       flexDirection:"column", alignItems:"center", justifyContent:"center",
       padding:"24px 20px", fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
       <div style={{ textAlign:"center", marginBottom:32 }}>
@@ -8645,7 +8645,7 @@ function leerProjekt() {
 // ─── Projekt-Liste (Startscreen) ─────────────────────────────────────────────
 function ProjektListe({ projekte, onSelect, onNeu }) {
   return (
-    <div style={{ background:"var(--bg)", minHeight:"100vh", fontFamily:"'Segoe UI', system-ui, sans-serif", color:"var(--text)" }}>
+    <div style={{ background:"var(--bg)", minHeight:"100dvh", fontFamily:"'Segoe UI', system-ui, sans-serif", color:"var(--text)" }}>
       {/* Header */}
       <div style={{ background: "var(--surface)", padding:"18px 18px 14px", borderBottom:`2px solid ${'var(--yellow)'}` }}>
         <div style={{ color: "var(--yellow)", fontWeight:800, fontSize:22, letterSpacing:-0.5 }}>★ POLARIS</div>
@@ -9043,7 +9043,7 @@ export default function PolierApp() {
   // ── Facharbeiter → nur Stempeluhr ──
   if (aktiveRolle === "facharbeiter") {
     return (
-      <div style={{ background:"var(--bg)", minHeight:"100vh",
+      <div style={{ background:"var(--bg)", minHeight:"100dvh",
         fontFamily:"'Segoe UI', system-ui, sans-serif", color:"var(--text)" }}>
         <div style={{ background:"var(--surface)", padding:"14px 18px",
           borderBottom:"3px solid var(--yellow)", display:"flex",
@@ -9125,7 +9125,7 @@ export default function PolierApp() {
   if (!aktivId) {
     return (
       <>
-        <div style={{ background:"var(--bg)", minHeight:"100vh",
+        <div style={{ background:"var(--bg)", minHeight:"100dvh",
           fontFamily:"'Segoe UI', system-ui, sans-serif", color:"var(--text)" }}>
 
           {/* Header */}
@@ -9326,7 +9326,7 @@ export default function PolierApp() {
   const TABS = ALLE_TABS.filter(t => !aktiveRolle || t.rollen.includes(aktiveRolle));
 
   return (
-    <div style={{ background:"var(--bg)", minHeight:"100vh",
+    <div style={{ background:"var(--bg)", minHeight:"100dvh",
       fontFamily:"'Segoe UI', system-ui, sans-serif", color:"var(--text)" }}>
 
       {/* ── TOP BAR ── */}
@@ -9375,7 +9375,7 @@ export default function PolierApp() {
 
       {/* ── CONTENT ── */}
       <PlanGuard firma={firma} ressource="app">
-      <div style={{ padding:"16px 14px 100px", background:"var(--bg)", minHeight:"100vh" }}>
+      <div style={{ padding:"16px 14px 100px", background:"var(--bg)", minHeight:"100dvh" }}>
         {tab === "dashboard" && <DashboardView felder={felder} kolonnen={kolonnen} sbConnected={sbConnected} />}
         {tab === "gantt"     && <GanttView felder={felder} />}
         {tab === "scanner"   && <ScannerView onFelderImport={handleFelderImport} projektTyp={projekt.typ} />}
