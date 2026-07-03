@@ -91,8 +91,8 @@ const C = {
 
 // ─── Supabase Config ─────────────────────────────────────────────────────────
 // Ersetze diese Werte mit deinen echten Supabase-Credentials
-const SUPABASE_URL = "https://DEIN-PROJEKT.supabase.co";
-const SUPABASE_ANON_KEY = "DEIN-ANON-KEY";
+const SUPABASE_URL = "https://qnbludwskdyupmyjxmql.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFuYmx1ZHdza2R5dXBteWp4bXFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0NDQ1NTQsImV4cCI6MjA5ODAyMDU1NH0.OrNHw6qoeKD35_DuxtDfcm7Le49prs0AW95Yjmp7CkY";
 
 async function sbFetch(path, opts = {}) {
   try {
