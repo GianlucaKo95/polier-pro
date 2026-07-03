@@ -91,8 +91,8 @@ const C = {
 
 // ─── Supabase Config ─────────────────────────────────────────────────────────
 // Ersetze diese Werte mit deinen echten Supabase-Credentials
-const SUPABASE_URL = "https://qnbludwskdyupmyjxmql.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFuYmx1ZHdza2R5dXBteWp4bXFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0NDQ1NTQsImV4cCI6MjA5ODAyMDU1NH0.OrNHw6qoeKD35_DuxtDfcm7Le49prs0AW95Yjmp7CkY";
+const SUPABASE_URL = "https://DEIN-PROJEKT.supabase.co";
+const SUPABASE_ANON_KEY = "DEIN-ANON-KEY";
 
 async function sbFetch(path, opts = {}) {
   try {
@@ -8947,8 +8947,7 @@ export default function PolierApp() {
   function handleOnboardingComplete(firma, ersterPolier) {
     setEigeneFirma(prev => ({ ...prev, ...firma }));
     setOnboardingDone(true);
-    // Direkt das Neue-Baustelle-Formular öffnen
-    setTimeout(() => setNeuProjekt(true), 100);
+    // neuProjekt wird im Home-Screen durch leere Projektliste gezeigt
   }
 
   // Onboarding anzeigen wenn noch nicht abgeschlossen
@@ -9066,7 +9065,14 @@ export default function PolierApp() {
                     <div style={{ fontWeight:700, color:"var(--text)", marginBottom:8 }}>
                       Noch keine Baustellen
                     </div>
-                    <div>Leg deine erste Baustelle an um loszulegen.</div>
+                    <div style={{ marginBottom:20 }}>Leg deine erste Baustelle an um loszulegen.</div>
+                    <button onClick={() => setNeuProjekt(true)}
+                      style={{ background:"var(--yellow)", color:"#1a1200",
+                        border:"none", borderRadius:12, padding:"14px 28px",
+                        fontWeight:800, fontSize:16, cursor:"pointer",
+                        fontFamily:"inherit" }}>
+                      🏗️ Erste Baustelle anlegen
+                    </button>
                   </div>
                 )}
 
