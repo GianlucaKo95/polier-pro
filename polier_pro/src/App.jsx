@@ -106,6 +106,11 @@ async function sbFetch(path, opts = {}) {
       },
       ...opts,
     });
+    if (res.status === 401) {
+      // Token ist ungültig/abgelaufen — globales Event für automatischen Logout
+      window.dispatchEvent(new CustomEvent("polaris-auth-invalid"));
+      return null;
+    }
     if (!res.ok) return null;
     return res.json();
   } catch {
@@ -114,48 +119,6 @@ async function sbFetch(path, opts = {}) {
 }
 
 // ─── Fallback Mock Data (wenn Supabase nicht konfiguriert) ───────────────────
-const MOCK_FELDER = [
-  { id: 1, name: "A1 – Fundament Nord",    status: "done",        m2: 48,  geplant: "2025-06-10", betoniert: "2025-06-10", dauer_tage: 1, festigkeit: 98 },
-  { id: 2, name: "A2 – Fundament Ost",     status: "done",        m2: 52,  geplant: "2025-06-12", betoniert: "2025-06-12", dauer_tage: 1, festigkeit: 87 },
-  { id: 3, name: "B1 – Bodenplatte Mitte", status: "in_progress", m2: 120, geplant: "2025-06-22", betoniert: null,         dauer_tage: 2, festigkeit: null },
-  { id: 4, name: "B2 – Bodenplatte West",  status: "planned",     m2: 135, geplant: "2025-06-25", betoniert: null,         dauer_tage: 2, festigkeit: null },
-  { id: 5, name: "C1 – Wand EG Nord",      status: "planned",     m2: 64,  geplant: "2025-07-01", betoniert: null,         dauer_tage: 1, festigkeit: null },
-  { id: 6, name: "C2 – Wand EG Ost",       status: "planned",     m2: 60,  geplant: "2025-07-03", betoniert: null,         dauer_tage: 1, festigkeit: null },
-  { id: 7, name: "D1 – Decke EG",          status: "blocked",     m2: 280, geplant: "2025-07-10", betoniert: null,         dauer_tage: 3, festigkeit: null },
-];
-
-const MOCK_KOLONNEN = [
-  { id: 1, name: "Kolonne Huber", vorarbeiter: "Thomas Huber", einsatz: "B1 – Bodenplatte Mitte", stunden: 7.5,
-    mitarbeiter: [
-      { id: 101, name: "Thomas Huber",   rolle: "Vorarbeiter", erfasstIdent: null },
-      { id: 102, name: "Klaus Bauer",    rolle: "Facharbeiter", erfasstIdent: null },
-      { id: 103, name: "Ali Yilmaz",     rolle: "Facharbeiter", erfasstIdent: null },
-      { id: 104, name: "Stefan Müller",  rolle: "Helfer",       erfasstIdent: null },
-    ]
-  },
-  { id: 2, name: "Kolonne Meier", vorarbeiter: "Maria Meier", einsatz: "Schalung C1", stunden: 8,
-    mitarbeiter: [
-      { id: 201, name: "Maria Meier",    rolle: "Vorarbeiter", erfasstIdent: null },
-      { id: 202, name: "Peter Schmidt",  rolle: "Facharbeiter", erfasstIdent: null },
-      { id: 203, name: "Jan Fischer",    rolle: "Facharbeiter", erfasstIdent: null },
-    ]
-  },
-  { id: 3, name: "Kolonne Schmidt", vorarbeiter: "Hans Schmidt", einsatz: "Bewehrung B2", stunden: 6,
-    mitarbeiter: [
-      { id: 301, name: "Hans Schmidt",   rolle: "Vorarbeiter", erfasstIdent: null },
-      { id: 302, name: "Ozan Demir",     rolle: "Facharbeiter", erfasstIdent: null },
-      { id: 303, name: "Felix Wagner",   rolle: "Facharbeiter", erfasstIdent: null },
-      { id: 304, name: "Lukas Brand",    rolle: "Facharbeiter", erfasstIdent: null },
-      { id: 305, name: "Max Richter",    rolle: "Helfer",       erfasstIdent: null },
-    ]
-  },
-];
-
-const MOCK_BERICHTE = [
-  { id: 1, datum: "22.06.2025", wetter: "☀️ 14°C", arbeiter: 12, taetigkeit: "Betonage B1 gestartet, 60m² abgeschlossen. Schalung C1 aufgebaut.", maengel: 0 },
-  { id: 2, datum: "21.06.2025", wetter: "⛅ 13°C", arbeiter: 10, taetigkeit: "Bewehrungsarbeiten B1 abgeschlossen. Betonierplan freigegeben.",      maengel: 1 },
-  { id: 3, datum: "20.06.2025", wetter: "🌧️ 9°C",  arbeiter: 8,  taetigkeit: "Schlechtwettertag. Nur Innenarbeiten. Schalung A2 ausgeschalt.",      maengel: 0 },
-];
 
 // ─── Wetter Utilities ────────────────────────────────────────────────────────
 const WMO_ICONS = {
@@ -179,19 +142,8 @@ function betonCheck(w) {
   if (w.humidity>90) warn.push("⚠️ Sehr hohe Luftfeuchtigkeit");
   return warn;
 }
-
-// ─── Gantt Utilities ─────────────────────────────────────────────────────────
-function addDays(dateStr, n) {
-  const d = new Date(dateStr);
-  d.setDate(d.getDate() + n);
-  return d;
-}
 function daysBetween(a, b) {
   return Math.round((new Date(b) - new Date(a)) / 86400000);
-}
-function fmt(dateStr) {
-  const d = new Date(dateStr);
-  return `${d.getDate().toString().padStart(2,"0")}.${(d.getMonth()+1).toString().padStart(2,"0")}`;
 }
 
 // ─── Status Helpers ───────────────────────────────────────────────────────────
@@ -530,609 +482,6 @@ function SupabaseStatus({ connected }) {
 // ════════════════════════════════════════════════════════════════════════════
 // BETONFELDER (mit Supabase)
 // ════════════════════════════════════════════════════════════════════════════
-// ─── Unterfeld-Schnellanlage Modal ──────────────────────────────────────────
-function UnterfeldSchnellanlage({ parent, onAdd, onClose }) {
-  const [praefix, setPraefix] = useState(parent.name.split(" ")[0] || "F");
-  const [datum,   setDatum]   = useState(parent.geplant || "");
-  const [modus,   setModus]   = useState("gleich"); // "gleich" | "einzeln"
-  const [stdM2,   setStdM2]   = useState(30);
-  const [felder,  setFelder]  = useState([
-    { name: `${parent.name.split(" ")[0] || "F"}-01`, m2: 30, datum: parent.geplant || "" },
-    { name: `${parent.name.split(" ")[0] || "F"}-02`, m2: 80, datum: parent.geplant || "" },
-    { name: `${parent.name.split(" ")[0] || "F"}-03`, m2: 40, datum: parent.geplant || "" },
-  ]);
-
-  const totalM2 = modus === "gleich"
-    ? felder.length * stdM2
-    : felder.reduce((s, f) => s + (Number(f.m2) || 0), 0);
-
-  const elternM2 = parent.m2 || 0;
-  const diffM2   = elternM2 - totalM2;
-  const diffOk   = Math.abs(diffM2) < 1;
-
-  function updateFeld(i, key, val) {
-    setFelder(prev => prev.map((f, idx) => idx === i ? { ...f, [key]: val } : f));
-  }
-
-  function addFeld() {
-    const nr = String(felder.length + 1).padStart(2, "0");
-    setFelder(prev => [...prev, { name: `${praefix}-${nr}`, m2: stdM2, datum }]);
-  }
-
-  function removeFeld(i) {
-    setFelder(prev => prev.filter((_, idx) => idx !== i));
-  }
-
-  // Wenn Präfix ändert → alle Namen aktualisieren
-  function updatePraefix(val) {
-    setPraefix(val);
-    setFelder(prev => prev.map((f, i) => ({ ...f, name: `${val}-${String(i+1).padStart(2,"0")}` })));
-  }
-
-  // Wenn Modus auf "gleich" → stdM2 auf alle anwenden
-  function switchModus(m) {
-    setModus(m);
-    if (m === "gleich") setFelder(prev => prev.map(f => ({ ...f, m2: stdM2 })));
-  }
-
-  function anlegen() {
-    const neu = felder.map((f, i) => ({
-      id:              Date.now() + i,
-      name:            f.name,
-      m2:              modus === "gleich" ? stdM2 : (Number(f.m2) || 0),
-      geplant:         f.datum || datum,
-      dauer_tage:      1,
-      bewehrung:       parent.bewehrung || "",
-      abhaengigkeiten: [],
-      status:          "planned",
-      festigkeit:      null,
-      betoniert:       null,
-      parentId:        parent.id,
-      gewerk:          parent.gewerk || "",
-    }));
-    onAdd(neu);
-    onClose();
-  }
-
-  return (
-    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"var(--bg)", zIndex:400, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
-      <div style={{ background: "var(--surface)", borderRadius:"16px 16px 0 0", padding:20,
-        width:"100%", maxWidth:520, maxHeight:"90vh", overflowY:"auto" }}>
-
-        {/* Header */}
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
-          <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:16 }}>⚡ Unterfelder Schnellanlage</div>
-          <button onClick={onClose} style={{ background:"none", border:"none", color: "var(--muted)", fontSize:22, cursor:"pointer" }}>✕</button>
-        </div>
-        <div style={{ color: "var(--muted)", fontSize:12, marginBottom:14 }}>
-          Unterfelder für <span style={{ color: "var(--text)", fontWeight:700 }}>{parent.name}</span>
-          {elternM2 > 0 && <span style={{ color: "var(--muted)" }}> · {elternM2} m² gesamt</span>}
-        </div>
-
-        {/* Präfix + Datum */}
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
-          <div>
-            <Label>Kürzel / Präfix</Label>
-            <input value={praefix} onChange={e => updatePraefix(e.target.value)}
-              style={inputStyle()} placeholder="z.B. BF" />
-          </div>
-          <div>
-            <Label>Standard-Termin</Label>
-            <input type="date" value={datum} onChange={e => {
-              setDatum(e.target.value);
-              setFelder(prev => prev.map(f => ({ ...f, datum: e.target.value })));
-            }} style={inputStyle()} />
-          </div>
-        </div>
-
-        {/* Modus-Auswahl */}
-        <div style={{ marginBottom:14 }}>
-          <Label>m²-Modus</Label>
-          <div style={{ display:"flex", gap:8, marginTop:6 }}>
-            {[["gleich","🔲 Alle gleich"],["einzeln","✏️ Individuell"]].map(([v,l]) => (
-              <button key={v} onClick={() => switchModus(v)}
-                style={{ flex:1, background: modus===v ? "var(--yellow)" : "var(--border)",
-                  color: modus===v ? "#1C2027" : "var(--muted)",
-                  border:"none", borderRadius:8, padding:"9px 0",
-                  fontWeight: modus===v ? 700 : 400, cursor:"pointer", fontSize:13 }}>
-                {l}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Gleich-Modus: Standard m² */}
-        {modus === "gleich" && (
-          <div style={{ marginBottom:14 }}>
-            <Label>m² pro Feld</Label>
-            <div style={{ display:"flex", alignItems:"center", gap:10, marginTop:6 }}>
-              <StepBtn onClick={() => { setStdM2(m=>Math.max(1,m-5)); setFelder(prev=>prev.map(f=>({...f,m2:Math.max(1,stdM2-5)}))); }}>−</StepBtn>
-              <input type="number" value={stdM2}
-                onChange={e => { setStdM2(+e.target.value); setFelder(prev=>prev.map(f=>({...f,m2:+e.target.value}))); }}
-                style={{ ...inputStyle(), width:80, textAlign:"center", fontSize:18, fontWeight:700 }} />
-              <StepBtn onClick={() => { setStdM2(m=>m+5); setFelder(prev=>prev.map(f=>({...f,m2:stdM2+5}))); }}>+</StepBtn>
-              <span style={{ color: "var(--muted)", fontSize:13 }}>m²</span>
-            </div>
-          </div>
-        )}
-
-        {/* Feldliste */}
-        <div style={{ marginBottom:10 }}>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
-            <Label>Felder ({felder.length})</Label>
-            <button onClick={addFeld}
-              style={{ background: "var(--border)", color: "var(--text)", border:"none", borderRadius:7,
-                padding:"4px 12px", cursor:"pointer", fontSize:12 }}>+ Feld</button>
-          </div>
-
-          {felder.map((f, i) => (
-            <div key={i} style={{ display:"flex", gap:8, alignItems:"center", marginBottom:7 }}>
-              {/* Nummer-Badge */}
-              <div style={{ background: "var(--border)", color: "var(--muted)", borderRadius:6,
-                padding:"4px 8px", fontSize:11, fontWeight:700, minWidth:28, textAlign:"center" }}>
-                {i+1}
-              </div>
-              {/* Name */}
-              <input value={f.name} onChange={e => updateFeld(i, "name", e.target.value)}
-                style={{ ...inputStyle(), flex:2, fontSize:12, padding:"8px 10px" }} />
-              {/* m² — nur im Einzelmodus editierbar */}
-              <div style={{ position:"relative", flex:1 }}>
-                <input
-                  type="number"
-                  value={f.m2}
-                  readOnly={modus === "gleich"}
-                  onChange={e => modus === "einzeln" && updateFeld(i, "m2", +e.target.value)}
-                  style={{ ...inputStyle(), fontSize:13, padding:"8px 10px",
-                    color: modus === "gleich" ? "var(--muted)" : "var(--text)",
-                    background: modus === "gleich" ? "var(--border)" : "var(--surface2)",
-                    cursor: modus === "gleich" ? "default" : "text" }}
-                />
-                <span style={{ position:"absolute", right:8, top:"50%", transform:"translateY(-50%)",
-                  color: "var(--muted)", fontSize:10, pointerEvents:"none" }}>m²</span>
-              </div>
-              {/* Löschen */}
-              <button onClick={() => removeFeld(i)}
-                style={{ background:"none", border:"none", color: "var(--red)", cursor:"pointer", fontSize:18, padding:"0 2px" }}>✕</button>
-            </div>
-          ))}
-        </div>
-
-        {/* Summen-Anzeige */}
-        <div style={{ background: diffOk ? "#1A3A28" : elternM2 > 0 ? "#2A2010" : "var(--border)",
-          borderRadius:10, padding:"10px 14px", marginBottom:14,
-          border:`1px solid ${diffOk ? "var(--green)" : elternM2 > 0 ? "var(--yellow)" : "var(--surface2)"}` }}>
-          <div style={{ display:"flex", justifyContent:"space-between" }}>
-            <span style={{ color: "var(--muted)", fontSize:12 }}>Summe Unterfelder</span>
-            <span style={{ color: "var(--text)", fontWeight:700 }}>{totalM2} m²</span>
-          </div>
-          {elternM2 > 0 && (
-            <div style={{ display:"flex", justifyContent:"space-between", marginTop:4 }}>
-              <span style={{ color: "var(--muted)", fontSize:12 }}>Elternfeld</span>
-              <span style={{ color: "var(--muted)" }}>{elternM2} m²</span>
-            </div>
-          )}
-          {elternM2 > 0 && (
-            <div style={{ display:"flex", justifyContent:"space-between", marginTop:4 }}>
-              <span style={{ color: "var(--muted)", fontSize:12 }}>Differenz</span>
-              <span style={{ color: diffOk ? "var(--green)" : "var(--yellow)", fontWeight:700 }}>
-                {diffM2 > 0 ? `−${diffM2}` : diffM2 < 0 ? `+${Math.abs(diffM2)}` : "✓ Passt genau"} {diffOk ? "" : "m²"}
-              </span>
-            </div>
-          )}
-        </div>
-
-        <button onClick={anlegen} disabled={felder.length === 0}
-          style={{ width:"100%", background: felder.length > 0 ? "var(--yellow)" : "var(--border)",
-            color: felder.length > 0 ? "#1C2027" : "var(--muted)",
-            border:"none", borderRadius:10, padding:14, fontWeight:700, cursor:"pointer", fontSize:15 }}>
-          ⚡ {felder.length} Unterfelder anlegen · {totalM2} m² gesamt
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ─── Einzelnes Elternfeld mit Unterfeldern ───────────────────────────────────
-function FeldKarte({ f, unterfelder, selected, onSelect, onEdit, onSchnell, onStatusChange }) {
-  const hatUnter = unterfelder.length > 0;
-  const unterDone = unterfelder.filter(u => u.status === "done").length;
-  const unterPct  = hatUnter ? Math.round(unterDone / unterfelder.length * 100) : null;
-  const [expanded, setExpanded] = useState(false);
-
-  return (
-    <div style={{ marginBottom: 8 }}>
-      {/* Elternfeld */}
-      <div onClick={() => onSelect(f)}
-        style={{ background: "var(--surface)",
-          border:`2px solid ${selected?.id === f.id ? "var(--yellow)" : STATUS_COLOR[f.status]}`,
-          borderRadius: expanded ? "10px 10px 0 0" : 10,
-          padding:"12px 14px", cursor:"pointer" }}>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
-          <div style={{ flex:1 }}>
-            {f.gewerk && <div style={{ color: "var(--muted)", fontSize:10, marginBottom:2 }}>{f.gewerk}</div>}
-            <div style={{ color: "var(--text)", fontSize:13, fontWeight:700 }}>{f.name}</div>
-            <div style={{ color: "var(--muted)", fontSize:11, marginTop:3 }}>
-              {f.m2} m²{f.geplant ? ` · ${fmt(f.geplant)}` : ""}
-              {hatUnter && <span style={{ color: "var(--muted)", marginLeft:6 }}>· {unterfelder.length} Unterfelder</span>}
-            </div>
-            {(f.subIds||[]).length > 0 && (
-              <div style={{ marginTop:5 }}>
-                <span style={{ color: "var(--blue)", fontSize:10 }}>🏢 Sub zugewiesen</span>
-              </div>
-            )}
-          </div>
-          <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4 }}>
-            <div style={{ background: STATUS_COLOR[f.status], color:"#fff", fontSize:9,
-              padding:"2px 7px", borderRadius:20 }}>
-              {STATUS_LABEL[f.status]?.split(" ")[0]}
-            </div>
-            {hatUnter && (
-              <div onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
-                style={{ color: "var(--muted)", fontSize:11, cursor:"pointer", userSelect:"none" }}>
-                {expanded ? "▲" : "▼"} {unterDone}/{unterfelder.length}
-              </div>
-            )}
-          </div>
-        </div>
-        {/* Unterfeld-Fortschritt */}
-        {hatUnter && (
-          <div style={{ marginTop:8 }}>
-            <div style={{ background: "var(--border)", borderRadius:3, height:5 }}>
-              <div style={{ background: unterPct === 100 ? "var(--green)" : "var(--yellow)",
-                width:`${unterPct}%`, height:"100%", borderRadius:3, transition:"width 0.4s" }} />
-            </div>
-            <div style={{ color: "var(--muted)", fontSize:10, marginTop:2 }}>{unterPct}% der Unterfelder fertig</div>
-          </div>
-        )}
-        {f.festigkeit && !hatUnter && (
-          <div style={{ marginTop:6 }}>
-            <div style={{ background: "var(--border)", borderRadius:3, height:4 }}>
-              <div style={{ background: f.festigkeit >= 95 ? "var(--green)" : "var(--yellow)",
-                width:`${f.festigkeit}%`, height:"100%", borderRadius:3 }} />
-            </div>
-            <div style={{ color: "var(--muted)", fontSize:10, marginTop:2 }}>Festigkeit {f.festigkeit}%</div>
-          </div>
-        )}
-      </div>
-
-      {/* Unterfelder (ausgeklappt) */}
-      {expanded && hatUnter && (
-        <div style={{ background: "var(--surface2)", borderRadius:"0 0 10px 10px",
-          border:`1px solid ${'var(--border)'}`, borderTop:"none", padding:"8px 10px" }}>
-          {unterfelder.map(u => (
-            <div key={u.id} onClick={() => onSelect(u)}
-              style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
-                background: "var(--surface)", borderRadius:8, padding:"8px 10px", marginBottom:5,
-                border:`1.5px solid ${selected?.id === u.id ? "var(--yellow)" : STATUS_COLOR[u.status]}`,
-                cursor:"pointer" }}>
-              <div>
-                <div style={{ color: "var(--text)", fontSize:12, fontWeight:600 }}>{u.name}</div>
-                <div style={{ color: "var(--muted)", fontSize:10 }}>{u.m2} m²{u.geplant ? ` · ${fmt(u.geplant)}` : ""}</div>
-              </div>
-              <div style={{ display:"flex", gap:6, alignItems:"center" }}>
-                <div style={{ background: STATUS_COLOR[u.status], color:"#fff",
-                  fontSize:9, padding:"2px 6px", borderRadius:20 }}>
-                  {STATUS_LABEL[u.status]?.split(" ")[0]}
-                </div>
-                <button onClick={e => { e.stopPropagation(); onEdit(u); }}
-                  style={{ background:"none", border:"none", color: "var(--muted)", cursor:"pointer", fontSize:14 }}>✏️</button>
-              </div>
-            </div>
-          ))}
-          <button onClick={() => onSchnell(f)}
-            style={{ width:"100%", background: "var(--border)", color: "var(--muted)",
-              border:`1px dashed ${'var(--muted)'}`, borderRadius:8, padding:"7px 0",
-              cursor:"pointer", fontSize:12, marginTop:2 }}>
-            ⚡ Weitere Unterfelder hinzufügen
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Detailpanel für ausgewähltes Feld ───────────────────────────────────────
-function FeldDetail({ selected, felder, onEdit, onStatusChange, onSchnell, projSubs=[], onSaveFeld, projekt, eigeneFirma, wetter }) {
-  const istUnterfeld = !!selected.parentId;
-  const eltern = istUnterfeld ? felder.find(f => f.id === selected.parentId) : null;
-  const unterfelder = felder.filter(f => f.parentId === selected.id);
-
-  function toggleSubFeld(subId) {
-    const current = selected.subIds || [];
-    const updated = current.includes(subId)
-      ? current.filter(x => x !== subId)
-      : [...current, subId];
-    onSaveFeld({ ...selected, subIds: updated });
-  }
-
-  const zugewieseneSubs = projSubs.filter(s => (selected.subIds||[]).includes(s.id));
-
-  return (
-    <div style={{ background: "var(--surface2)", borderRadius:10, padding:16,
-      border:`1px solid ${'var(--yellow)'}`, marginBottom:8 }}>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
-        <div style={{ flex:1 }}>
-          {eltern && <div style={{ color: "var(--muted)", fontSize:10, marginBottom:2 }}>↳ Unterfeld von {eltern.name}</div>}
-          {selected.gewerk && <div style={{ color: "var(--muted)", fontSize:11 }}>{selected.gewerk}</div>}
-          <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:15 }}>{selected.name}</div>
-          {/* Zugewiesene Subs Badge */}
-          {zugewieseneSubs.length > 0 && (
-            <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginTop:6 }}>
-              {zugewieseneSubs.map(s => (
-                <div key={s.id} style={{ background:"#1A2040", color: "var(--blue)",
-                  fontSize:10, padding:"2px 8px", borderRadius:10, border:`1px solid ${'var(--blue)'}44` }}>
-                  🏢 {s.name}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-        <div style={{ display:"flex", gap:6 }}>
-          {!istUnterfeld && unterfelder.length === 0 && (
-            <button onClick={() => onSchnell(selected)}
-              style={{ background: "var(--border)", color: "var(--text)", border:`1px solid ${'var(--muted)'}`,
-                borderRadius:8, padding:"5px 10px", cursor:"pointer", fontSize:11 }}>
-              ⚡ Unterfelder
-            </button>
-          )}
-          <button onClick={() => onEdit(selected)}
-            style={{ background: "var(--border)", color: "var(--text)", border:"none",
-              borderRadius:8, padding:"5px 12px", cursor:"pointer", fontSize:12 }}>
-            ✏️ Bearbeiten
-          </button>
-          <PDFExportButton feld={selected} projekt={projekt} eigeneFirma={eigeneFirma} wetter={wetter} typ="betonprotokoll" />
-        </div>
-      </div>
-
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:12 }}>
-        {[
-          ["Fläche",    `${selected.m2} m²`],
-          ["Geplant",   selected.geplant ? fmt(selected.geplant) : "—"],
-          ["Dauer",     `${selected.dauer_tage || 1} Tag(e)`],
-          ["Bewehrung", selected.bewehrung || "—"],
-          ...(selected.festigkeit ? [["Festigkeit", `${selected.festigkeit}%`]] : []),
-          ...(selected.elektro_phase   ? [["Elektro",  selected.elektro_phase]]   : []),
-          ...(selected.sanitaer_phase  ? [["Sanitär",  selected.sanitaer_phase]]  : []),
-          ...(selected.heizung_phase   ? [["Heizung",  selected.heizung_phase]]   : []),
-          ...(selected.belegreife      ? [["Belegreife",selected.belegreife]]      : []),
-          ...(selected.ausbau_phase    ? [["Ausbau",   selected.ausbau_phase]]    : []),
-          ...(selected.belag_phase     ? [["Belag",    selected.belag_phase]]     : []),
-        ].map(([k,v]) => (
-          <div key={k}>
-            <div style={{ color: "var(--muted)", fontSize:10 }}>{k}</div>
-            <div style={{ color: "var(--text)", fontSize:13, fontWeight:600 }}>{v}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Sub-Zuweisung auf Feldebene */}
-      {projSubs.length > 0 && (
-        <div style={{ marginBottom:12 }}>
-          <div style={{ color: "var(--muted)", fontSize:11, marginBottom:6 }}>🏢 Subunternehmer für dieses Feld:</div>
-          <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
-            {projSubs.map(s => {
-              const aktiv = (selected.subIds||[]).includes(s.id);
-              return (
-                <div key={s.id} onClick={() => toggleSubFeld(s.id)}
-                  style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
-                    background: aktiv ? "#1A2040" : "var(--border)",
-                    border:`1.5px solid ${aktiv ? "var(--blue)" : "transparent"}`,
-                    borderRadius:8, padding:"8px 11px", cursor:"pointer" }}>
-                  <div>
-                    <div style={{ color: "var(--text)", fontSize:12, fontWeight: aktiv ? 700 : 400 }}>{s.name}</div>
-                    <div style={{ display:"flex", gap:5, marginTop:3 }}>
-                      {s.gewerke.map(k => {
-                        const g = ALLE_GEWERKE.find(x=>x.key===k);
-                        return g ? <span key={k} style={{ color: "var(--muted)", fontSize:10 }}>{g.icon}</span> : null;
-                      })}
-                      {s.stundensatz > 0 && <span style={{ color: "var(--muted)", fontSize:10 }}>· {s.stundensatz}€/Std.</span>}
-                    </div>
-                  </div>
-                  <span style={{ fontSize:16 }}>{aktiv ? "🔵" : "⚪"}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {unterfelder.length > 0 ? (
-        <div style={{ background: "var(--border)", borderRadius:8, padding:"8px 10px", marginBottom:10 }}>
-          <div style={{ color: "var(--muted)", fontSize:11, marginBottom:4 }}>
-            Unterfelder: {unterfelder.filter(u=>u.status==="done").length}/{unterfelder.length} fertig
-          </div>
-          <div style={{ color: "var(--muted)", fontSize:10 }}>
-            Status des Elternfeldes wird automatisch aktualisiert.
-          </div>
-        </div>
-      ) : (
-        <>
-          <div style={{ color: "var(--muted)", fontSize:11, marginBottom:6 }}>Status ändern:</div>
-          <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-            {Object.entries(STATUS_LABEL).map(([k,v]) => (
-              <button key={k} onClick={() => onStatusChange(selected.id, k)}
-                style={{ background: selected.status === k ? STATUS_COLOR[k] : "var(--border)",
-                  color: selected.status === k ? "#fff" : "var(--muted)",
-                  border:"none", borderRadius:8, padding:"6px 12px", cursor:"pointer", fontSize:12 }}>
-                {v}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-// ─── Haupt-BetonfelderView ────────────────────────────────────────────────────
-function BetonfelderView({ felder, setFelder, sbConnected, projektTyp, projSubs=[], projekt, eigeneFirma, wetter }) {
-  const cfg = typConfig(projektTyp);
-  const [selected,     setSelected]     = useState(null);
-  const [editFeld,     setEditFeld]     = useState(null);
-  const [schnellParent,setSchnellParent]= useState(null);
-  const [gewerkFilter, setGewerkFilter] = useState("alle");
-
-  // Elternfelder = Felder ohne parentId
-  const elternFelder = felder.filter(f => !f.parentId);
-  const total  = elternFelder.length;
-  const done   = elternFelder.filter(f => f.status === "done").length;
-  const progress = total > 0 ? Math.round(done / total * 100) : 0;
-
-  const gefilterteEltern = gewerkFilter === "alle"
-    ? elternFelder
-    : elternFelder.filter(f => f.gewerk?.includes(gewerkFilter));
-
-  // Auto-Status: wenn alle Unterfelder eines Elternfelds fertig sind → Elternfeld auf "done"
-  function autoStatusUpdate(updatedFelder) {
-    return updatedFelder.map(f => {
-      const kinder = updatedFelder.filter(u => u.parentId === f.id);
-      if (kinder.length > 0 && kinder.every(u => u.status === "done") && f.status !== "done") {
-        return { ...f, status: "done" };
-      }
-      if (kinder.length > 0 && !kinder.every(u => u.status === "done") && f.status === "done") {
-        return { ...f, status: "in_progress" };
-      }
-      return f;
-    });
-  }
-
-  async function updateStatus(id, newStatus) {
-    const base = felder.map(f => f.id === id ? { ...f, status: newStatus } : f);
-    const updated = autoStatusUpdate(base);
-    setFelder(updated);
-    setSelected(updated.find(f => f.id === id) || null);
-  }
-
-  function handleSave(f) {
-    const base = felder.some(x => x.id === f.id)
-      ? felder.map(x => x.id === f.id ? f : x)
-      : [...felder, { ...f, id: Date.now() }];
-    setFelder(autoStatusUpdate(base));
-    setEditFeld(null);
-    setSelected(null);
-  }
-
-  function handleDelete(id) {
-    // also delete all children
-    setFelder(prev => autoStatusUpdate(
-      prev.filter(f => f.id !== id && f.parentId !== id)
-          .map(f => ({ ...f, abhaengigkeiten: (f.abhaengigkeiten||[]).filter(x => x !== id) }))
-    ));
-    setEditFeld(null);
-    setSelected(null);
-  }
-
-  function handleSchnellAdd(neuFelder) {
-    const base = [...felder, ...neuFelder];
-    setFelder(autoStatusUpdate(base));
-  }
-
-  return (
-    <div>
-      <SupabaseStatus connected={sbConnected} />
-
-      {/* Header */}
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
-        <div style={{ color: "var(--text)", fontWeight:700 }}>
-          {cfg.einheitenPl} · {done}/{total} fertig
-        </div>
-        <button onClick={() => setEditFeld({ name:"", m2:0, geplant:"", dauer_tage:1, bewehrung:"", abhaengigkeiten:[], status:"planned" })}
-          style={{ background: "var(--yellow)", color:"#1C2027", border:"none", borderRadius:9,
-            padding:"7px 14px", fontWeight:700, cursor:"pointer", fontSize:13 }}>
-          + {cfg.einheitLabel}
-        </button>
-      </div>
-
-      {/* Fortschritt */}
-      <div style={{ background: "var(--border)", borderRadius:4, height:8, marginBottom:14 }}>
-        <div style={{ background: "var(--green)", width:`${progress}%`, height:"100%", borderRadius:4, transition:"width 0.6s" }} />
-      </div>
-
-      {felder.length === 0 ? (
-        <div style={{ background: "var(--surface)", borderRadius:12, padding:32, textAlign:"center" }}>
-          <div style={{ fontSize:36 }}>🏗️</div>
-          <div style={{ color: "var(--muted)", marginTop:10, marginBottom:16 }}>Noch keine {cfg.einheitenPl} angelegt.</div>
-          <button onClick={() => setEditFeld({ name:"", m2:0, geplant:"", dauer_tage:1, bewehrung:"", abhaengigkeiten:[], status:"planned" })}
-            style={{ background: "var(--yellow)", color:"#1C2027", border:"none", borderRadius:10,
-              padding:"12px 24px", fontWeight:700, cursor:"pointer", fontSize:14 }}>
-            + Erste {cfg.einheitLabel} anlegen
-          </button>
-        </div>
-      ) : (
-        <>
-          {/* Gewerk-Filter */}
-          {projektTyp === "hochbau" && (
-            <div style={{ display:"flex", gap:6, marginBottom:10, overflowX:"auto", paddingBottom:2 }}>
-              <FilterBtn active={gewerkFilter==="alle"} onClick={() => setGewerkFilter("alle")}>
-                Alle ({elternFelder.length})
-              </FilterBtn>
-              {Object.values(HOCHBAU_GEWERKE).map(g => {
-                const n = elternFelder.filter(f => f.gewerk?.includes(g.label)).length;
-                if (!n) return null;
-                return (
-                  <FilterBtn key={g.label} active={gewerkFilter===g.label} onClick={() => setGewerkFilter(g.label)}>
-                    {g.icon} {g.label} ({n})
-                  </FilterBtn>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Feldliste */}
-          {gefilterteEltern.map(f => (
-            <FeldKarte
-              key={f.id}
-              f={f}
-              unterfelder={felder.filter(u => u.parentId === f.id)}
-              selected={selected}
-              onSelect={s => setSelected(selected?.id === s.id ? null : s)}
-              onEdit={setEditFeld}
-              onSchnell={setSchnellParent}
-              onStatusChange={updateStatus}
-            />
-          ))}
-
-          {/* Detail-Panel */}
-          {selected && (
-            <FeldDetail
-              selected={selected}
-              felder={felder}
-              onEdit={setEditFeld}
-              onStatusChange={updateStatus}
-              onSchnell={setSchnellParent}
-              projSubs={projSubs}
-              onSaveFeld={handleSave}
-              projekt={projekt}
-              eigeneFirma={eigeneFirma}
-              wetter={wetter}
-            />
-          )}
-        </>
-      )}
-
-      {/* Modals */}
-      {editFeld !== null && (
-        <FeldEditor
-          feld={editFeld}
-          allFelder={felder}
-          onSave={handleSave}
-          onDelete={handleDelete}
-          onClose={() => setEditFeld(null)}
-          projektTyp={projektTyp}
-          projSubs={projSubs}
-        />
-      )}
-      {schnellParent && (
-        <UnterfeldSchnellanlage
-          parent={schnellParent}
-          onAdd={handleSchnellAdd}
-          onClose={() => setSchnellParent(null)}
-        />
-      )}
-    </div>
-  );
-}
-
 function FilterBtn({ active, onClick, children }) {
   return (
     <button onClick={onClick}
@@ -1244,10 +593,27 @@ function MitarbeiterZeilen({ ma, zeitdaten, vonDatum, bisDatum }) {
 }
 
 // ─── Kolonne-Karte mit aufklappbarer MA-Liste ────────────────────────────────
-function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, erfasstVerbunden }) {
+function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, erfasstVerbunden, setKolonnen, darfBearbeiten = true }) {
   const [expanded, setExpanded] = useState(false);
+  const [neuerName, setNeuerName] = useState("");
   const mas = k.mitarbeiter || [];
   const totalMann = mas.length;
+
+  function mitarbeiterHinzufuegen() {
+    if (!neuerName.trim() || !setKolonnen) return;
+    const neu = { id: Date.now(), name: neuerName.trim() };
+    setKolonnen(prev => prev.map(kol =>
+      kol.id === k.id ? { ...kol, mitarbeiter: [...(kol.mitarbeiter||[]), neu] } : kol
+    ));
+    setNeuerName("");
+  }
+
+  function mitarbeiterEntfernen(id) {
+    if (!setKolonnen) return;
+    setKolonnen(prev => prev.map(kol =>
+      kol.id === k.id ? { ...kol, mitarbeiter: (kol.mitarbeiter||[]).filter(m => m.id !== id) } : kol
+    ));
+  }
 
   // Stunden dieser Kolonne aus Zeitdaten
   const kolonneH = zeitdaten.filter(z => {
@@ -1337,14 +703,47 @@ function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, erfasstVerbunden }) {
         <div style={{ background: "var(--surface2)", borderRadius:"0 0 12px 12px",
           border:`1px solid ${'var(--border)'}`, borderTop:"none", padding:"10px 12px" }}>
           {mas.map(ma => (
-            <MitarbeiterZeilen
-              key={ma.id}
-              ma={ma}
-              zeitdaten={zeitdaten}
-              vonDatum={vonDatum}
-              bisDatum={bisDatum}
-            />
+            <div key={ma.id} style={{ display:"flex", alignItems:"center", gap:8 }}>
+              <div style={{ flex:1 }}>
+                <MitarbeiterZeilen
+                  ma={ma}
+                  zeitdaten={zeitdaten}
+                  vonDatum={vonDatum}
+                  bisDatum={bisDatum}
+                />
+              </div>
+              {darfBearbeiten && setKolonnen && (
+                <button onClick={() => mitarbeiterEntfernen(ma.id)}
+                  style={{ background:"var(--rbg)", color:"var(--red)",
+                    border:"1px solid var(--red)", borderRadius:8,
+                    padding:"4px 8px", cursor:"pointer", fontSize:11,
+                    fontFamily:"inherit", flexShrink:0 }}>
+                  ✕
+                </button>
+              )}
+            </div>
           ))}
+
+          {/* Mitarbeiter hinzufügen */}
+          {darfBearbeiten && setKolonnen && (
+            <div style={{ display:"flex", gap:6, marginTop:10 }}>
+              <input value={neuerName} onChange={e=>setNeuerName(e.target.value)}
+                placeholder="Name des Mitarbeiters"
+                onKeyDown={e => e.key==="Enter" && mitarbeiterHinzufuegen()}
+                style={{ flex:1, background:"var(--surface)", color:"var(--text)",
+                  border:"1px solid var(--border)", borderRadius:8,
+                  padding:"7px 10px", fontSize:12, fontFamily:"inherit" }} />
+              <button onClick={mitarbeiterHinzufuegen} disabled={!neuerName.trim()}
+                style={{ background: neuerName.trim() ? "var(--yellow)" : "var(--border)",
+                  color: neuerName.trim() ? "#1a1200" : "var(--muted)",
+                  border:"none", borderRadius:8, padding:"7px 14px",
+                  cursor: neuerName.trim() ? "pointer" : "default", fontSize:12,
+                  fontWeight:700, fontFamily:"inherit", flexShrink:0 }}>
+                + Hinzufügen
+              </button>
+            </div>
+          )}
+
           {/* Kolonnen-Summe */}
           {erfasstVerbunden && kolonneH > 0 && (
             <div style={{ display:"flex", justifyContent:"space-between",
@@ -1360,14 +759,17 @@ function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, erfasstVerbunden }) {
 }
 
 // ─── Haupt KolonnenView ───────────────────────────────────────────────────────
-function KolonnenView({ kolonnen, projekt }) {
+function KolonnenView({ kolonnen, projekt, setKolonnen, darfBearbeiten = true, profil, session }) {
   const [zeitdaten,   setZeitdaten]   = useState([]);
   const [ladeStatus,  setLadeStatus]  = useState("idle"); // idle | loading | ok | error
   const [vonDatum,    setVonDatum]    = useState(() => {
     const d = new Date(); d.setDate(d.getDate()-6);
     return d.toISOString().slice(0,10);
   });
-  const [bisDatum, setBisDatum] = useState(new Date().toISOString().slice(0,10));
+  const [bisDatum,    setBisDatum]    = useState(new Date().toISOString().slice(0,10));
+  const [neueKolonne, setNeueKolonne] = useState(false);
+  const [kName,       setKName]       = useState("");
+  const [kVorarbeiter,setKVorarbeiter]= useState("");
 
   const konfiguriert  = !ERFASST_PROXY.includes("DEIN-PROJEKT");
   const erfasstLinked = konfiguriert && !!projekt?.erfasstIdent;
@@ -1392,6 +794,18 @@ function KolonnenView({ kolonnen, projekt }) {
   }
 
   useEffect(() => { ladeZeiten(); }, [vonDatum, bisDatum, projekt?.erfasstIdent]);
+
+  function kolonneAnlegen() {
+    if (!kName.trim() || !setKolonnen) return;
+    const neu = {
+      id: Date.now(),
+      name: kName.trim(),
+      vorarbeiter: kVorarbeiter.trim(),
+      mitarbeiter: [],
+    };
+    setKolonnen(prev => [...prev, neu]);
+    setKName(""); setKVorarbeiter(""); setNeueKolonne(false);
+  }
 
   return (
     <div>
@@ -1467,13 +881,48 @@ function KolonnenView({ kolonnen, projekt }) {
           vonDatum={vonDatum}
           bisDatum={bisDatum}
           erfasstVerbunden={ladeStatus === "ok"}
+          setKolonnen={setKolonnen}
+          darfBearbeiten={darfBearbeiten}
         />
       ))}
 
-      <button style={{ width:"100%", background: "var(--border)", color: "var(--text)",
-        border:`1px dashed ${'var(--muted)'}`, borderRadius:10, padding:12, cursor:"pointer", fontSize:14 }}>
-        + Kolonne einteilen
-      </button>
+      {darfBearbeiten && (!neueKolonne ? (
+        <button onClick={() => setNeueKolonne(true)}
+          style={{ width:"100%", background:"var(--ybg)", color:"var(--ydark)",
+            border:"2px dashed var(--yellow)", borderRadius:10, padding:12,
+            cursor:"pointer", fontSize:14, fontWeight:700, fontFamily:"inherit" }}>
+          + Kolonne einteilen
+        </button>
+      ) : (
+        <div style={{ background:"var(--surface)", borderRadius:12, padding:16,
+          border:"1.5px solid var(--yellow)" }}>
+          <div style={{ color:"var(--text)", fontWeight:700, fontSize:14,
+            marginBottom:12 }}>Neue Kolonne</div>
+          <div style={{ marginBottom:10 }}>
+            <Label>Name</Label>
+            <input value={kName} onChange={e => setKName(e.target.value)}
+              placeholder="z.B. Kolonne Huber" style={inputStyle()} />
+          </div>
+          <div style={{ marginBottom:14 }}>
+            <Label>Vorarbeiter</Label>
+            <input value={kVorarbeiter} onChange={e => setKVorarbeiter(e.target.value)}
+              placeholder="z.B. Thomas Huber" style={inputStyle()} />
+          </div>
+          <div style={{ display:"flex", gap:8 }}>
+            <button onClick={() => { setNeueKolonne(false); setKName(""); setKVorarbeiter(""); }}
+              style={{ flex:1, background:"var(--surface2)", color:"var(--muted)",
+                border:"1px solid var(--border)", borderRadius:10, padding:10,
+                cursor:"pointer", fontFamily:"inherit" }}>Abbrechen</button>
+            <button onClick={kolonneAnlegen} disabled={!kName.trim()}
+              style={{ flex:2, background: kName.trim() ? "var(--yellow)" : "var(--surface2)",
+                color: kName.trim() ? "#1a1200" : "var(--muted)",
+                border:"none", borderRadius:10, padding:10, fontWeight:700,
+                cursor: kName.trim() ? "pointer" : "default", fontFamily:"inherit" }}>
+              💾 Anlegen
+            </button>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -1967,101 +1416,6 @@ Erstelle daraus einen vollständigen, professionellen Bautagesbericht. Antworte 
   }
 }
 
-function KIBerichtButton({ onGenerated, projekt, kolonnen, wetter }) {
-  const [offen, setOffen]   = useState(false);
-  const [diktat, setDiktat] = useState("");
-  const [laden, setLaden]   = useState(false);
-  const diktierRef = useRef(null);
-  const [aufnahme, setAufnahme] = useState(false);
-
-  function startDiktat() {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { alert("Diktat nicht unterstützt auf diesem Gerät."); return; }
-    if (!diktierRef.current) {
-      const er = new SR();
-      er.lang = "de-DE"; er.continuous = true; er.interimResults = false;
-      er.onresult = e => {
-        const t = Array.from(e.results).map(r => r[0].transcript).join(" ");
-        setDiktat(t);
-      };
-      er.onend = () => setAufnahme(false);
-      diktierRef.current = er;
-    }
-    if (aufnahme) { diktierRef.current.stop(); setAufnahme(false); }
-    else { diktierRef.current.start(); setAufnahme(true); }
-  }
-
-  async function generieren() {
-    if (!diktat.trim()) return;
-    setLaden(true);
-    try {
-      const result = await generiereBerichtKI(diktat, projekt, kolonnen, wetter);
-      onGenerated(result);
-      setOffen(false);
-      setDiktat("");
-    } catch(e) {
-      alert("KI-Generierung fehlgeschlagen. Bitte erneut versuchen.");
-    }
-    setLaden(false);
-  }
-
-  return (
-    <>
-      <button onClick={() => setOffen(true)}
-        style={{ background: "var(--blue)", color:"#fff", border:"none", borderRadius:8,
-          padding:"6px 14px", fontWeight:700, cursor:"pointer", fontSize:13,
-          display:"flex", alignItems:"center", gap:6 }}>
-        🤖 KI-Bericht
-      </button>
-
-      {offen && (
-        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"var(--bg)", zIndex:500, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
-          <div style={{ background: "var(--surface)", borderRadius:"16px 16px 0 0", padding:22,
-            width:"100%", maxWidth:520 }}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
-              <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:16 }}>🤖 KI-Tagesbericht</div>
-              <button onClick={() => setOffen(false)}
-                style={{ background:"none", border:"none", color: "var(--muted)", fontSize:22, cursor:"pointer" }}>✕</button>
-            </div>
-            <div style={{ color: "var(--muted)", fontSize:13, marginBottom:12 }}>
-              Beschreibe kurz was heute auf der Baustelle passiert ist — die KI erstellt daraus einen vollständigen, professionellen Bericht.
-            </div>
-
-            {/* Diktat-Bereich */}
-            <div style={{ position:"relative", marginBottom:14 }}>
-              <textarea rows={5} value={diktat}
-                onChange={e => setDiktat(e.target.value)}
-                placeholder="z.B. Heute haben wir die Bodenplatte B1 fertig betoniert. Kolonne Huber war mit 4 Mann da. Nachmittags kam Regen, haben aufgehört. Bewehrung für C1 läuft gut..."
-                style={{ width:"100%", background: aufnahme ? "#1A1A2E" : "var(--surface2)",
-                  color: "var(--text)", border:`1px solid ${aufnahme ? "var(--red)" : "var(--border)"}`,
-                  borderRadius:8, padding:"10px 12px", fontSize:13, resize:"none",
-                  boxSizing:"border-box" }} />
-              <button onClick={startDiktat}
-                style={{ position:"absolute", bottom:10, right:10,
-                  background: aufnahme ? "var(--red)" : "var(--border)", color: aufnahme ? "#fff" : "var(--muted)",
-                  border:"none", borderRadius:20, padding:"4px 12px", cursor:"pointer", fontSize:12 }}>
-                {aufnahme ? "⏹ Stopp" : "🎤 Diktieren"}
-              </button>
-            </div>
-
-            <div style={{ display:"flex", gap:10 }}>
-              <button onClick={() => setOffen(false)}
-                style={{ flex:1, background: "var(--border)", color: "var(--muted)", border:"none",
-                  borderRadius:10, padding:13, cursor:"pointer" }}>Abbrechen</button>
-              <button onClick={generieren} disabled={!diktat.trim() || laden}
-                style={{ flex:2, background: diktat.trim() && !laden ? "var(--yellow)" : "var(--border)",
-                  color: diktat.trim() && !laden ? "#1C2027" : "var(--muted)",
-                  border:"none", borderRadius:10, padding:13, fontWeight:700, cursor:"pointer", fontSize:15 }}>
-                {laden ? "⏳ KI schreibt…" : "✨ Bericht generieren"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
-
 
 // ════════════════════════════════════════════════════════════════════════════
 // PUSH NOTIFICATIONS
@@ -2386,8 +1740,46 @@ function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eigeneFirm
       <SupabaseStatus connected={sbConnected} />
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
         <div style={{ color: "var(--text)", fontWeight:700 }}>Bautagebuch</div>
-        <div style={{ display:"flex", gap:8 }}>
-          <KIBerichtButton onGenerated={handleKIGenerated} projekt={projekt} kolonnen={kolonnen} wetter={wetter} />
+        <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+          <KITagesabschlussButton
+            projekt={projekt} kolonnen={kolonnen} wetter={wetter}
+            onErgebnis={result => {
+              if (result?.bericht) {
+                setForm(p => ({ ...p,
+                  taetigkeit:     result.bericht.taetigkeit     || p.taetigkeit,
+                  besonderheiten: result.bericht.besonderheiten || p.besonderheiten,
+                  material:       result.bericht.material       || p.material,
+                  arbeiter:       result.bericht.arbeiter       || p.arbeiter,
+                }));
+                // Neue Aufgaben aus KI-Analyse übernehmen
+                if (result.neue_aufgaben?.length && setAufgaben) {
+                  const neue = result.neue_aufgaben.map(a => ({
+                    ...leereAufgabe(),
+                    id: Date.now() + Math.random(),
+                    titel: a.titel,
+                    typ: a.typ || "allgemein",
+                    prioritaet: a.prioritaet || "mittel",
+                    beschreibung: a.beschreibung || "",
+                  }));
+                  setAufgaben(prev => [...neue, ...prev]);
+                }
+                // Neue Mängel aus KI-Analyse übernehmen
+                if (result.neue_maengel?.length && setAufgaben) {
+                  const neueMaengel = result.neue_maengel.map(m => ({
+                    ...leereAufgabe(),
+                    id: Date.now() + Math.random(),
+                    titel: m.titel,
+                    typ: "mangel",
+                    ist_mangel: true,
+                    mangel_verursacher: m.mangel_verursacher || "",
+                    prioritaet: m.prioritaet || "mittel",
+                  }));
+                  setAufgaben(prev => [...neueMaengel, ...prev]);
+                }
+                setOpen(true);
+              }
+            }}
+          />
           <button onClick={() => setOpen(true)}
             style={{ background: "var(--yellow)", color:"#1C2027", border:"none",
               borderRadius:8, padding:"6px 14px", fontWeight:700, cursor:"pointer", fontSize:13 }}>
@@ -2438,9 +1830,19 @@ function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eigeneFirm
           <div style={{ background: "var(--surface)", minHeight:"100dvh", maxWidth:520, margin:"0 auto", padding:20 }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
               <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:16 }}>📋 {detail.datum}</div>
-              <button onClick={() => setDetail(null)}
-                style={{ background: "var(--border)", border:"none", color: "var(--text)",
-                  borderRadius:8, padding:"6px 14px", cursor:"pointer" }}>✕ Schließen</button>
+              <div style={{ display:"flex", gap:8 }}>
+                <RevisionssichererExport
+                  bericht={detail}
+                  projekt={projekt}
+                  eigeneFirma={eigeneFirma}
+                  wetter={detail?.wetterData}
+                  maengel={aufgaben?.filter(a => a.ist_mangel) || []}
+                  datum={detail?.datum}
+                />
+                <button onClick={() => setDetail(null)}
+                  style={{ background: "var(--border)", border:"none", color: "var(--text)",
+                    borderRadius:8, padding:"6px 14px", cursor:"pointer", fontFamily:"inherit" }}>✕</button>
+              </div>
             </div>
 
             {/* Meta */}
@@ -2656,7 +2058,6 @@ function DashboardView({ felder, kolonnen, sbConnected }) {
 // ════════════════════════════════════════════════════════════════════════════
 // MANUELLER EDITOR – Raster-Generator + Einzelfeld + Abhängigkeiten
 // ════════════════════════════════════════════════════════════════════════════
-const PRAEFIX_OPTIONEN = ["A","B","C","D","E","F"];
 
 // ─── Projekttyp-Konfiguration ────────────────────────────────────────────────
 // Gewerk-Definitionen für Hochbau-Ausbau
@@ -2849,484 +2250,9 @@ const PROJEKTTYPEN = {
     fortschrittLabel: "Reihen installiert",
   },
 };
-
-function typConfig(typ) {
-  return PROJEKTTYPEN[typ] || PROJEKTTYPEN.hochbau;
-}
-
-
-function leererFeld(id, name, m2, geplant) {
-  return { id, name, m2: m2||0, geplant: geplant||"", dauer_tage:1, betonsorte:"C25/30 XC2", bewehrung:"BSt 500, Ø12, 15cm", abhaengigkeiten:[], status:"planned", festigkeit:null, betoniert:null };
-}
-
-function RasterGenerator({ onGenerate }) {
-  const [zeilen,  setZeilen]  = useState(2);
-  const [spalten, setSpalten] = useState(3);
-  const [praefix, setPraefix] = useState("A");
-  const [m2,      setM2]      = useState(80);
-  const [geplant, setGeplant] = useState("2025-07-01");
-  const [schema,  setSchema]  = useState("alpha"); // alpha | num
-
-  const vorschau = [];
-  for (let z = 0; z < zeilen; z++) {
-    for (let s = 0; s < spalten; s++) {
-      const nr = schema === "alpha"
-        ? `${PRAEFIX_OPTIONEN[z]||z+1}${s+1}`
-        : `${praefix}${z * spalten + s + 1}`;
-      vorschau.push(nr);
-    }
-  }
-
-  function generate() {
-    const felder = vorschau.map((name, i) => leererFeld(Date.now()+i, name, m2, geplant));
-    onGenerate(felder);
-  }
-
-  return (
-    <div style={{ background: "var(--surface)", borderRadius:14, padding:18, marginBottom:16 }}>
-      <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:15, marginBottom:14 }}>🔲 Raster generieren</div>
-
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:14 }}>
-        {/* Zeilen */}
-        <div>
-          <Label>Zeilen</Label>
-          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-            <StepBtn onClick={() => setZeilen(z => Math.max(1,z-1))}>−</StepBtn>
-            <span style={{ color: "var(--text)", fontWeight:700, fontSize:20, minWidth:24, textAlign:"center" }}>{zeilen}</span>
-            <StepBtn onClick={() => setZeilen(z => Math.min(10,z+1))}>+</StepBtn>
-          </div>
-        </div>
-        {/* Spalten */}
-        <div>
-          <Label>Spalten</Label>
-          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-            <StepBtn onClick={() => setSpalten(s => Math.max(1,s-1))}>−</StepBtn>
-            <span style={{ color: "var(--text)", fontWeight:700, fontSize:20, minWidth:24, textAlign:"center" }}>{spalten}</span>
-            <StepBtn onClick={() => setSpalten(s => Math.min(12,s+1))}>+</StepBtn>
-          </div>
-        </div>
-        {/* m² */}
-        <div>
-          <Label>Standard m² / Feld</Label>
-          <input type="number" value={m2} onChange={e => setM2(+e.target.value)}
-            style={inputStyle()} />
-        </div>
-        {/* Startdatum */}
-        <div>
-          <Label>Starttermin</Label>
-          <input type="date" value={geplant} onChange={e => setGeplant(e.target.value)}
-            style={inputStyle()} />
-        </div>
-      </div>
-
-      {/* Nummernschema */}
-      <div style={{ marginBottom:14 }}>
-        <Label>Nummernschema</Label>
-        <div style={{ display:"flex", gap:8 }}>
-          {[["alpha","A1, B2, C3…"],["num","Präfix + lfd. Nr."]].map(([v,l]) => (
-            <button key={v} onClick={() => setSchema(v)}
-              style={{ flex:1, background: schema===v ? "var(--yellow)" : "var(--surface2)",
-                color: schema===v ? "#1C2027" : "var(--muted)",
-                border:"none", borderRadius:8, padding:"8px 0", cursor:"pointer", fontSize:12, fontWeight: schema===v ? 700 : 400 }}>
-              {l}
-            </button>
-          ))}
-        </div>
-        {schema === "num" && (
-          <div style={{ marginTop:8 }}>
-            <Label>Präfix</Label>
-            <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-              {PRAEFIX_OPTIONEN.map(p => (
-                <button key={p} onClick={() => setPraefix(p)}
-                  style={{ background: praefix===p ? "var(--yellow)" : "var(--surface2)", color: praefix===p ? "#1C2027" : "var(--muted)",
-                    border:"none", borderRadius:6, padding:"4px 12px", cursor:"pointer", fontWeight:700 }}>
-                  {p}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Vorschau-Raster */}
-      <div style={{ marginBottom:14 }}>
-        <Label>Vorschau ({zeilen * spalten} Felder)</Label>
-        <div style={{ display:"grid", gridTemplateColumns:`repeat(${spalten}, 1fr)`, gap:4 }}>
-          {vorschau.map((name, i) => (
-            <div key={i} style={{ background: "var(--border)", borderRadius:6, padding:"6px 4px", textAlign:"center",
-              color: "var(--text2)", fontSize:11, fontWeight:600, border:`1px solid ${'var(--surface2)'}` }}>
-              {name}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <button onClick={generate}
-        style={{ width:"100%", background: "var(--yellow)", color:"#1C2027", border:"none",
-          borderRadius:10, padding:13, fontWeight:700, cursor:"pointer", fontSize:15 }}>
-        ✅ {zeilen * spalten} Felder erstellen
-      </button>
-    </div>
-  );
-}
-
-function FeldEditor({ feld, allFelder, onSave, onDelete, onClose, projektTyp, projSubs=[] }) {
-  const [f, setF] = useState({ ...feld });
-  const cfg = typConfig(projektTyp);
-
-  // For Hochbau: derive active Gewerk config from selected gewerk field
-  const aktivGewerk = projektTyp === "hochbau" && f.gewerk
-    ? Object.values(HOCHBAU_GEWERKE).find(g => f.gewerk.includes(g.label))
-    : null;
-  const aktivCfg = aktivGewerk || cfg;
-
-  function toggleAbh(id) {
-    setF(prev => ({
-      ...prev,
-      abhaengigkeiten: prev.abhaengigkeiten.includes(id)
-        ? prev.abhaengigkeiten.filter(x => x !== id)
-        : [...prev.abhaengigkeiten, id],
-    }));
-  }
-
-  return (
-    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"var(--bg)", zIndex:300, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
-      <div style={{ background: "var(--surface)", borderRadius:"16px 16px 0 0", padding:20,
-        width:"100%", maxWidth:520, maxHeight:"90vh", overflowY:"auto" }}>
-
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
-          <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:16 }}>
-            {feld.id ? "✏️ Position bearbeiten" : "➕ Neue Position"}
-          </div>
-          <button onClick={onClose} style={{ background:"none", border:"none", color: "var(--muted)", fontSize:22, cursor:"pointer" }}>✕</button>
-        </div>
-
-        {/* Gewerk-Auswahl (nur Hochbau) */}
-        {projektTyp === "hochbau" && (
-          <div style={{ marginBottom:16 }}>
-            <Label>Gewerk *</Label>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6, marginTop:6 }}>
-              {Object.values(HOCHBAU_GEWERKE).map(g => {
-                const aktiv = f.gewerk?.includes(g.label);
-                return (
-                  <div key={g.label} onClick={() => setF(p => ({ ...p, gewerk: `${g.icon} ${g.label}`, bewehrung:"", name: p.name || "" }))}
-                    style={{ background: aktiv ? "var(--surface2)" : "var(--border)",
-                      border:`2px solid ${aktiv ? "var(--yellow)" : "transparent"}`,
-                      borderRadius:9, padding:"8px 10px", cursor:"pointer",
-                      display:"flex", alignItems:"center", gap:7 }}>
-                    <span style={{ fontSize:18 }}>{g.icon}</span>
-                    <span style={{ color: aktiv ? "var(--text)" : "var(--muted)", fontSize:11, fontWeight: aktiv ? 700 : 400 }}>{g.label}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-
-        {/* Feldname */}
-        <div style={{ marginBottom:12 }}>
-          <Label>{cfg.einheitLabel}name / Nummer *</Label>
-          {/* Schnellauswahl Feldtyp */}
-          <div style={{ display:"flex", flexWrap:"wrap", gap:5, marginBottom:6 }}>
-            {aktivCfg.feldTypen.map(t => (
-              <button key={t} onClick={() => setF(p=>({...p, name: f.name ? f.name : t}))}
-                style={{ background: "var(--border)", color: "var(--muted)", border:"none", borderRadius:6,
-                  padding:"4px 9px", cursor:"pointer", fontSize:11 }}>{t}</button>
-            ))}
-          </div>
-          <input value={f.name} onChange={e => setF(p=>({...p,name:e.target.value}))}
-            placeholder={cfg.namePlaceholder} style={inputStyle()} />
-        </div>
-
-        {/* m² + Dauer */}
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12 }}>
-          <div>
-            <Label>Fläche (m²) *</Label>
-            <input type="number" value={f.m2||""} onChange={e => setF(p=>({...p,m2:+e.target.value}))}
-              placeholder="120" style={inputStyle()} />
-          </div>
-          <div>
-            <Label>Dauer (Tage)</Label>
-            <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:4 }}>
-              <StepBtn onClick={() => setF(p=>({...p,dauer_tage:Math.max(1,p.dauer_tage-1)}))}>−</StepBtn>
-              <span style={{ color: "var(--text)", fontWeight:700, fontSize:18, minWidth:20, textAlign:"center" }}>{f.dauer_tage}</span>
-              <StepBtn onClick={() => setF(p=>({...p,dauer_tage:p.dauer_tage+1}))}>+</StepBtn>
-            </div>
-          </div>
-        </div>
-
-        {/* Termin */}
-        <div style={{ marginBottom:12 }}>
-          <Label>{aktivCfg.betonCheck === false ? "Geplanter Termin" : "Betoniertermin"}</Label>
-          <input type="date" value={f.geplant||""} onChange={e => setF(p=>({...p,geplant:e.target.value}))}
-            style={inputStyle()} />
-        </div>
-
-        {/* Typ-spezifische Extrafelder (Dach, PV) */}
-        {(aktivCfg.extraFelder||[]).map(ef => (
-          <div key={ef.key} style={{ marginBottom:12 }}>
-            <Label>{ef.label}</Label>
-            {ef.type === "select" ? (
-              <div style={{ display:"flex", flexWrap:"wrap", gap:5, marginBottom:6 }}>
-                {ef.optionen.map(o => (
-                  <button key={o} onClick={() => setF(p=>({...p,[ef.key]:o}))}
-                    style={{ background: f[ef.key]===o ? "var(--blue)" : "var(--border)",
-                      color: f[ef.key]===o ? "#fff" : "var(--muted)",
-                      border:"none", borderRadius:7, padding:"5px 9px", cursor:"pointer", fontSize:11 }}>
-                    {o}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <input type={ef.type} value={f[ef.key]||""} onChange={e => setF(p=>({...p,[ef.key]:e.target.value}))}
-                placeholder={ef.placeholder||""} style={inputStyle()} />
-            )}
-          </div>
-        ))}
-
-        {/* Bewehrung – nur bei Beton-Typen */}
-        {(aktivCfg.bewehrung||[]).length > 0 && !aktivCfg.bewehrung?.[0]?.startsWith("Nicht") && (
-        <div style={{ marginBottom:12 }}>
-          <Label>Bewehrung</Label>
-          <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:6 }}>
-            {(aktivCfg.bewehrung||[]).map(o => (
-              <button key={o} onClick={() => setF(p=>({...p,bewehrung:o}))}
-                style={{ background: f.bewehrung===o ? "var(--blue)" : "var(--border)",
-                  color: f.bewehrung===o ? "#fff" : "var(--muted)",
-                  border:"none", borderRadius:7, padding:"5px 10px", cursor:"pointer", fontSize:11 }}>
-                {o}
-              </button>
-            ))}
-          </div>
-          <input value={f.bewehrung||""} onChange={e => setF(p=>({...p,bewehrung:e.target.value}))}
-            placeholder="Oder eigene Eingabe…" style={inputStyle()} />
-        </div>
-        )}
-
-        {/* Sub-Zuweisung auf Feldebene */}
-        {projSubs.length > 0 && (
-          <div style={{ marginBottom:16 }}>
-            <Label>🏢 Subunternehmer für dieses Feld</Label>
-            <div style={{ display:"flex", flexDirection:"column", gap:6, marginTop:6 }}>
-              {projSubs.map(s => {
-                const aktiv = (f.subIds||[]).includes(s.id);
-                return (
-                  <div key={s.id} onClick={() => setF(p => ({
-                    ...p, subIds: aktiv
-                      ? (p.subIds||[]).filter(x=>x!==s.id)
-                      : [...(p.subIds||[]), s.id]
-                  }))}
-                    style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
-                      background: aktiv ? "#1A2040" : "var(--surface2)",
-                      border:`1.5px solid ${aktiv ? "var(--blue)" : "var(--border)"}`,
-                      borderRadius:9, padding:"9px 12px", cursor:"pointer" }}>
-                    <div>
-                      <div style={{ color: "var(--text)", fontSize:13, fontWeight: aktiv ? 700 : 400 }}>{s.name}</div>
-                      <div style={{ display:"flex", gap:6, marginTop:2 }}>
-                        {s.gewerke.map(k => {
-                          const g = ALLE_GEWERKE.find(x=>x.key===k);
-                          return g ? <span key={k} style={{ color: "var(--muted)", fontSize:10 }}>{g.icon} {g.label}</span> : null;
-                        })}
-                        {s.stundensatz > 0 && <span style={{ color: "var(--muted)", fontSize:10 }}>· {s.stundensatz}€/Std.</span>}
-                      </div>
-                    </div>
-                    <div style={{ fontSize:18 }}>{aktiv ? "🔵" : "⚪"}</div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Abhängigkeiten */}
-        {allFelder.filter(x => x.id !== f.id).length > 0 && (
-          <div style={{ marginBottom:16 }}>
-            <Label>🔗 Abhängigkeiten – muss fertig sein vor diesem Feld</Label>
-            <div style={{ display:"flex", flexDirection:"column", gap:6, marginTop:6 }}>
-              {allFelder.filter(x => x.id !== f.id).map(x => {
-                const active = f.abhaengigkeiten.includes(x.id);
-                return (
-                  <div key={x.id} onClick={() => toggleAbh(x.id)}
-                    style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
-                      background: active ? "#1A2A3A" : "var(--surface2)",
-                      border:`1.5px solid ${active ? "var(--blue)" : "var(--border)"}`,
-                      borderRadius:9, padding:"9px 12px", cursor:"pointer" }}>
-                    <div>
-                      <div style={{ color: "var(--text)", fontSize:13, fontWeight: active ? 700 : 400 }}>{x.name}</div>
-                      <div style={{ color: "var(--muted)", fontSize:11 }}>{x.m2} m² · {x.status}</div>
-                    </div>
-                    <div style={{ fontSize:18 }}>{active ? "🔵" : "⚪"}</div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Buttons */}
-        <div style={{ display:"flex", gap:10 }}>
-          {feld.id && (
-            <button onClick={() => onDelete(f.id)}
-              style={{ background:"#2E1A1A", color: "var(--red)", border:`1px solid ${'var(--red)'}`,
-                borderRadius:10, padding:"12px 16px", cursor:"pointer", fontSize:13 }}>
-              🗑️
-            </button>
-          )}
-          <button onClick={onClose}
-            style={{ flex:1, background: "var(--border)", color: "var(--muted)", border:"none", borderRadius:10, padding:13, cursor:"pointer" }}>
-            Abbrechen
-          </button>
-          <button onClick={() => onSave(f)} disabled={!f.name || !f.m2}
-            style={{ flex:2, background: f.name && f.m2 ? "var(--yellow)" : "var(--border)",
-              color: f.name && f.m2 ? "#1C2027" : "var(--muted)",
-              border:"none", borderRadius:10, padding:13, fontWeight:700, cursor:"pointer", fontSize:15 }}>
-            💾 Speichern
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function EditorView({ felder, setFelder, projektTyp }) {
-  const cfg = typConfig(projektTyp);
-  const [showRaster, setShowRaster] = useState(false);
-  const [editFeld,   setEditFeld]   = useState(null); // null | {} (neu) | {…} (bestehend)
-  const [filter,     setFilter]     = useState("all");
-
-  function handleGenerate(neuFelder) {
-    setFelder(prev => {
-      const maxId = prev.reduce((m,f) => Math.max(m,f.id), 0);
-      return [...prev, ...neuFelder.map((f,i) => ({ ...f, id: maxId+i+1 }))];
-    });
-    setShowRaster(false);
-  }
-
-  function handleSave(f) {
-    setFelder(prev => prev.some(x => x.id===f.id)
-      ? prev.map(x => x.id===f.id ? f : x)
-      : [...prev, { ...f, id: Date.now() }]
-    );
-    setEditFeld(null);
-  }
-
-  function handleDelete(id) {
-    setFelder(prev => prev
-      .filter(f => f.id !== id)
-      .map(f => ({ ...f, abhaengigkeiten: (f.abhaengigkeiten||[]).filter(x => x !== id) }))
-    );
-    setEditFeld(null);
-  }
-
-  const filtered = filter==="all" ? felder : felder.filter(f => f.status===filter);
-
-  return (
-    <div>
-      {/* Aktionsleiste */}
-      <div style={{ display:"flex", gap:8, marginBottom:16 }}>
-        <button onClick={() => setShowRaster(s => !s)}
-          style={{ flex:1, background: showRaster ? "var(--yellow)" : "var(--surface)",
-            color: showRaster ? "#1C2027" : "var(--text)", border:`1px solid ${showRaster ? "var(--yellow)" : "var(--border)"}`,
-            borderRadius:10, padding:"10px 0", cursor:"pointer", fontWeight:700, fontSize:13 }}>
-          🔲 Raster
-        </button>
-        <button onClick={() => setEditFeld({ name:"", m2:0, geplant:"", dauer_tage:1, bewehrung:"", abhaengigkeiten:[], status:"planned" })}
-          style={{ flex:1, background: "var(--surface)", color: "var(--text)", border:`1px solid ${'var(--border)'}`,
-            borderRadius:10, padding:"10px 0", cursor:"pointer", fontWeight:700, fontSize:13 }}>
-          ➕ {cfg.einheitLabel}
-        </button>
-      </div>
-
-      {/* Raster-Generator */}
-      {showRaster && <RasterGenerator onGenerate={handleGenerate} />}
-
-      {/* Filter */}
-      <div style={{ display:"flex", gap:6, marginBottom:12, overflowX:"auto" }}>
-        {[["all","Alle"],["planned","Geplant"],["in_progress","Aktiv"],["done","Fertig"],["blocked","Blockiert"]].map(([v,l]) => (
-          <button key={v} onClick={() => setFilter(v)}
-            style={{ background: filter===v ? "var(--yellow)" : "var(--surface)", color: filter===v ? "#1C2027" : "var(--muted)",
-              border:"none", borderRadius:20, padding:"5px 12px", cursor:"pointer", fontSize:12,
-              fontWeight: filter===v ? 700 : 400, whiteSpace:"nowrap" }}>
-            {l} {v==="all" ? `(${felder.length})` : `(${felder.filter(f=>f.status===v).length})`}
-          </button>
-        ))}
-      </div>
-
-      {/* Feldliste */}
-      {filtered.length === 0 ? (
-        <div style={{ background: "var(--surface)", borderRadius:12, padding:32, textAlign:"center" }}>
-          <div style={{ fontSize:36 }}>🏗️</div>
-          <div style={{ color: "var(--muted)", marginTop:10 }}>Noch keine Felder angelegt.<br/>Raster generieren oder Einzelfeld hinzufügen.</div>
-        </div>
-      ) : filtered.map(f => {
-        const abh = (f.abhaengigkeiten||[]).map(id => felder.find(x=>x.id===id)?.name).filter(Boolean);
-        const abhNichtFertig = (f.abhaengigkeiten||[]).some(id => felder.find(x=>x.id===id)?.status !== "done");
-        return (
-          <div key={f.id} onClick={() => setEditFeld(f)}
-            style={{ background: "var(--surface)", borderRadius:11, padding:"13px 15px", marginBottom:9,
-              border:`2px solid ${abhNichtFertig && f.status==="planned" ? "var(--orange)" : STATUS_COLOR[f.status]}`,
-              cursor:"pointer" }}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
-              <div style={{ flex:1 }}>
-                <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                  <span style={{ color: "var(--text)", fontWeight:700, fontSize:14 }}>{f.name}</span>
-                  <span style={{ background: STATUS_COLOR[f.status], color:"#fff", fontSize:9,
-                    padding:"2px 7px", borderRadius:20 }}>
-                    {STATUS_LABEL[f.status]?.split(" ")[1]}
-                  </span>
-                </div>
-                <div style={{ display:"flex", gap:10, marginTop:5, flexWrap:"wrap" }}>
-                  {f.m2 > 0 && <Chip icon="📐" label={`${f.m2} m²`} />}
-                  {f.geplant && <Chip icon="📅" label={f.geplant} />}
-                  {f.dauer_tage > 1 && <Chip icon="⏱️" label={`${f.dauer_tage} Tage`} />}
-                </div>
-                {f.bewehrung && <div style={{ color: "var(--muted)", fontSize:11, marginTop:5 }}>🔩 {f.bewehrung}</div>}
-                {abh.length > 0 && (
-                  <div style={{ marginTop:6, display:"flex", gap:5, flexWrap:"wrap" }}>
-                    <span style={{ color: "var(--muted)", fontSize:11 }}>🔗</span>
-                    {abh.map((n,i) => (
-                      <span key={i} style={{ background: abhNichtFertig ? "#2E1A1A" : "#1A2E1A",
-                        color: abhNichtFertig ? "var(--orange)" : "var(--green)",
-                        fontSize:10, padding:"2px 7px", borderRadius:10 }}>{n}</span>
-                    ))}
-                    {abhNichtFertig && <span style={{ color: "var(--orange)", fontSize:10 }}>⚠️ Vorgänger nicht fertig</span>}
-                  </div>
-                )}
-              </div>
-              <div style={{ color: "var(--muted)", fontSize:18, marginLeft:8 }}>›</div>
-            </div>
-          </div>
-        );
-      })}
-
-      {/* Editor Modal */}
-      {editFeld !== null && (
-        <FeldEditor
-          feld={editFeld}
-          allFelder={felder}
-          onSave={handleSave}
-          onDelete={handleDelete}
-          onClose={() => setEditFeld(null)}
-          projektTyp={projektTyp}
-          projSubs={projSubs}
-        />
-      )}
-    </div>
-  );
-}
-
 // ─── Shared UI Helpers ───────────────────────────────────────────────────────
 function Label({ children }) {
   return <div style={{ color: "var(--muted)", fontSize:12, marginBottom:5, fontWeight:600, letterSpacing:0.3 }}>{children}</div>;
-}
-function StepBtn({ onClick, children }) {
-  return (
-    <button onClick={onClick} style={{ width:44, height:44, background: "var(--surface2)", color: "var(--text)",
-      border:`1.5px solid ${'var(--border)'}`, borderRadius:10, cursor:"pointer", fontSize:20, fontWeight:700,
-      display:"flex", alignItems:"center", justifyContent:"center",
-      boxShadow:"0 1px 3px rgba(0,0,0,0.08)" }}>{children}</button>
-  );
 }
 function inputStyle() {
   return { width:"100%", background: "var(--surface)", color: "var(--text)",
@@ -3359,644 +2285,10 @@ async function erfasstQuery(query, variables = {}) {
 }
 
 // GraphQL Queries
-const Q_PERSONS = `
-  query {
-    persons(filter: { isDeleted: { eq: false } }) {
-      nodes {
-        ident
-        firstname
-        lastname
-        formattedName
-        employee { staffNumber }
-      }
-    }
-  }
-`;
-
-const Q_TIMES = `
-  query GetTimes($from: DateTime!, $to: DateTime!, $projectIdent: Ident) {
-    hoursBlocks(
-      filter: {
-        date: { gte: $from, lte: $to }
-        projectIdent: { eq: $projectIdent }
-      }
-      orderBy: { date: ASC }
-    ) {
-      nodes {
-        ident
-        date
-        hours
-        minutes
-        person {
-          ident
-          formattedName
-        }
-        project {
-          ident
-          name
-        }
-        activity {
-          name
-          abbreviation
-        }
-        note
-      }
-      totalCount
-    }
-  }
-`;
-
-const Q_PROJECTS = `
-  query {
-    projects(filter: { isDeleted: { eq: false } }) {
-      nodes {
-        ident
-        name
-        number
-        endDate
-      }
-    }
-  }
-`;
-
-function ZeiterfassungView({ projekt }) {
-  const [status,      setStatus]      = useState("idle"); // idle | loading | ok | error | unconfigured
-  const [fehler,      setFehler]      = useState("");
-  const [zeitdaten,   setZeitdaten]   = useState([]);
-  const [personen,    setPersonen]    = useState([]);
-  const [projekte123, setProjekte123] = useState([]);
-  const [linkedId,    setLinkedId]    = useState(projekt?.erfasstIdent || null);
-  const [vonDatum,    setVonDatum]    = useState(() => {
-    const d = new Date(); d.setDate(d.getDate() - 7);
-    return d.toISOString().slice(0,10);
-  });
-  const [bisDatum,    setBisDatum]    = useState(new Date().toISOString().slice(0,10));
-  const [personFilter,setPersonFilter]= useState("alle");
-  const [screen,      setScreen]      = useState("zeiten"); // zeiten | verknuepfen
-
-  const konfiguriert = !ERFASST_PROXY.includes("DEIN-PROJEKT");
-
-  useEffect(() => {
-    if (!konfiguriert) { setStatus("unconfigured"); return; }
-    if (screen === "verknuepfen") ladeProjects();
-    else if (linkedId) ladeZeiten();
-  }, [screen, linkedId, vonDatum, bisDatum]);
-
-  async function ladeZeiten() {
-    setStatus("loading");
-    try {
-      const data = await erfasstQuery(Q_TIMES, {
-        from:         vonDatum + "T00:00:00",
-        to:           bisDatum + "T23:59:59",
-        projectIdent: linkedId,
-      });
-      setZeitdaten(data?.hoursBlocks?.nodes || []);
-      setStatus("ok");
-    } catch(e) {
-      setFehler(e.message); setStatus("error");
-    }
-  }
-
-  async function ladeProjects() {
-    setStatus("loading");
-    try {
-      const data = await erfasstQuery(Q_PROJECTS);
-      setProjekte123(data?.projects?.nodes || []);
-      setStatus("ok");
-    } catch(e) {
-      setFehler(e.message); setStatus("error");
-    }
-  }
-
-  // Stunden summieren
-  function toH(h, m) { return (h||0) + (m||0)/60; }
-  const totalStd = zeitdaten.reduce((s,z) => s + toH(z.hours, z.minutes), 0);
-
-  // Gruppierung nach Person
-  const nachPerson = {};
-  zeitdaten.forEach(z => {
-    const key = z.person?.formattedName || "Unbekannt";
-    if (!nachPerson[key]) nachPerson[key] = { name: key, eintraege: [], total: 0 };
-    nachPerson[key].eintraege.push(z);
-    nachPerson[key].total += toH(z.hours, z.minutes);
-  });
-
-  const gefiltert = personFilter === "alle"
-    ? zeitdaten
-    : zeitdaten.filter(z => z.person?.formattedName === personFilter);
-
-  // ── Unconfigured ──
-  if (status === "unconfigured") return (
-    <div style={{ background: "var(--surface)", borderRadius:14, padding:24 }}>
-      <div style={{ fontSize:36, textAlign:"center", marginBottom:12 }}>⏱️</div>
-      <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:16, marginBottom:10 }}>123erfasst Anbindung</div>
-      <div style={{ color: "var(--muted)", fontSize:13, marginBottom:20, lineHeight:1.6 }}>
-        Um Zeiterfassungsdaten zu laden, muss die Supabase Edge Function konfiguriert werden.
-      </div>
-      <div style={{ background: "var(--border)", borderRadius:10, padding:14, marginBottom:16 }}>
-        <div style={{ color: "var(--text)", fontSize:12, fontWeight:700, marginBottom:8 }}>Setup (einmalig):</div>
-        {[
-          ["1.", "Supabase Edge Function deployen:", "supabase functions deploy erfasst-proxy"],
-          ["2.", "API-Key setzen:", "supabase secrets set ERFASST_API_KEY=<key>"],
-          ["3.", "Server setzen:", "supabase secrets set ERFASST_SERVER=<firma.123erfasst.de>"],
-          ["4.", "Proxy-URL in polier-app.jsx eintragen:", "ERFASST_PROXY = 'https://...'"],
-        ].map(([nr, label, code]) => (
-          <div key={nr} style={{ marginBottom:10 }}>
-            <div style={{ color: "var(--muted)", fontSize:11 }}>{nr} {label}</div>
-            <div style={{ background: "var(--surface)", borderRadius:6, padding:"5px 10px", marginTop:3,
-              color: "var(--yellow)", fontSize:11, fontFamily:"monospace" }}>{code}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  return (
-    <div>
-      {/* Header */}
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
-        <div style={{ color: "var(--text)", fontWeight:700, fontSize:15 }}>⏱️ Zeiterfassung</div>
-        <div style={{ display:"flex", gap:8 }}>
-          <button onClick={() => setScreen(s => s==="zeiten" ? "verknuepfen" : "zeiten")}
-            style={{ background: screen==="verknuepfen" ? "var(--yellow)" : "var(--border)",
-              color: screen==="verknuepfen" ? "#1C2027" : "var(--muted)",
-              border:"none", borderRadius:8, padding:"6px 12px", cursor:"pointer", fontSize:12 }}>
-            🔗 Projekt verknüpfen
-          </button>
-          {screen==="zeiten" && linkedId && (
-            <button onClick={ladeZeiten}
-              style={{ background: "var(--border)", color: "var(--text)", border:"none",
-                borderRadius:8, padding:"6px 12px", cursor:"pointer", fontSize:12 }}>
-              🔄
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Projekt-Verknüpfung */}
-      {screen === "verknuepfen" && (
-        <div>
-          <div style={{ color: "var(--muted)", fontSize:13, marginBottom:14 }}>
-            Wähle das entsprechende Projekt in 123erfasst — Zeitbuchungen werden dann hier angezeigt.
-          </div>
-          {status === "loading" ? (
-            <div style={{ textAlign:"center", color: "var(--muted)", padding:32 }}>⏳ Lade Projekte…</div>
-          ) : status === "error" ? (
-            <div style={{ background:"#2E1A1A", borderRadius:10, padding:14, color: "var(--red)" }}>{fehler}</div>
-          ) : (
-            <div style={{ display:"flex", flexDirection:"column", gap:7 }}>
-              <div onClick={() => { setLinkedId(null); setScreen("zeiten"); }}
-                style={{ background: !linkedId ? "var(--surface2)" : "var(--border)",
-                  border:`1.5px solid ${!linkedId ? "var(--yellow)" : "transparent"}`,
-                  borderRadius:9, padding:"10px 14px", cursor:"pointer" }}>
-                <div style={{ color: "var(--muted)", fontSize:12 }}>Keine Verknüpfung</div>
-              </div>
-              {projekte123.map(p => (
-                <div key={p.ident} onClick={() => { setLinkedId(p.ident); setScreen("zeiten"); }}
-                  style={{ background: linkedId===p.ident ? "var(--surface2)" : "var(--border)",
-                    border:`1.5px solid ${linkedId===p.ident ? "var(--yellow)" : "transparent"}`,
-                    borderRadius:9, padding:"10px 14px", cursor:"pointer" }}>
-                  <div style={{ display:"flex", justifyContent:"space-between" }}>
-                    <div style={{ color: "var(--text)", fontWeight: linkedId===p.ident ? 700 : 400 }}>{p.name}</div>
-                    {linkedId===p.ident && <span style={{ color: "var(--yellow)" }}>✓</span>}
-                  </div>
-                  {p.number && <div style={{ color: "var(--muted)", fontSize:11, marginTop:2 }}>Nr. {p.number}</div>}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Zeiterfassung Ansicht */}
-      {screen === "zeiten" && (
-        <>
-          {!linkedId ? (
-            <div style={{ background: "var(--surface)", borderRadius:12, padding:28, textAlign:"center" }}>
-              <div style={{ fontSize:32, marginBottom:10 }}>🔗</div>
-              <div style={{ color: "var(--muted)", fontSize:13 }}>
-                Noch kein 123erfasst-Projekt verknüpft.
-              </div>
-              <button onClick={() => setScreen("verknuepfen")}
-                style={{ background: "var(--yellow)", color:"#1C2027", border:"none", borderRadius:10,
-                  padding:"11px 22px", fontWeight:700, cursor:"pointer", marginTop:14 }}>
-                Jetzt verknüpfen
-              </button>
-            </div>
-          ) : (
-            <>
-              {/* Datumsfilter */}
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
-                <div>
-                  <Label>Von</Label>
-                  <input type="date" value={vonDatum} onChange={e => setVonDatum(e.target.value)}
-                    style={inputStyle()} />
-                </div>
-                <div>
-                  <Label>Bis</Label>
-                  <input type="date" value={bisDatum} onChange={e => setBisDatum(e.target.value)}
-                    style={inputStyle()} />
-                </div>
-              </div>
-
-              {status === "loading" && (
-                <div style={{ textAlign:"center", color: "var(--muted)", padding:32 }}>⏳ Lade Zeitdaten…</div>
-              )}
-
-              {status === "error" && (
-                <div style={{ background:"#2E1A1A", borderRadius:10, padding:14, color: "var(--red)", marginBottom:12 }}>
-                  ❌ {fehler}
-                </div>
-              )}
-
-              {status === "ok" && (
-                <>
-                  {/* KPI Leiste */}
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, marginBottom:14 }}>
-                    {[
-                      ["Stunden gesamt", totalStd.toFixed(1)+"h", "var(--yellow)"],
-                      ["Einträge",       zeitdaten.length,         "var(--muted)"],
-                      ["Mitarbeiter",    Object.keys(nachPerson).length, "var(--green)"],
-                    ].map(([l,v,col]) => (
-                      <div key={l} style={{ background: "var(--surface)", borderRadius:10, padding:"11px 12px",
-                        borderBottom:`3px solid ${col}` }}>
-                        <div style={{ color: "var(--muted)", fontSize:10 }}>{l}</div>
-                        <div style={{ color: "var(--text)", fontWeight:800, fontSize:20 }}>{v}</div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Personen-Zusammenfassung */}
-                  <div style={{ marginBottom:14 }}>
-                    <div style={{ color: "var(--muted)", fontSize:11, marginBottom:8 }}>NACH MITARBEITER</div>
-                    <div style={{ display:"flex", gap:6, overflowX:"auto", paddingBottom:4 }}>
-                      <FilterBtn active={personFilter==="alle"} onClick={() => setPersonFilter("alle")}>
-                        Alle
-                      </FilterBtn>
-                      {Object.values(nachPerson).map(p => (
-                        <FilterBtn key={p.name} active={personFilter===p.name}
-                          onClick={() => setPersonFilter(p.name)}>
-                          {p.name.split(" ").pop()} · {p.total.toFixed(1)}h
-                        </FilterBtn>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Stunden-Balken pro Person */}
-                  {personFilter === "alle" && Object.values(nachPerson).length > 0 && (
-                    <div style={{ background: "var(--surface)", borderRadius:12, padding:14, marginBottom:14 }}>
-                      {Object.values(nachPerson)
-                        .sort((a,b) => b.total - a.total)
-                        .map(p => {
-                          const pct = totalStd > 0 ? (p.total / totalStd) * 100 : 0;
-                          return (
-                            <div key={p.name} style={{ marginBottom:10 }}>
-                              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
-                                <div style={{ color: "var(--text)", fontSize:12 }}>{p.name}</div>
-                                <div style={{ color: "var(--yellow)", fontSize:12, fontWeight:700 }}>{p.total.toFixed(1)}h</div>
-                              </div>
-                              <div style={{ background: "var(--border)", borderRadius:4, height:6 }}>
-                                <div style={{ background: "var(--yellow)", width:`${pct}%`, height:"100%", borderRadius:4 }} />
-                              </div>
-                            </div>
-                          );
-                        })}
-                    </div>
-                  )}
-
-                  {/* Einzelbuchungen */}
-                  {gefiltert.length === 0 ? (
-                    <div style={{ background: "var(--surface)", borderRadius:10, padding:24, textAlign:"center", color: "var(--muted)" }}>
-                      Keine Buchungen im gewählten Zeitraum
-                    </div>
-                  ) : gefiltert.map((z, i) => (
-                    <div key={i} style={{ background: "var(--surface)", borderRadius:10, padding:"12px 14px",
-                      marginBottom:8, borderLeft:`3px solid ${'var(--blue)'}` }}>
-                      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
-                        <div style={{ color: "var(--text)", fontWeight:600, fontSize:13 }}>
-                          {z.person?.formattedName || "—"}
-                        </div>
-                        <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:13 }}>
-                          {z.hours > 0 || z.minutes > 0
-                            ? `${z.hours || 0}h ${z.minutes > 0 ? z.minutes+"min" : ""}`
-                            : "—"}
-                        </div>
-                      </div>
-                      <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
-                        <span style={{ color: "var(--muted)", fontSize:11 }}>
-                          📅 {new Date(z.date).toLocaleDateString("de-DE")}
-                        </span>
-                        {z.activity?.name && (
-                          <span style={{ color: "var(--muted)", fontSize:11 }}>🔧 {z.activity.name}</span>
-                        )}
-                      </div>
-                      {z.note && (
-                        <div style={{ color: "var(--muted)", fontSize:11, marginTop:5, fontStyle:"italic" }}>
-                          💬 {z.note}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </>
-              )}
-            </>
-          )}
-        </>
-      )}
-    </div>
-  );
-}
-
 // ════════════════════════════════════════════════════════════════════════════
 // KI-SCANNER – Betonfeld-Karte fotografieren & auslesen
 // ════════════════════════════════════════════════════════════════════════════
-const SCAN_PROMPT = `Du bist ein Spezialist für Bauwesen und liest gedruckte Betonfeld-Karten aus.
-Analysiere das Bild und extrahiere ALLE erkennbaren Informationen.
 
-Antworte NUR mit einem JSON-Objekt, ohne Markdown-Backticks, ohne Erklärungen:
-{
-  "felder": [
-    {
-      "name": "Feldname oder Nummer z.B. A1 oder B2 – Bodenplatte Nord",
-      "m2": 120,
-      "geplant": "2025-06-25",
-      "dauer_tage": 1,
-      "betonsorte": "C25/30 XC2",
-      "bewehrung": "BSt 500, Ø12, 15cm Raster",
-      "bemerkung": "Sonstige Hinweise vom Formular",
-      "status": "planned"
-    }
-  ],
-  "konfidenz": 0.92,
-  "hinweise": "Was war auf dem Formular schwer lesbar oder unklar"
-}
-
-Regeln:
-- Mehrere Felder auf einer Karte → mehrere Einträge im Array
-- Datum immer als YYYY-MM-DD, falls nicht erkennbar: null
-- m2 als Zahl ohne Einheit
-- dauer_tage schätzen aus Fläche falls nicht angegeben (bis 80m²=1, bis 200m²=2, sonst 3)
-- status immer "planned" für neue Karten
-- konfidenz zwischen 0 und 1
-- Falls kein Betonfeld-Formular erkennbar: { "felder": [], "konfidenz": 0, "hinweise": "Kein Betonfeld-Formular erkannt" }`;
-
-async function scanBetonkarte(imageBase64, mediaType) {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-6",
-      max_tokens: 1000,
-      messages: [{
-        role: "user",
-        content: [
-          { type: "image", source: { type: "base64", media_type: mediaType, data: imageBase64 } },
-          { type: "text",  text: SCAN_PROMPT },
-        ],
-      }],
-    }),
-  });
-  const data = await res.json();
-  const raw = data.content?.find(b => b.type === "text")?.text || "{}";
-  try {
-    return JSON.parse(raw.replace(/```json|```/g, "").trim());
-  } catch {
-    return { felder: [], konfidenz: 0, hinweise: "Antwort konnte nicht geparst werden: " + raw.slice(0,100) };
-  }
-}
-
-function ScannerView({ onFelderImport }) {
-  const fileRef     = useRef(null);
-  const [phase, setPhase]       = useState("idle"); // idle | preview | scanning | result | error
-  const [imgSrc, setImgSrc]     = useState(null);
-  const [imgB64, setImgB64]     = useState(null);
-  const [imgType, setImgType]   = useState(null);
-  const [result, setResult]     = useState(null);
-  const [selected, setSelected] = useState({});
-  const [imported, setImported] = useState(false);
-
-  function handleFile(file) {
-    if (!file) return;
-    setImported(false);
-    setResult(null);
-    const reader = new FileReader();
-    reader.onload = e => {
-      const dataUrl = e.target.result;
-      setImgSrc(dataUrl);
-      setImgType(file.type || "image/jpeg");
-      // Extract base64
-      const b64 = dataUrl.split(",")[1];
-      setImgB64(b64);
-      setPhase("preview");
-    };
-    reader.readAsDataURL(file);
-  }
-
-  async function doScan() {
-    setPhase("scanning");
-    try {
-      const res = await scanBetonkarte(imgB64, imgType);
-      setResult(res);
-      // Pre-select all
-      const sel = {};
-      res.felder.forEach((_, i) => sel[i] = true);
-      setSelected(sel);
-      setPhase("result");
-    } catch (e) {
-      setPhase("error");
-    }
-  }
-
-  function doImport() {
-    const toImport = result.felder
-      .filter((_, i) => selected[i])
-      .map((f, i) => ({ ...f, id: Date.now() + i, festigkeit: null, betoniert: null }));
-    onFelderImport(toImport);
-    setImported(true);
-  }
-
-  function reset() {
-    setPhase("idle"); setImgSrc(null); setImgB64(null);
-    setResult(null); setSelected({}); setImported(false);
-  }
-
-  const konfidenzColor = (k) => k >= 0.85 ? "var(--green)" : k >= 0.6 ? "var(--yellow)" : "var(--red)";
-  const konfidenzLabel = (k) => k >= 0.85 ? "Hoch" : k >= 0.6 ? "Mittel" : "Niedrig";
-
-  return (
-    <div>
-      <div style={{ color: "var(--text)", fontWeight:700, fontSize:16, marginBottom:4 }}>📷 Betonkarten-Scanner</div>
-      <div style={{ color: "var(--muted)", fontSize:13, marginBottom:18 }}>
-        Foto eines gedruckten Betonfeld-Formulars hochladen — KI liest alle Felder automatisch aus.
-      </div>
-
-      {/* IDLE */}
-      {phase === "idle" && (
-        <div>
-          <input ref={fileRef} type="file" accept="image/*" capture="environment"
-            style={{ display:"none" }} onChange={e => handleFile(e.target.files[0])} />
-          <div onClick={() => fileRef.current.click()}
-            style={{ border:`2px dashed ${'var(--yellow)'}`, borderRadius:20, padding:"48px 20px",
-              textAlign:"center", cursor:"pointer", background:"#FFFBEB",
-              boxShadow:"inset 0 2px 8px rgba(245,196,0,0.1)" }}>
-            <div style={{ fontSize:48, marginBottom:12 }}>📷</div>
-            <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:16 }}>Betonfeld-Karte aufnehmen</div>
-            <div style={{ color: "var(--muted)", fontSize:13, marginTop:6 }}>Tippen zum Fotografieren oder Bild hochladen</div>
-          </div>
-          <div style={{ display:"flex", gap:10, marginTop:12 }}>
-            <button onClick={() => fileRef.current.click()}
-              style={{ flex:1, background: "var(--surface2)", color: "var(--text)", border:`1px solid ${'var(--border)'}`,
-                borderRadius:10, padding:12, cursor:"pointer", fontSize:13 }}>
-              📁 Aus Galerie wählen
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* PREVIEW */}
-      {phase === "preview" && (
-        <div>
-          <img src={imgSrc} alt="Betonkarte" style={{ width:"100%", borderRadius:12, marginBottom:14, maxHeight:320, objectFit:"contain", background: "var(--surface)" }} />
-          <div style={{ display:"flex", gap:10 }}>
-            <button onClick={reset} style={{ flex:1, background: "var(--border)", color: "var(--muted)", border:"none", borderRadius:10, padding:13, cursor:"pointer" }}>
-              ✕ Neu
-            </button>
-            <button onClick={doScan} style={{ flex:2, background: "var(--yellow)", color:"#1C2027", border:"none", borderRadius:10, padding:13, fontWeight:700, cursor:"pointer", fontSize:15 }}>
-              🔍 Jetzt auslesen
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* SCANNING */}
-      {phase === "scanning" && (
-        <div style={{ textAlign:"center", padding:"40px 20px" }}>
-          <div style={{ fontSize:48, marginBottom:16 }}>🤖</div>
-          <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:16, marginBottom:8 }}>KI analysiert Betonkarte…</div>
-          <div style={{ color: "var(--muted)", fontSize:13 }}>Feldname, m², Bewehrungsplan und Termine werden erkannt</div>
-          <div style={{ marginTop:24, display:"flex", justifyContent:"center", gap:6 }}>
-            {[0,1,2].map(i => (
-              <div key={i} style={{ width:8, height:8, borderRadius:4, background: "var(--yellow)",
-                animation:`pulse 1.2s ${i*0.3}s infinite`, opacity:0.8 }} />
-            ))}
-          </div>
-          <style>{`@keyframes pulse { 0%,100%{transform:scale(1);opacity:0.4} 50%{transform:scale(1.4);opacity:1} }`}</style>
-        </div>
-      )}
-
-      {/* ERROR */}
-      {phase === "error" && (
-        <div style={{ background:"#2E1A1A", borderRadius:12, padding:24, textAlign:"center" }}>
-          <div style={{ fontSize:40, marginBottom:12 }}>❌</div>
-          <div style={{ color: "var(--red)", fontWeight:700, marginBottom:8 }}>Scan fehlgeschlagen</div>
-          <div style={{ color: "var(--muted)", fontSize:13, marginBottom:16 }}>Bitte Bild prüfen und nochmals versuchen.</div>
-          <button onClick={reset} style={{ background: "var(--border)", color: "var(--text)", border:"none", borderRadius:10, padding:"10px 24px", cursor:"pointer" }}>
-            Nochmals versuchen
-          </button>
-        </div>
-      )}
-
-      {/* RESULT */}
-      {phase === "result" && result && (
-        <div>
-          {/* Bild klein */}
-          <img src={imgSrc} alt="Betonkarte" style={{ width:"100%", borderRadius:10, marginBottom:14, maxHeight:160, objectFit:"contain", background: "var(--surface)" }} />
-
-          {/* Konfidenz */}
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
-            background: "var(--surface)", borderRadius:10, padding:"10px 14px", marginBottom:12 }}>
-            <div>
-              <div style={{ color: "var(--muted)", fontSize:11 }}>KI-Erkennungssicherheit</div>
-              <div style={{ color: konfidenzColor(result.konfidenz), fontWeight:700, fontSize:15 }}>
-                {konfidenzLabel(result.konfidenz)} · {Math.round(result.konfidenz * 100)}%
-              </div>
-            </div>
-            <div style={{ width:48, height:48, borderRadius:24,
-              background: `conic-gradient(${konfidenzColor(result.konfidenz)} ${result.konfidenz*360}deg, ${'var(--border)'} 0deg)`,
-              display:"flex", alignItems:"center", justifyContent:"center" }}>
-              <div style={{ width:36, height:36, borderRadius:18, background: "var(--surface)",
-                display:"flex", alignItems:"center", justifyContent:"center",
-                color: konfidenzColor(result.konfidenz), fontSize:11, fontWeight:700 }}>
-                {Math.round(result.konfidenz*100)}%
-              </div>
-            </div>
-          </div>
-
-          {/* Hinweise */}
-          {result.hinweise && (
-            <div style={{ background:"#2A2A1A", borderRadius:8, padding:"8px 12px", marginBottom:12, color:"#FFD966", fontSize:12 }}>
-              💬 {result.hinweise}
-            </div>
-          )}
-
-          {/* Felder */}
-          {result.felder.length === 0 ? (
-            <div style={{ background: "var(--surface)", borderRadius:12, padding:24, textAlign:"center" }}>
-              <div style={{ fontSize:32 }}>🤷</div>
-              <div style={{ color: "var(--muted)", marginTop:8 }}>Kein Betonfeld-Formular erkannt.<br/>Bitte ein klareres Foto versuchen.</div>
-            </div>
-          ) : (
-            <>
-              <div style={{ color: "var(--text)", fontWeight:700, marginBottom:10 }}>
-                {result.felder.length} Feld{result.felder.length > 1 ? "er" : ""} erkannt — auswählen zum Importieren:
-              </div>
-              {result.felder.map((f, i) => (
-                <div key={i} onClick={() => setSelected(p => ({ ...p, [i]: !p[i] }))}
-                  style={{ background: selected[i] ? "var(--surface2)" : "var(--surface)",
-                    border:`2px solid ${selected[i] ? "var(--yellow)" : "var(--border)"}`,
-                    borderRadius:12, padding:"14px 16px", marginBottom:10, cursor:"pointer" }}>
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
-                    <div style={{ flex:1 }}>
-                      <div style={{ color: "var(--text)", fontWeight:700, fontSize:14 }}>{f.name}</div>
-                      <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginTop:8 }}>
-                        {f.m2 && <Chip icon="📐" label={`${f.m2} m²`} />}
-                        {f.geplant && <Chip icon="📅" label={f.geplant} />}
-                        {f.dauer_tage && <Chip icon="⏱️" label={`${f.dauer_tage} Tag(e)`} />}
-                        {f.betonsorte && <Chip icon="🧱" label={f.betonsorte} />}
-                      </div>
-                      {f.bewehrung && (
-                        <div style={{ color: "var(--muted)", fontSize:11, marginTop:8 }}>🔩 {f.bewehrung}</div>
-                      )}
-                      {f.bemerkung && (
-                        <div style={{ color: "var(--muted)", fontSize:11, marginTop:4 }}>📝 {f.bemerkung}</div>
-                      )}
-                    </div>
-                    <div style={{ marginLeft:12, fontSize:22 }}>{selected[i] ? "✅" : "⬜"}</div>
-                  </div>
-                </div>
-              ))}
-
-              {imported ? (
-                <div style={{ background:"#1A3A28", borderRadius:12, padding:16, textAlign:"center" }}>
-                  <div style={{ color: "var(--green)", fontWeight:700, fontSize:15 }}>✅ Erfolgreich importiert!</div>
-                  <div style={{ color: "var(--muted)", fontSize:13, marginTop:4 }}>Felder sind jetzt in der Felderliste und im Gantt-Plan sichtbar.</div>
-                  <button onClick={reset} style={{ background: "var(--border)", color: "var(--text)", border:"none",
-                    borderRadius:10, padding:"10px 20px", marginTop:14, cursor:"pointer" }}>
-                    Weitere Karte scannen
-                  </button>
-                </div>
-              ) : (
-                <div style={{ display:"flex", gap:10, marginTop:4 }}>
-                  <button onClick={reset} style={{ flex:1, background: "var(--border)", color: "var(--muted)",
-                    border:"none", borderRadius:10, padding:13, cursor:"pointer" }}>
-                    ✕ Verwerfen
-                  </button>
-                  <button onClick={doImport}
-                    disabled={Object.values(selected).every(v => !v)}
-                    style={{ flex:2, background: Object.values(selected).some(v=>v) ? "var(--yellow)" : "var(--border)",
-                      color: Object.values(selected).some(v=>v) ? "#1C2027" : "var(--muted)",
-                      border:"none", borderRadius:10, padding:13, fontWeight:700, cursor:"pointer", fontSize:15 }}>
-                    ✅ {Object.values(selected).filter(Boolean).length} Feld{Object.values(selected).filter(Boolean).length !== 1 ? "er" : ""} importieren
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
 
 function Chip({ icon, label }) {
   return (
@@ -4033,25 +2325,6 @@ const ALLE_GEWERKE = [
   { key:"abbruch",      label:"Abbruch / Rückbau",         icon:"⛏️" },
   { key:"vermessung",   label:"Vermessung",                icon:"📐" },
   { key:"garten",       label:"Garten / Außenanlagen",     icon:"🌿" },
-];
-
-const MOCK_EIGENE_FIRMA = {
-  name:         "Bauunternehmen Koeven GmbH",
-  strasse:      "Musterstraße 12",
-  plz:          "80331",
-  ort:          "München",
-  telefon:      "+49 89 123456",
-  email:        "info@koeven-bau.de",
-  geschaeftsfuehrer: "Luca Koeven",
-  steuernummer: "123/456/78900",
-  gewerke:      ["rohbau","elektro","sanitaer","heizung","estrich"],
-};
-
-const MOCK_SUBS = [
-  { id:1, name:"Elektro Huber GmbH",     gewerke:["elektro"],          kontakt:"Thomas Huber",   telefon:"+49 89 111222", email:"huber@elektro.de",  status:"aktiv", stundensatz:85 },
-  { id:2, name:"Sanitär Meier KG",       gewerke:["sanitaer","heizung"],kontakt:"Klaus Meier",    telefon:"+49 89 333444", email:"meier@sanitaer.de", status:"aktiv", stundensatz:75 },
-  { id:3, name:"Estrich Schmidt",        gewerke:["estrich"],           kontakt:"Hans Schmidt",   telefon:"+49 89 555666", email:"schmidt@estrich.de",status:"aktiv", stundensatz:55 },
-  { id:4, name:"Dach & Fach Wagner AG",  gewerke:["dach"],              kontakt:"Maria Wagner",   telefon:"+49 89 777888", email:"wagner@dach.de",    status:"inaktiv",stundensatz:90 },
 ];
 
 function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboardingReset }) {
@@ -4881,7 +3154,7 @@ function PlanGuard({ firma, kinder, ressource }) {
               {p.features}
             </div>
             <button
-              onClick={() => window.open("https://polaris.app/billing", "_blank")}
+              onClick={() => window.location.href = "mailto:support@polaris-app.de?subject=Plan%20Upgrade&body=Ich%20möchte%20auf%20den%20" + p.label + "-Plan%20wechseln."}
               style={{ width:"100%",
                 background: p.key === "pro" ? "var(--yellow)" : "var(--surface2)",
                 color: p.key === "pro" ? "#1a1200" : "var(--text)",
@@ -5546,6 +3819,70 @@ function useAuth() {
     }
   }, [session?.access_token]);
 
+  // Automatischer Token-Refresh vor Ablauf (Supabase Tokens laufen nach 1h ab)
+  useEffect(() => {
+    if (!session?.refresh_token) return;
+
+    async function refreshSession() {
+      try {
+        const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+          method: "POST",
+          headers: { "apikey": SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+          body: JSON.stringify({ refresh_token: session.refresh_token }),
+        });
+        const data = await res.json();
+        if (data.access_token) {
+          localStorage.setItem("polaris-session", JSON.stringify(data));
+          setSession(data);
+        } else {
+          // Refresh fehlgeschlagen → Session ist ungültig, abmelden
+          localStorage.removeItem("polaris-session");
+          setSession(null);
+          setProfil(null);
+        }
+      } catch {
+        // Netzwerkfehler beim Refresh — Session vorerst behalten, nächster Versuch folgt
+      }
+    }
+
+    // Supabase Tokens laufen typischerweise nach 3600s ab.
+    // expires_in gibt die Gültigkeitsdauer in Sekunden an; wir erneuern 5 Minuten vorher.
+    const expiresInMs = (session.expires_in || 3600) * 1000;
+    const refreshInMs = Math.max(expiresInMs - 5 * 60 * 1000, 30 * 1000);
+    const timer = setTimeout(refreshSession, refreshInMs);
+    return () => clearTimeout(timer);
+  }, [session?.access_token, session?.refresh_token]);
+
+  // Bei Wiederherstellung des Tabs (App aus Hintergrund geholt): Session sofort prüfen
+  useEffect(() => {
+    function handleVisibility() {
+      if (document.visibilityState === "visible" && session?.access_token) {
+        sbGetProfile(session.access_token).then(p => {
+          if (!p) {
+            // Token ist ungültig geworden (z.B. abgelaufen während App im Hintergrund war)
+            localStorage.removeItem("polaris-session");
+            setSession(null);
+            setProfil(null);
+          }
+        });
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [session?.access_token]);
+
+  // Globaler 401-Handler: bei ungültigem Token automatisch abmelden
+  useEffect(() => {
+    function handleAuthInvalid() {
+      localStorage.removeItem("polaris-session");
+      setSession(null);
+      setProfil(null);
+      setFehler("Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.");
+    }
+    window.addEventListener("polaris-auth-invalid", handleAuthInvalid);
+    return () => window.removeEventListener("polaris-auth-invalid", handleAuthInvalid);
+  }, []);
+
   async function anmelden(email, password) {
     setLoading(true); setFehler("");
     const data = await sbSignIn(email, password);
@@ -5556,6 +3893,23 @@ function useAuth() {
       setFehler(data.error_description || data.msg || "Anmeldung fehlgeschlagen");
     }
     setLoading(false);
+  }
+
+  async function passwortVergessen(email) {
+    setLoading(true); setFehler("");
+    try {
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/recover`, {
+        method: "POST",
+        headers: { "apikey": SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      setLoading(false);
+      return res.ok;
+    } catch {
+      setFehler("Passwort-Reset konnte nicht angefordert werden.");
+      setLoading(false);
+      return false;
+    }
   }
 
   async function passwortSetzen(password) {
@@ -5597,7 +3951,7 @@ function useAuth() {
 
   return { session, profil, rolle, rolleConfig, loading, fehler,
     anmelden, abmelden, supabaseKonfiguriert,
-    inviteToken, inviteType, passwortSetzen };
+    inviteToken, inviteType, passwortSetzen, passwortVergessen };
 }
 
 // ─── Login Screen ─────────────────────────────────────────────────────────
@@ -5605,6 +3959,78 @@ function LoginScreen({ auth, onDemoLogin, onRegistrieren }) {
   const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
   const [showPw,   setShowPw]   = useState(false);
+  const [zeigeReset, setZeigeReset] = useState(false);
+  const [resetGesendet, setResetGesendet] = useState(false);
+
+  async function resetAnfordern() {
+    if (!email) return;
+    const ok = await auth.passwortVergessen(email);
+    if (ok) setResetGesendet(true);
+  }
+
+  if (zeigeReset) {
+    return (
+      <div style={{ background:"var(--bg)", minHeight:"100dvh", display:"flex",
+        flexDirection:"column", alignItems:"center", justifyContent:"center",
+        padding:"24px 20px", fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
+        <div style={{ textAlign:"center", marginBottom:32 }}>
+          <div style={{ fontWeight:900, fontSize:24, letterSpacing:-1, color:"var(--text)" }}>
+            <span style={{ color:"var(--yellow)" }}>★</span> POLARIS
+          </div>
+        </div>
+        <div style={{ background:"var(--surface)", borderRadius:20, padding:28,
+          width:"100%", maxWidth:380, border:"1.5px solid var(--border)" }}>
+          {!resetGesendet ? (
+            <>
+              <div style={{ color:"var(--text)", fontWeight:800, fontSize:18,
+                marginBottom:6 }}>Passwort zurücksetzen</div>
+              <div style={{ color:"var(--muted)", fontSize:13, marginBottom:20 }}>
+                Gib deine E-Mail-Adresse ein — wir schicken dir einen Link zum
+                Zurücksetzen deines Passworts.
+              </div>
+              {auth.fehler && (
+                <div style={{ background:"var(--rbg)", color:"var(--red)",
+                  borderRadius:10, padding:"10px 14px", marginBottom:16,
+                  fontSize:13, border:"1px solid var(--red)" }}>
+                  ❌ {auth.fehler}
+                </div>
+              )}
+              <div style={{ marginBottom:20 }}>
+                <Label>E-Mail</Label>
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                  placeholder="name@firma.de" style={inputStyle()}
+                  onKeyDown={e => e.key==="Enter" && resetAnfordern()} />
+              </div>
+              <button onClick={resetAnfordern} disabled={auth.loading || !email}
+                style={{ width:"100%", background: email ? "var(--yellow)" : "var(--surface2)",
+                  color: email ? "#1a1200" : "var(--muted)",
+                  border:"none", borderRadius:12, padding:15, fontWeight:800,
+                  fontSize:15, cursor: email ? "pointer" : "default", fontFamily:"inherit" }}>
+                {auth.loading ? "⏳ Wird gesendet…" : "Link senden →"}
+              </button>
+            </>
+          ) : (
+            <div style={{ textAlign:"center" }}>
+              <div style={{ fontSize:48, marginBottom:12 }}>📧</div>
+              <div style={{ color:"var(--text)", fontWeight:800, fontSize:16,
+                marginBottom:8 }}>E-Mail gesendet!</div>
+              <div style={{ color:"var(--muted)", fontSize:13, lineHeight:1.6 }}>
+                Falls ein Konto mit dieser E-Mail existiert, erhältst du in
+                Kürze einen Link zum Zurücksetzen deines Passworts.
+              </div>
+            </div>
+          )}
+          <div style={{ textAlign:"center", marginTop:16 }}>
+            <button onClick={() => { setZeigeReset(false); setResetGesendet(false); }}
+              style={{ background:"none", border:"none", color:"var(--muted)",
+                cursor:"pointer", fontSize:13, fontFamily:"inherit" }}>
+              ← Zurück zur Anmeldung
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ background:"var(--bg)", minHeight:"100dvh", display:"flex",
@@ -5645,7 +4071,7 @@ function LoginScreen({ auth, onDemoLogin, onRegistrieren }) {
             onKeyDown={e => e.key==="Enter" && auth.anmelden(email, password)} />
         </div>
 
-        <div style={{ marginBottom:20 }}>
+        <div style={{ marginBottom:10 }}>
           <Label>Passwort</Label>
           <div style={{ position:"relative" }}>
             <input type={showPw ? "text" : "password"} value={password}
@@ -5659,6 +4085,14 @@ function LoginScreen({ auth, onDemoLogin, onRegistrieren }) {
               {showPw ? "🙈" : "👁️"}
             </button>
           </div>
+        </div>
+
+        <div style={{ textAlign:"right", marginBottom:20 }}>
+          <button onClick={() => setZeigeReset(true)}
+            style={{ background:"none", border:"none", color:"var(--muted)",
+              cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>
+            Passwort vergessen?
+          </button>
         </div>
 
         <button onClick={() => auth.anmelden(email, password)}
@@ -5828,7 +4262,376 @@ async function reverseGeocode(lat, lng) {
   } catch { return `${lat.toFixed(5)}, ${lng.toFixed(5)}`; }
 }
 
-function StempeluhrView({ profil, projekte, session }) {
+// Tätigkeiten für Zeitbuchung — wird für Kalkulation, Lohnabrechnung und
+// Kostenauswertung benötigt (analog zu Aktivitäten in 123erfasst).
+const TAETIGKEITEN = {
+  beton:      { label:"Betonage",       icon:"🏗️" },
+  schalung:   { label:"Schalung",       icon:"🪵"  },
+  bewehrung:  { label:"Bewehrung",      icon:"🔩"  },
+  abdichtung: { label:"Abdichtung",     icon:"💧"  },
+  estrich:    { label:"Estrich",        icon:"🪣"  },
+  aufraeumen: { label:"Aufräumen",      icon:"🧹"  },
+  transport:  { label:"Transport",      icon:"🚚"  },
+  vorarbeit:  { label:"Vorbereitung",   icon:"📐"  },
+  sonstiges:  { label:"Sonstiges",      icon:"📋"  },
+};
+
+// ─── Stunden-Export ────────────────────────────────────────────────────────
+// Exportiert Zeitbuchungen als CSV für Lohnbüro/Buchhaltung — die GPS-Daten
+// aus der Stempeluhr müssen sonst manuell übertragen werden, was den
+// eigentlichen Nutzen der digitalen Erfassung zunichtemacht.
+function StundenExportView({ profil, session, projekte, darfAlleSehen = false }) {
+  const [vonDatum, setVonDatum] = useState(() => {
+    const d = new Date(); d.setDate(1); // Monatserster
+    return d.toISOString().slice(0,10);
+  });
+  const [bisDatum, setBisDatum] = useState(new Date().toISOString().slice(0,10));
+  const [laden,    setLaden]    = useState(false);
+  const [buchungen,setBuchungen]= useState([]);
+  const [geladen,  setGeladen]  = useState(false);
+
+  async function ladeZeitraum() {
+    setLaden(true); setGeladen(false);
+    const filterProfil = darfAlleSehen ? "" : `&profil_id=eq.${profil.id}`;
+    const data = await sbFetch(
+      `zeitbuchungen?select=*,profile(vorname,nachname)&status=eq.abgeschlossen` +
+      `&eingestempelt_at=gte.${vonDatum}T00:00:00` +
+      `&eingestempelt_at=lte.${bisDatum}T23:59:59` +
+      filterProfil +
+      `&order=eingestempelt_at.asc`,
+      { headers: { "Authorization": `Bearer ${session?.access_token}` } }
+    );
+    setBuchungen(data || []);
+    setGeladen(true);
+    setLaden(false);
+  }
+
+  const gesamtMinuten = buchungen.reduce((s,b) => s + (b.netto_minuten||0), 0);
+  const gesamtStunden = (gesamtMinuten / 60).toFixed(2);
+
+  function projektName(id) {
+    return projekte.find(p => p.id === id)?.name || "—";
+  }
+
+  function exportCSV() {
+    const rows = [
+      ["Datum","Name","Projekt","Tätigkeit","Von","Bis","Pause (min)","Netto (Std)","Adresse Start","Notiz"],
+      ...buchungen.map(b => {
+        const von = new Date(b.eingestempelt_at);
+        const bis = b.ausgestempelt_at ? new Date(b.ausgestempelt_at) : null;
+        const name = b.profile ? `${b.profile.vorname||""} ${b.profile.nachname||""}`.trim() : (profil.vorname+" "+profil.nachname);
+        return [
+          von.toLocaleDateString("de-DE"),
+          name,
+          projektName(b.projekt_id),
+          TAETIGKEITEN[b.taetigkeit]?.label || "—",
+          von.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}),
+          bis ? bis.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}) : "—",
+          b.pause_minuten || 0,
+          ((b.netto_minuten||0)/60).toFixed(2).replace(".",","),
+          b.ein_adresse || "",
+          b.notiz || "",
+        ];
+      }),
+      [],
+      ["", "", "", "", "", "", "GESAMT (Std):", gesamtStunden.replace(".",","), "", ""],
+    ];
+    const csv = rows.map(r => r.map(v => '"'+String(v).replace(/"/g,'""')+'"').join(";")).join("\n");
+    const blob = new Blob(["\uFEFF"+csv], { type:"text/csv;charset=utf-8;" });
+    const url  = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `Stunden_${vonDatum}_bis_${bisDatum}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <div>
+      <div style={{ color:"var(--text)", fontWeight:800, fontSize:16, marginBottom:14 }}>
+        📊 Stunden-Export
+      </div>
+
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
+        <div>
+          <Label>Von</Label>
+          <input type="date" value={vonDatum} onChange={e=>setVonDatum(e.target.value)}
+            style={inputStyle()} />
+        </div>
+        <div>
+          <Label>Bis</Label>
+          <input type="date" value={bisDatum} onChange={e=>setBisDatum(e.target.value)}
+            style={inputStyle()} />
+        </div>
+      </div>
+
+      <button onClick={ladeZeitraum} disabled={laden}
+        style={{ width:"100%", background:"var(--surface2)", color:"var(--text)",
+          border:"1.5px solid var(--border)", borderRadius:12, padding:13,
+          fontWeight:700, cursor:"pointer", fontSize:14, fontFamily:"inherit",
+          marginBottom:16 }}>
+        {laden ? "⏳ Lädt…" : "🔍 Zeitraum laden"}
+      </button>
+
+      {geladen && (
+        <>
+          <div style={{ background:"var(--surface)", borderRadius:14, padding:16,
+            marginBottom:14, border:"1.5px solid var(--border)" }}>
+            <div style={{ display:"flex", justifyContent:"space-between",
+              alignItems:"center" }}>
+              <div>
+                <div style={{ color:"var(--muted)", fontSize:11, fontWeight:700,
+                  textTransform:"uppercase" }}>Gesamt</div>
+                <div style={{ color:"var(--text)", fontWeight:900, fontSize:24 }}>
+                  {gesamtStunden} Std
+                </div>
+              </div>
+              <div style={{ color:"var(--muted)", fontSize:12, textAlign:"right" }}>
+                {buchungen.length} Buchung{buchungen.length!==1?"en":""}
+              </div>
+            </div>
+          </div>
+
+          {buchungen.length > 0 && (
+            <button onClick={exportCSV}
+              style={{ width:"100%", background:"var(--yellow)", color:"#1a1200",
+                border:"none", borderRadius:12, padding:14, fontWeight:800,
+                fontSize:15, cursor:"pointer", fontFamily:"inherit",
+                marginBottom:16 }}>
+              📥 Als CSV exportieren
+            </button>
+          )}
+
+          {buchungen.length === 0 && (
+            <div style={{ textAlign:"center", padding:"32px 20px", color:"var(--muted)" }}>
+              Keine Buchungen im gewählten Zeitraum.
+            </div>
+          )}
+
+          {buchungen.map(b => {
+            const von = new Date(b.eingestempelt_at);
+            const name = b.profile ? `${b.profile.vorname||""} ${b.profile.nachname||""}`.trim() : "";
+            return (
+              <div key={b.id} style={{ background:"var(--surface)", borderRadius:10,
+                padding:"10px 12px", marginBottom:6, border:"1px solid var(--border)" }}>
+                <div style={{ display:"flex", justifyContent:"space-between" }}>
+                  <div>
+                    <div style={{ color:"var(--text)", fontSize:12, fontWeight:600 }}>
+                      {von.toLocaleDateString("de-DE")} {name && `· ${name}`}
+                    </div>
+                    <div style={{ color:"var(--muted)", fontSize:11, marginTop:2 }}>
+                      {projektName(b.projekt_id)}
+                      {b.taetigkeit && ` · ${TAETIGKEITEN[b.taetigkeit]?.icon} ${TAETIGKEITEN[b.taetigkeit]?.label}`}
+                    </div>
+                  </div>
+                  <div style={{ color:"var(--text)", fontWeight:700, fontSize:13 }}>
+                    {((b.netto_minuten||0)/60).toFixed(1)}h
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </>
+      )}
+    </div>
+  );
+}
+
+
+// Vorarbeiter stempelt für die gesamte Kolonne auf einmal statt jeder
+// Mitarbeiter einzeln — spiegelt den Team-Erfassungsmodus aus 123erfasst,
+// wichtig für Kolonnen ohne eigene App-Accounts pro Mitarbeiter.
+function KolonnenSammelstempel({ kolonne, projekte, session, onClose }) {
+  const [ausgewaehlt, setAusgewaehlt] = useState(() => {
+    const sel = {};
+    (kolonne.mitarbeiter || []).forEach((_, i) => sel[i] = true);
+    return sel;
+  });
+  const [aktivProjekt, setAktivProjekt] = useState(projekte[0]?.id || null);
+  const [taetigkeit,   setTaetigkeit]   = useState("beton");
+  const [gpsLaden,     setGpsLaden]     = useState(false);
+  const [ergebnis,     setErgebnis]     = useState(null); // { erfolg, fehler }
+
+  const anzahlAusgewaehlt = Object.values(ausgewaehlt).filter(Boolean).length;
+
+  async function sammelEinstempeln() {
+    setGpsLaden(true);
+    let pos = null, adresse = null;
+    try {
+      pos = await getGPSPosition();
+      adresse = await reverseGeocode(pos.lat, pos.lng);
+    } catch { /* GPS optional — Buchung geht auch ohne */ }
+    setGpsLaden(false);
+
+    const ausgewaehlteMitarbeiter = (kolonne.mitarbeiter || [])
+      .filter((_, i) => ausgewaehlt[i]);
+
+    let erfolgreich = 0, fehlgeschlagen = 0;
+    for (const mitarbeiter of ausgewaehlteMitarbeiter) {
+      const buchung = {
+        profil_id:        null, // kein eigener Account — Name in Notiz
+        projekt_id:       aktivProjekt,
+        kolonne_id:       kolonne.id,
+        eingestempelt_at: new Date().toISOString(),
+        ein_lat:          pos?.lat,
+        ein_lng:          pos?.lng,
+        ein_adresse:      adresse || null,
+        status:           "aktiv",
+        taetigkeit:       taetigkeit,
+        notiz:            `Sammelbuchung Kolonne ${kolonne.name}: ${mitarbeiter.name}`,
+      };
+      if (session?.access_token) {
+        const data = await sbFetch("zeitbuchungen", {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${session.access_token}` },
+          body: JSON.stringify(buchung),
+        });
+        if (data?.[0]) erfolgreich++; else fehlgeschlagen++;
+      } else {
+        erfolgreich++; // Demo-Modus: immer "erfolgreich"
+      }
+    }
+    setErgebnis({ erfolgreich, fehlgeschlagen, gesamt: ausgewaehlteMitarbeiter.length });
+  }
+
+  return (
+    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
+      background:"var(--bg)", zIndex:500, overflowY:"auto",
+      WebkitOverflowScrolling:"touch",
+      fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
+
+      <div style={{ background:"var(--surface)", padding:"14px 18px",
+        borderBottom:"3px solid var(--yellow)", position:"sticky", top:0,
+        zIndex:10, display:"flex", justifyContent:"space-between",
+        alignItems:"center" }}>
+        <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:17 }}>
+          👷 Kolonne einstempeln
+        </div>
+        <button onClick={onClose}
+          style={{ background:"var(--surface2)", border:"1px solid var(--border)",
+            color:"var(--text)", borderRadius:8, padding:"6px 14px",
+            cursor:"pointer", fontSize:14, fontFamily:"inherit" }}>✕</button>
+      </div>
+
+      <div style={{ padding:"18px 16px 100px" }}>
+
+        {!ergebnis ? (
+          <>
+            <div style={{ color:"var(--muted)", fontSize:13, marginBottom:16,
+              lineHeight:1.5 }}>
+              Stempelt <strong>{kolonne.name}</strong> gesammelt ein. Praktisch
+              wenn nicht jeder Mitarbeiter ein eigenes Smartphone mit App hat —
+              der Vorarbeiter erfasst für das ganze Team auf einmal.
+            </div>
+
+            <div style={{ marginBottom:14 }}>
+              <Label>Projekt</Label>
+              <div style={{ display:"flex", flexDirection:"column", gap:6, marginTop:6 }}>
+                {projekte.map(p => (
+                  <button key={p.id} onClick={() => setAktivProjekt(p.id)}
+                    style={{ background: aktivProjekt===p.id ? "var(--ybg)" : "var(--surface)",
+                      color:"var(--text)", border:`2px solid ${aktivProjekt===p.id ? "var(--yellow)" : "var(--border)"}`,
+                      borderRadius:12, padding:"10px 14px", cursor:"pointer",
+                      fontFamily:"inherit", textAlign:"left",
+                      fontWeight: aktivProjekt===p.id ? 700 : 400, fontSize:13 }}>
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ marginBottom:16 }}>
+              <Label>Tätigkeit</Label>
+              <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:6 }}>
+                {Object.entries(TAETIGKEITEN).map(([key, t]) => (
+                  <button key={key} onClick={() => setTaetigkeit(key)}
+                    style={{ background: taetigkeit===key ? "var(--ybg)" : "var(--surface2)",
+                      color: taetigkeit===key ? "var(--ydark)" : "var(--muted)",
+                      border:`1.5px solid ${taetigkeit===key ? "var(--yellow)" : "var(--border)"}`,
+                      borderRadius:20, padding:"6px 12px", cursor:"pointer",
+                      fontSize:12, fontWeight: taetigkeit===key ? 700 : 400,
+                      fontFamily:"inherit" }}>
+                    {t.icon} {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display:"flex", justifyContent:"space-between",
+              alignItems:"center", marginBottom:10 }}>
+              <Label>Mitarbeiter</Label>
+              <div style={{ color:"var(--muted)", fontSize:12 }}>
+                {anzahlAusgewaehlt} / {(kolonne.mitarbeiter||[]).length} ausgewählt
+              </div>
+            </div>
+
+            {(kolonne.mitarbeiter||[]).length === 0 && (
+              <div style={{ background:"var(--surface)", borderRadius:12,
+                padding:"20px 16px", textAlign:"center", color:"var(--muted)",
+                fontSize:13, border:"1px solid var(--border)" }}>
+                Diese Kolonne hat noch keine Mitarbeiter hinterlegt.
+                Füge sie in der Kolonnen-Verwaltung hinzu.
+              </div>
+            )}
+
+            {(kolonne.mitarbeiter||[]).map((mitarbeiter, i) => (
+              <div key={mitarbeiter.id ?? i} onClick={() => setAusgewaehlt(p=>({...p,[i]:!p[i]}))}
+                style={{ display:"flex", alignItems:"center", gap:10,
+                  background:"var(--surface)", borderRadius:10,
+                  padding:"10px 14px", marginBottom:6, cursor:"pointer",
+                  border:`1.5px solid ${ausgewaehlt[i] ? "var(--yellow)" : "var(--border)"}` }}>
+                <div style={{ width:22, height:22, borderRadius:6, flexShrink:0,
+                  background: ausgewaehlt[i] ? "var(--yellow)" : "var(--surface2)",
+                  border:`1.5px solid ${ausgewaehlt[i] ? "var(--yellow)" : "var(--border)"}`,
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                  fontSize:13, color:"#1a1200" }}>
+                  {ausgewaehlt[i] && "✓"}
+                </div>
+                <div style={{ color:"var(--text)", fontSize:13, fontWeight:600 }}>
+                  {mitarbeiter.name}
+                </div>
+              </div>
+            ))}
+
+            <button onClick={sammelEinstempeln}
+              disabled={gpsLaden || anzahlAusgewaehlt===0 || !aktivProjekt}
+              style={{ width:"100%", background: anzahlAusgewaehlt>0 && aktivProjekt ? "var(--green)" : "var(--surface2)",
+                color: anzahlAusgewaehlt>0 && aktivProjekt ? "#fff" : "var(--muted)",
+                border:"none", borderRadius:14, padding:16, fontWeight:800,
+                fontSize:16, marginTop:20,
+                cursor: anzahlAusgewaehlt>0 && aktivProjekt ? "pointer" : "default",
+                fontFamily:"inherit" }}>
+              {gpsLaden ? "📍 GPS…" : `▶ ${anzahlAusgewaehlt} Mitarbeiter einstempeln`}
+            </button>
+          </>
+        ) : (
+          <div style={{ textAlign:"center", paddingTop:20 }}>
+            <div style={{ fontSize:48, marginBottom:16 }}>
+              {ergebnis.fehlgeschlagen === 0 ? "✅" : "⚠️"}
+            </div>
+            <div style={{ color:"var(--text)", fontWeight:800, fontSize:18,
+              marginBottom:8 }}>
+              {ergebnis.erfolgreich} von {ergebnis.gesamt} eingestempelt
+            </div>
+            {ergebnis.fehlgeschlagen > 0 && (
+              <div style={{ color:"var(--red)", fontSize:13, marginBottom:16 }}>
+                {ergebnis.fehlgeschlagen} Buchung(en) fehlgeschlagen — bitte erneut versuchen.
+              </div>
+            )}
+            <button onClick={onClose}
+              style={{ background:"var(--yellow)", color:"#1a1200", border:"none",
+                borderRadius:12, padding:"12px 24px", fontWeight:800,
+                cursor:"pointer", fontSize:15, fontFamily:"inherit" }}>
+              Fertig
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
   const [status,      setStatus]      = useState("aus");   // aus | ein | pause
   const [aktiveBuchung, setAktiveBuchung] = useState(null);
   const [gps,         setGPS]         = useState(null);
@@ -5838,6 +4641,24 @@ function StempeluhrView({ profil, projekte, session }) {
   const [buchungen,   setBuchungen]   = useState([]);
   const [aktivProjekt,setAktivProjekt]= useState(projekte[0]?.id || null);
   const [notiz,       setNotiz]       = useState("");
+  const [taetigkeit,  setTaetigkeit]  = useState("beton");
+  const [zeigeSammel, setZeigeSammel] = useState(false);
+
+  // Eigene Kolonne finden (für Vorarbeiter mit Team-Sammelerfassung)
+  const eigeneKolonne = kolonnen.find(k => k.id === profil?.kolonne_id);
+  const kannSammelStempeln = ROLLEN[profil?.rolle]?.label === "Vorarbeiter" ||
+    profil?.rolle === "vorarbeiter" || profil?.rolle === "polier" || profil?.rolle === "administrator";
+
+  if (zeigeSammel && eigeneKolonne) {
+    return (
+      <KolonnenSammelstempel
+        kolonne={eigeneKolonne}
+        projekte={projekte}
+        session={session}
+        onClose={() => setZeigeSammel(false)}
+      />
+    );
+  }
 
   // Uhr aktualisieren
   useEffect(() => {
@@ -5893,6 +4714,7 @@ function StempeluhrView({ profil, projekte, session }) {
       ein_adresse:      pos?.adresse || null,
       status:           "aktiv",
       notiz:            notiz || null,
+      taetigkeit:       taetigkeit,
     };
 
     if (session?.access_token) {
@@ -6023,6 +4845,18 @@ function StempeluhrView({ profil, projekte, session }) {
         )}
       </div>
 
+      {/* Kolonnen-Sammelerfassung — nur wenn eigene Kolonne + berechtigte Rolle */}
+      {eigeneKolonne && kannSammelStempeln && status === "aus" && (
+        <button onClick={() => setZeigeSammel(true)}
+          style={{ width:"100%", background:"var(--bbg)", color:"var(--blue)",
+            border:"2px solid var(--blue)", borderRadius:14, padding:14,
+            fontWeight:700, fontSize:14, cursor:"pointer", marginBottom:14,
+            fontFamily:"inherit", display:"flex", alignItems:"center",
+            justifyContent:"center", gap:8 }}>
+          👷 Für Kolonne „{eigeneKolonne.name}" sammelbuchen
+        </button>
+      )}
+
       {/* Projekt Auswahl */}
       {status === "aus" && (
         <>
@@ -6043,6 +4877,22 @@ function StempeluhrView({ profil, projekte, session }) {
               ))}
             </div>
           </div>
+          <div style={{ marginBottom:12 }}>
+            <Label>Tätigkeit</Label>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:6 }}>
+              {Object.entries(TAETIGKEITEN).map(([key, t]) => (
+                <button key={key} onClick={() => setTaetigkeit(key)}
+                  style={{ background: taetigkeit===key ? "var(--ybg)" : "var(--surface2)",
+                    color: taetigkeit===key ? "var(--ydark)" : "var(--muted)",
+                    border:`1.5px solid ${taetigkeit===key ? "var(--yellow)" : "var(--border)"}`,
+                    borderRadius:20, padding:"6px 12px", cursor:"pointer",
+                    fontSize:12, fontWeight: taetigkeit===key ? 700 : 400,
+                    fontFamily:"inherit" }}>
+                  {t.icon} {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
           <div style={{ marginBottom:16 }}>
             <Label>Notiz (optional)</Label>
             <input value={notiz} onChange={e => setNotiz(e.target.value)}
@@ -6059,6 +4909,12 @@ function StempeluhrView({ profil, projekte, session }) {
           <div style={{ color:"var(--text)", fontSize:13, fontWeight:600 }}>
             {projekte.find(p=>p.id===aktiveBuchung.projekt_id)?.name || "—"}
           </div>
+          {aktiveBuchung.taetigkeit && (
+            <div style={{ color:"var(--ydark)", fontSize:12, marginTop:4,
+              fontWeight:600 }}>
+              {TAETIGKEITEN[aktiveBuchung.taetigkeit]?.icon} {TAETIGKEITEN[aktiveBuchung.taetigkeit]?.label}
+            </div>
+          )}
           {aktiveBuchung.ein_adresse && (
             <div style={{ color:"var(--muted)", fontSize:11, marginTop:4 }}>
               📍 Eingestempelt: {aktiveBuchung.ein_adresse}
@@ -6126,6 +4982,11 @@ function StempeluhrView({ profil, projekte, session }) {
                     {b.ausgestempelt_at ? new Date(b.ausgestempelt_at).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}) : "—"}
                   </div>
                   {b.ein_adresse && <div style={{ fontSize:10, color:"var(--muted)", marginTop:2 }}>📍 {b.ein_adresse}</div>}
+                  {b.taetigkeit && (
+                    <div style={{ fontSize:10, color:"var(--ydark)", marginTop:2, fontWeight:600 }}>
+                      {TAETIGKEITEN[b.taetigkeit]?.icon} {TAETIGKEITEN[b.taetigkeit]?.label}
+                    </div>
+                  )}
                 </div>
                 <div style={{ fontWeight:800, color:"var(--text)", fontSize:14 }}>
                   {b.netto_minuten ? `${Math.floor(b.netto_minuten/60)}h ${b.netto_minuten%60}min` : "—"}
@@ -6666,7 +5527,874 @@ function leereAufgabe() {
   };
 }
 
-// ─── Aufgaben-Karte ───────────────────────────────────────────────────────────
+// ─── Aufgaben-Vorlagen für Schnellerstellung ─────────────────────────────
+const AUFGABEN_VORLAGEN = [
+  { name:"Bodenplatte",       typ:"beton",      betonsorte:"C25/30", icon:"🏗️" },
+  { name:"Fundament",         typ:"beton",      betonsorte:"C25/30", icon:"🏗️" },
+  { name:"Kellerwand WU",     typ:"beton",      betonsorte:"C30/37", icon:"🏗️" },
+  { name:"Schaltafel stellen",typ:"schalung",   betonsorte:"",       icon:"🪵" },
+  { name:"Bewehrung verlegen",typ:"bewehrung",  betonsorte:"",       icon:"🔩" },
+  { name:"Abdichtung 2-lagig",typ:"abdichtung", betonsorte:"",       icon:"💧" },
+  { name:"Estrich einbringen",typ:"estrich",    betonsorte:"",       icon:"🪣" },
+];
+
+// ─── Schnellerstellung: Vorlage | Einzeln | Liste ────────────────────────
+// ─── Plan-Erkennung: ausschließlich DXF via Vektor-Parsing (keine KI) ────
+
+// ════════════════════════════════════════════════════════════════════════════
+// VOLLSTÄNDIGER DXF-PARSER
+// Unterstützt: LWPOLYLINE, POLYLINE (2D/3D + Bulge-Bögen), LINE-Ketten
+// (offene Linien werden zu geschlossenen Polygonen zusammengesetzt),
+// HATCH (gefüllte Flächen mit Boundary-Pfaden), CIRCLE, ARC,
+// INSERT-Block-Auflösung (Skalierung, Rotation, Translation, Arrays).
+// Kein externes Package nötig — reiner DXF-Tag-Parser (Gruppencode/Wert-Paare).
+// ════════════════════════════════════════════════════════════════════════════
+
+// ─── 1. Tokenizer: DXF in Gruppencode/Wert-Paare zerlegen ────────────────
+function dxfTokenize(text) {
+  const lines = text.split(/\r?\n/);
+  const tokens = [];
+  for (let i = 0; i + 1 < lines.length; i += 2) {
+    const code = parseInt(lines[i].trim(), 10);
+    const value = lines[i + 1] !== undefined ? lines[i + 1].trim() : "";
+    if (!Number.isNaN(code)) tokens.push({ code, value });
+  }
+  return tokens;
+}
+
+// ─── 2. Sektionen extrahieren (HEADER/TABLES/BLOCKS/ENTITIES) ────────────
+function dxfSplitSections(tokens) {
+  const sections = {};
+  let current = null;
+  let name = null;
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i];
+    if (t.code === 0 && t.value === "SECTION") {
+      current = [];
+      name = null;
+    } else if (t.code === 2 && current !== null && name === null) {
+      name = t.value;
+    } else if (t.code === 0 && t.value === "ENDSEC") {
+      if (name) sections[name] = current;
+      current = null; name = null;
+    } else if (current !== null) {
+      current.push(t);
+    }
+  }
+  return sections;
+}
+
+// ─── 3. Entitäten aus einem Token-Strom extrahieren (0/TYPE trennt Objekte) ──
+function dxfSplitEntities(tokens) {
+  const entities = [];
+  let current = null;
+  for (const t of tokens) {
+    if (t.code === 0) {
+      if (current) entities.push(current);
+      current = { type: t.value, tags: [] };
+    } else if (current) {
+      current.tags.push(t);
+    }
+  }
+  if (current) entities.push(current);
+  return entities;
+}
+
+function dxfGet(tags, code, def) {
+  const t = tags.find(x => x.code === code);
+  return t ? t.value : def;
+}
+function dxfGetNum(tags, code, def) {
+  const v = dxfGet(tags, code, undefined);
+  return v !== undefined ? parseFloat(v) : def;
+}
+function dxfGetAll(tags, code) {
+  return tags.filter(x => x.code === code).map(x => x.value);
+}
+
+// ─── 4. Bulge-Bogen: DXF-Polylinien können gebogene Segmente haben ───────
+// Ein Bulge != 0 zwischen zwei Punkten beschreibt einen Kreisbogen.
+// Wir approximieren den Bogen durch mehrere Liniensegmente für die
+// Flächenberechnung (Shoelace bleibt exakt genug für Bausteinflächen).
+function bulgeArcPoints(p1, p2, bulge, segments = 12) {
+  if (!bulge) return [p2];
+  const theta = 4 * Math.atan(bulge);
+  const dx = p2.x - p1.x, dy = p2.y - p1.y;
+  const chord = Math.hypot(dx, dy);
+  if (chord === 0) return [p2];
+  const radius = chord / (2 * Math.sin(theta / 2));
+  const midX = (p1.x + p2.x) / 2, midY = (p1.y + p2.y) / 2;
+  const sagitta = radius * (1 - Math.cos(theta / 2)) * Math.sign(bulge);
+  const nx = -dy / chord, ny = dx / chord;
+  const cx = midX + nx * (radius * Math.cos(theta / 2)) * Math.sign(bulge);
+  const cy = midY + ny * (radius * Math.cos(theta / 2)) * Math.sign(bulge);
+  const startAngle = Math.atan2(p1.y - cy, p1.x - cx);
+  const pts = [];
+  for (let s = 1; s <= segments; s++) {
+    const a = startAngle + theta * (s / segments);
+    pts.push({ x: cx + Math.abs(radius) * Math.cos(a), y: cy + Math.abs(radius) * Math.sin(a) });
+  }
+  return pts;
+}
+
+// ─── 5. Geometrie-Extraktion pro Entity-Typ → gibt Punktliste + closed zurück ──
+function dxfEntityToPolyline(entity) {
+  const { type, tags } = entity;
+  const layer = dxfGet(tags, 8, "0");
+
+  if (type === "LWPOLYLINE") {
+    const xs = dxfGetAll(tags, 10).map(Number);
+    const ys = dxfGetAll(tags, 20).map(Number);
+    const bulges = {};
+    // Bulge (Code 42) gehört zum vorherigen Vertex — wir sammeln sie positionsgebunden
+    let vertexIdx = -1;
+    const bulgeByVertex = [];
+    for (const t of tags) {
+      if (t.code === 10) { vertexIdx++; bulgeByVertex[vertexIdx] = 0; }
+      if (t.code === 42) bulgeByVertex[vertexIdx] = parseFloat(t.value);
+    }
+    const closedFlag = Number(dxfGet(tags, 70, "0")) & 1;
+    const rawPts = xs.map((x, i) => ({ x, y: ys[i] }));
+    let pts = [];
+    for (let i = 0; i < rawPts.length; i++) {
+      pts.push(rawPts[i]);
+      const nextIdx = closedFlag ? (i + 1) % rawPts.length : i + 1;
+      if (nextIdx < rawPts.length && bulgeByVertex[i]) {
+        pts = pts.concat(bulgeArcPoints(rawPts[i], rawPts[nextIdx], bulgeByVertex[i]));
+      }
+      if (!closedFlag && nextIdx >= rawPts.length) break;
+    }
+    return { points: pts, closed: !!closedFlag, layer, type };
+  }
+
+  if (type === "POLYLINE") {
+    // POLYLINE referenziert VERTEX-Entitäten separat — werden vom Aufrufer
+    // vorab eingesammelt und hier als tags.__vertices übergeben.
+    const closedFlag = Number(dxfGet(tags, 70, "0")) & 1;
+    const verts = tags.__vertices || [];
+    return { points: verts, closed: !!closedFlag, layer, type };
+  }
+
+  if (type === "LINE") {
+    const p1 = { x: dxfGetNum(tags, 10, 0), y: dxfGetNum(tags, 20, 0) };
+    const p2 = { x: dxfGetNum(tags, 11, 0), y: dxfGetNum(tags, 21, 0) };
+    return { points: [p1, p2], closed: false, layer, type: "LINE" };
+  }
+
+  if (type === "CIRCLE") {
+    const cx = dxfGetNum(tags, 10, 0), cy = dxfGetNum(tags, 20, 0);
+    const r  = dxfGetNum(tags, 40, 0);
+    const pts = [];
+    const seg = 24;
+    for (let s = 0; s < seg; s++) {
+      const a = (s / seg) * Math.PI * 2;
+      pts.push({ x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) });
+    }
+    return { points: pts, closed: true, layer, type };
+  }
+
+  if (type === "ARC") {
+    const cx = dxfGetNum(tags, 10, 0), cy = dxfGetNum(tags, 20, 0);
+    const r  = dxfGetNum(tags, 40, 0);
+    const a1 = dxfGetNum(tags, 50, 0) * Math.PI / 180;
+    let   a2 = dxfGetNum(tags, 51, 0) * Math.PI / 180;
+    if (a2 < a1) a2 += Math.PI * 2;
+    const pts = [];
+    const seg = 16;
+    for (let s = 0; s <= seg; s++) {
+      const a = a1 + (a2 - a1) * (s / seg);
+      pts.push({ x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) });
+    }
+    return { points: pts, closed: false, layer, type };
+  }
+
+  if (type === "HATCH") {
+    // HATCH: Boundary-Pfade bestehen aus Edges (Code 72/73 Typ) mit Linien/Bögen.
+    // Vereinfachtes, aber korrektes Parsing der häufigsten Polyline-Boundary (Typ 7).
+    const pts = [];
+    let collecting = false;
+    let curX = null;
+    for (const t of tags) {
+      if (t.code === 92) collecting = true; // Boundary path type flag beginnt Pfad
+      if (collecting) {
+        if (t.code === 10) curX = parseFloat(t.value);
+        if (t.code === 20 && curX !== null) {
+          pts.push({ x: curX, y: parseFloat(t.value) });
+          curX = null;
+        }
+      }
+    }
+    return { points: pts, closed: true, layer, type };
+  }
+
+  return null;
+}
+
+// ─── 6. INSERT-Blöcke auflösen: Transformation auf Block-Geometrie anwenden ──
+function dxfTransformPoint(p, ins, scaleX, scaleY, rotDeg) {
+  const rot = (rotDeg || 0) * Math.PI / 180;
+  const sx = (p.x || 0) * (scaleX ?? 1);
+  const sy = (p.y || 0) * (scaleY ?? 1);
+  const rx = sx * Math.cos(rot) - sy * Math.sin(rot);
+  const ry = sx * Math.sin(rot) + sy * Math.cos(rot);
+  return { x: rx + ins.x, y: ry + ins.y };
+}
+
+// Löst INSERT-Referenzen zu ihrer tatsächlichen (transformierten) Geometrie auf.
+// Gibt NUR die aus Blöcken erzeugte Geometrie zurück — der Aufrufer kombiniert
+// dies selbst mit den direkten (Nicht-INSERT) Entitäten aus der ENTITIES-Sektion.
+function dxfResolveInserts(entities, blockDefs, depth = 0) {
+  if (depth > 6) return []; // Schutz vor zirkulären Block-Referenzen
+  const resolved = [];
+  for (const e of entities) {
+    if (e.type !== "INSERT") continue;
+    const blockName = dxfGet(e.tags, 2, "");
+    const def = blockDefs[blockName];
+    if (!def) continue;
+    const insX = dxfGetNum(e.tags, 10, 0), insY = dxfGetNum(e.tags, 20, 0);
+    const scaleX = dxfGetNum(e.tags, 41, 1), scaleY = dxfGetNum(e.tags, 42, 1);
+    const rot = dxfGetNum(e.tags, 50, 0);
+    const colCount = Number(dxfGet(e.tags, 70, "1")) || 1;
+    const rowCount  = Number(dxfGet(e.tags, 71, "1")) || 1;
+    const colSpace  = dxfGetNum(e.tags, 44, 0);
+    const rowSpace  = dxfGetNum(e.tags, 45, 0);
+
+    for (let row = 0; row < rowCount; row++) {
+      for (let col = 0; col < colCount; col++) {
+        const ins = { x: insX + col * colSpace, y: insY + row * rowSpace };
+        // Block-interne Entitäten: direkte Geometrie + rekursiv aufgelöste Sub-Blöcke
+        const directInner = def.entities.filter(x => x.type !== "INSERT");
+        const nestedResolved = dxfResolveInserts(def.entities, blockDefs, depth + 1);
+        const innerAll = directInner.concat(nestedResolved.map(r => ({ type: r.type, tags: r.tags, __precomputed: r.__precomputed })));
+
+        for (const inner of innerAll) {
+          const geo = inner.__precomputed || dxfEntityToPolyline(inner);
+          if (!geo || !geo.points.length) continue;
+          const transformedPts = geo.points.map(p =>
+            dxfTransformPoint(p, ins, scaleX, scaleY, rot)
+          );
+          resolved.push({
+            type: inner.type,
+            tags: inner.tags,
+            __precomputed: { ...geo, points: transformedPts },
+          });
+        }
+      }
+    }
+  }
+  return resolved;
+}
+
+// ─── 7. Offene Linien zu Polygonen zusammensetzen (Graph-basiert) ────────
+// LINE-Entitäten haben oft keine explizite Verkettung — wir bauen einen
+// Endpunkt-Graphen und suchen geschlossene Zyklen (Flächenumrandungen).
+function dxfChainLinesToPolygons(lineSegments, tolerance = 0.01) {
+  if (lineSegments.length === 0) return [];
+
+  function keyOf(p) {
+    return `${Math.round(p.x / tolerance) * tolerance}_${Math.round(p.y / tolerance) * tolerance}`;
+  }
+
+  // Adjazenzliste: Punkt-Key → Liste von {to, segIdx}
+  const adjacency = new Map();
+  function addEdge(a, b, idx) {
+    const ka = keyOf(a);
+    if (!adjacency.has(ka)) adjacency.set(ka, []);
+    adjacency.get(ka).push({ point: a, to: b, idx });
+  }
+  lineSegments.forEach((seg, idx) => {
+    addEdge(seg.p1, seg.p2, idx);
+    addEdge(seg.p2, seg.p1, idx);
+  });
+
+  const usedSegments = new Set();
+  const polygons = [];
+
+  for (let startIdx = 0; startIdx < lineSegments.length; startIdx++) {
+    if (usedSegments.has(startIdx)) continue;
+    const startSeg = lineSegments[startIdx];
+    const path = [startSeg.p1, startSeg.p2];
+    const pathSegIdx = new Set([startIdx]);
+    let currentPoint = startSeg.p2;
+    let closed = false;
+    let guard = 0;
+
+    while (guard++ < 500) {
+      const candidates = (adjacency.get(keyOf(currentPoint)) || [])
+        .filter(c => !pathSegIdx.has(c.idx) && !usedSegments.has(c.idx));
+      if (candidates.length === 0) break;
+      const next = candidates[0];
+      pathSegIdx.add(next.idx);
+      currentPoint = next.to;
+      // Zyklus geschlossen, wenn wir zum Startpunkt zurückkehren
+      if (keyOf(currentPoint) === keyOf(path[0])) { closed = true; break; }
+      path.push(currentPoint);
+    }
+
+    if (closed && path.length >= 3) {
+      pathSegIdx.forEach(i => usedSegments.add(i));
+      polygons.push(path);
+    }
+  }
+
+  return polygons;
+}
+
+// ─── 8. Fläche via Shoelace-Formel ────────────────────────────────────────
+function dxfPolygonArea(pts) {
+  let a = 0;
+  for (let j = 0; j < pts.length; j++) {
+    const p1 = pts[j], p2 = pts[(j + 1) % pts.length];
+    a += p1.x * p2.y - p2.x * p1.y;
+  }
+  return Math.abs(a / 2);
+}
+
+// ─── 9. Hauptfunktion: DXF-Text → Betonfeld-Vorschläge ───────────────────
+function parseDXFFlaechen(dxfText) {
+  const tokens   = dxfTokenize(dxfText);
+  const sections = dxfSplitSections(tokens);
+
+  // ── BLOCKS-Sektion: Block-Definitionen sammeln (Name → Entitäten) ──
+  const blockDefs = {};
+  if (sections.BLOCKS) {
+    const blockTokens = sections.BLOCKS;
+    let currentBlockName = null;
+    let currentBlockEntities = null;
+    let inBlock = false;
+    let i = 0;
+    while (i < blockTokens.length) {
+      const t = blockTokens[i];
+      if (t.code === 0 && t.value === "BLOCK") {
+        inBlock = true;
+        currentBlockEntities = [];
+        currentBlockName = null;
+      } else if (inBlock && t.code === 2 && currentBlockName === null) {
+        currentBlockName = t.value;
+      } else if (t.code === 0 && t.value === "ENDBLK") {
+        if (currentBlockName) blockDefs[currentBlockName] = { entities: currentBlockEntities };
+        inBlock = false; currentBlockName = null; currentBlockEntities = null;
+      } else if (inBlock && currentBlockEntities !== null && currentBlockName !== null) {
+        currentBlockEntities.push(t);
+      }
+      i++;
+    }
+    // Entitäten je Block in echte Entity-Objekte umwandeln
+    for (const name in blockDefs) {
+      blockDefs[name].entities = dxfSplitEntities(blockDefs[name].entities);
+    }
+  }
+
+  if (!sections.ENTITIES) {
+    throw new Error("Keine ENTITIES-Sektion in der DXF-Datei gefunden.");
+  }
+
+  let entities = dxfSplitEntities(sections.ENTITIES);
+
+  // ── POLYLINE-Sonderfall: VERTEX-Kindobjekte einsammeln ──
+  const withVertices = [];
+  for (let i = 0; i < entities.length; i++) {
+    const e = entities[i];
+    if (e.type === "POLYLINE") {
+      const verts = [];
+      let j = i + 1;
+      while (j < entities.length && entities[j].type === "VERTEX") {
+        verts.push({ x: dxfGetNum(entities[j].tags, 10, 0), y: dxfGetNum(entities[j].tags, 20, 0) });
+        j++;
+      }
+      e.tags.__vertices = verts;
+      withVertices.push(e);
+      i = j - 1; // VERTEX-Einträge überspringen (bis SEQEND)
+    } else if (e.type === "VERTEX" || e.type === "SEQEND") {
+      // wird oben mitverarbeitet, hier ignorieren
+    } else {
+      withVertices.push(e);
+    }
+  }
+  entities = withVertices;
+
+  // ── INSERT-Blöcke auflösen ──
+  // dxfResolveInserts gibt ausschließlich die aus Block-Referenzen erzeugte
+  // (transformierte) Geometrie zurück. Direkte Entitäten kombinieren wir separat.
+  const blockGeometrie = dxfResolveInserts(entities, blockDefs);
+  const allEntities = entities.filter(e => e.type !== "INSERT").concat(blockGeometrie);
+
+  // ── Geometrie extrahieren ──
+  const closedPolygons = []; // { points, layer, source }
+  const openLineSegments = []; // für spätere Verkettung
+
+  for (const e of allEntities) {
+    const geo = e.__precomputed || dxfEntityToPolyline(e);
+    if (!geo || geo.points.length < 2) continue;
+
+    if (geo.type === "LINE") {
+      openLineSegments.push({ p1: geo.points[0], p2: geo.points[1], layer: geo.layer });
+      continue;
+    }
+    if (geo.points.length >= 3) {
+      closedPolygons.push({ points: geo.points, layer: geo.layer, source: geo.type });
+    }
+  }
+
+  // ── Offene LINE-Ketten zu Polygonen zusammensetzen ──
+  if (openLineSegments.length > 0) {
+    const chained = dxfChainLinesToPolygons(openLineSegments);
+    chained.forEach(pts => closedPolygons.push({
+      points: pts, layer: openLineSegments[0]?.layer || "0", source: "LINE-CHAIN"
+    }));
+  }
+
+  if (closedPolygons.length === 0) {
+    throw new Error("Keine geschlossenen Flächen gefunden (weder Polylinien, Hatches, Kreise noch geschlossene Linienketten).");
+  }
+
+  // ── Flächen berechnen, Einheiten normalisieren, filtern ──
+  const results = closedPolygons
+    .map((poly, idx) => {
+      const m2raw = dxfPolygonArea(poly.points);
+      // Heuristik: DXF-Dateien sind oft in mm modelliert.
+      // Realistische Bauflächen liegen zwischen ~1 und ~5000 m².
+      // Bei mm-Einheiten wäre die Rohfläche 1_000_000x zu groß.
+      const m2 = m2raw > 100000 ? m2raw / 1_000_000 : m2raw;
+      const cx = poly.points.reduce((s, p) => s + p.x, 0) / poly.points.length;
+      const cy = poly.points.reduce((s, p) => s + p.y, 0) / poly.points.length;
+      return {
+        name: poly.layer && poly.layer !== "0" ? poly.layer : `Fläche ${idx + 1}`,
+        m2: Math.round(m2 * 10) / 10,
+        plan_x: cx, plan_y: cy,
+        quelle: poly.source,
+      };
+    })
+    .filter(f => f.m2 > 0.5 && f.m2 < 50000); // Mini-/Riesenflächen (Rahmen, Bemaßung) rausfiltern
+
+  if (results.length === 0) {
+    throw new Error("Erkannte Flächen liegen außerhalb eines plausiblen Größenbereichs (0.5–50.000 m²). Prüfe die Zeicheneinheiten der DXF-Datei.");
+  }
+
+  return results;
+}
+
+function PlanErkennung({ onSave, onClose, onZurueck }) {
+  const fileRef = useRef(null);
+  const [phase,       setPhase]       = useState("idle"); // idle | result | error
+  const [ergebnis,    setErgebnis]    = useState(null);    // { felder }
+  const [fehler,      setFehler]      = useState("");
+  const [ausgewaehlt, setAusgewaehlt] = useState({}); // index -> bool
+  const [bearbeitet,  setBearbeitet]  = useState({}); // index -> { name, m2 }
+
+  function handleFile(file) {
+    if (!file) return;
+    setFehler(""); setErgebnis(null);
+    const ext = file.name.split(".").pop().toLowerCase();
+
+    if (ext !== "dxf") {
+      setFehler(`Nur DXF-Dateien werden unterstützt (erhalten: .${ext}). Exportiere den Plan aus deinem CAD-Programm als DXF.`);
+      setPhase("error");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const felder = parseDXFFlaechen(e.target.result);
+        // Koordinaten für Anzeige normalisieren (0-100%)
+        const xs = felder.map(f=>f.plan_x), ys = felder.map(f=>f.plan_y);
+        const minX = Math.min(...xs), maxX = Math.max(...xs);
+        const minY = Math.min(...ys), maxY = Math.max(...ys);
+        const normFelder = felder.map(f => ({
+          ...f,
+          plan_x: maxX>minX ? ((f.plan_x-minX)/(maxX-minX))*100 : 50,
+          plan_y: maxY>minY ? (1-(f.plan_y-minY)/(maxY-minY))*100 : 50, // Y invertieren (DXF: unten=0)
+        }));
+        setErgebnis({ felder: normFelder });
+        const sel = {}; normFelder.forEach((_,i)=>sel[i]=true);
+        setAusgewaehlt(sel);
+        setPhase("result");
+      } catch (err) {
+        setFehler(err.message || "DXF konnte nicht gelesen werden.");
+        setPhase("error");
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function reset() {
+    setPhase("idle"); setErgebnis(null); setFehler("");
+    setAusgewaehlt({}); setBearbeitet({});
+  }
+
+  function uebernehmen() {
+    const neue = ergebnis.felder
+      .filter((_,i) => ausgewaehlt[i])
+      .map((f,i) => {
+        const b = bearbeitet[i] || {};
+        return {
+          ...leereAufgabe(),
+          id: Date.now() + Math.random(),
+          titel: b.name ?? f.name,
+          typ: "beton",
+          m2: b.m2 ?? f.m2,
+          plan_bild_url: null,
+          plan_x: f.plan_x,
+          plan_y: f.plan_y,
+        };
+      });
+    onSave(neue);
+  }
+
+  const anzahlAusgewaehlt = Object.values(ausgewaehlt).filter(Boolean).length;
+
+  return (
+    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
+      background:"var(--bg)", zIndex:500, overflowY:"auto",
+      WebkitOverflowScrolling:"touch",
+      fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
+
+      <div style={{ background:"var(--surface)", padding:"14px 18px",
+        borderBottom:"3px solid var(--yellow)", position:"sticky", top:0,
+        zIndex:10, display:"flex", justifyContent:"space-between",
+        alignItems:"center" }}>
+        <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:17 }}>
+          📐 DXF-Plan hochladen
+        </div>
+        <button onClick={onZurueck || onClose}
+          style={{ background:"var(--surface2)", border:"1px solid var(--border)",
+            color:"var(--text)", borderRadius:8, padding:"6px 14px",
+            cursor:"pointer", fontSize:14, fontFamily:"inherit" }}>
+          {onZurueck ? "←" : "✕"}
+        </button>
+      </div>
+
+      <div style={{ padding:"18px 16px 100px" }}>
+
+        {/* IDLE: Datei wählen */}
+        {phase === "idle" && (
+          <div>
+            <div style={{ color:"var(--muted)", fontSize:13, marginBottom:18,
+              lineHeight:1.6 }}>
+              Lade eine DXF-Datei aus deinem CAD-Programm hoch — die App
+              erkennt automatisch geschlossene Flächen (Polylinien, Blöcke,
+              verkettete Linien) und schlägt daraus Betonfelder mit exakter
+              Flächenberechnung vor.
+            </div>
+            <input ref={fileRef} type="file" accept=".dxf"
+              style={{ display:"none" }} onChange={e => handleFile(e.target.files[0])} />
+            <div onClick={() => fileRef.current.click()}
+              style={{ border:"2px dashed var(--yellow)", borderRadius:20,
+                padding:"48px 20px", textAlign:"center", cursor:"pointer",
+                background:"var(--ybg)" }}>
+              <div style={{ fontSize:48, marginBottom:12 }}>📐</div>
+              <div style={{ color:"var(--ydark)", fontWeight:700, fontSize:16 }}>
+                DXF-Datei hochladen
+              </div>
+              <div style={{ color:"var(--muted)", fontSize:13, marginTop:6 }}>
+                Antippen zum Auswählen
+              </div>
+            </div>
+            <div style={{ background:"var(--surface)", borderRadius:10,
+              padding:"10px 12px", marginTop:14, fontSize:11, color:"var(--muted)",
+              border:"1px solid var(--border)", lineHeight:1.5 }}>
+              Unterstützt: LWPOLYLINE, POLYLINE (inkl. Bögen), HATCH, CIRCLE,
+              ARC, verkettete LINE-Segmente sowie INSERT-Blockreferenzen
+              mit Skalierung/Rotation. Kein Internet nötig — die Erkennung
+              läuft vollständig lokal auf dem Gerät.
+            </div>
+          </div>
+        )}
+
+        {/* ERROR */}
+        {phase === "error" && (
+          <div>
+            <div style={{ background:"var(--rbg)", borderRadius:12, padding:16,
+              marginBottom:16, border:"1px solid var(--red)" }}>
+              <div style={{ color:"var(--red)", fontWeight:700, fontSize:14,
+                marginBottom:4 }}>⚠️ Datei konnte nicht verarbeitet werden</div>
+              <div style={{ color:"var(--text)", fontSize:13 }}>{fehler}</div>
+            </div>
+            <button onClick={reset}
+              style={{ width:"100%", background:"var(--yellow)", color:"#1a1200",
+                border:"none", borderRadius:12, padding:14, fontWeight:800,
+                cursor:"pointer", fontSize:15, fontFamily:"inherit" }}>
+              Erneut versuchen
+            </button>
+          </div>
+        )}
+
+        {/* RESULT: Vorschau mit Bestätigung */}
+        {phase === "result" && ergebnis && (
+          <div>
+            <div style={{ display:"flex", justifyContent:"space-between",
+              alignItems:"center", marginBottom:14 }}>
+              <div style={{ color:"var(--text)", fontWeight:700, fontSize:14 }}>
+                {ergebnis.felder.length} Fläche{ergebnis.felder.length!==1?"n":""} erkannt
+              </div>
+              <div style={{ color:"var(--muted)", fontSize:12 }}>
+                {anzahlAusgewaehlt} ausgewählt
+              </div>
+            </div>
+
+            {ergebnis.felder.map((f, i) => (
+              <div key={i} style={{ background:"var(--surface)", borderRadius:12,
+                padding:"12px 14px", marginBottom:8,
+                border:`1.5px solid ${ausgewaehlt[i] ? "var(--yellow)" : "var(--border)"}`,
+                opacity: ausgewaehlt[i] ? 1 : 0.5 }}>
+                <div style={{ display:"flex", alignItems:"flex-start", gap:10 }}>
+                  <div onClick={() => setAusgewaehlt(p=>({...p,[i]:!p[i]}))}
+                    style={{ width:24, height:24, borderRadius:6, flexShrink:0,
+                      background: ausgewaehlt[i] ? "var(--yellow)" : "var(--surface2)",
+                      border:`1.5px solid ${ausgewaehlt[i] ? "var(--yellow)" : "var(--border)"}`,
+                      display:"flex", alignItems:"center", justifyContent:"center",
+                      cursor:"pointer", fontSize:14, color:"#1a1200", marginTop:2 }}>
+                    {ausgewaehlt[i] && "✓"}
+                  </div>
+                  <div style={{ flex:1 }}>
+                    <input
+                      value={bearbeitet[i]?.name ?? f.name}
+                      onChange={e => setBearbeitet(p=>({...p,[i]:{...p[i], name:e.target.value}}))}
+                      style={{ ...inputStyle(), padding:"6px 10px", fontSize:13,
+                        fontWeight:700, marginBottom:6 }} />
+                    <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                      <span style={{ color:"var(--muted)", fontSize:11 }}>Fläche:</span>
+                      <input type="number"
+                        value={bearbeitet[i]?.m2 ?? f.m2}
+                        onChange={e => setBearbeitet(p=>({...p,[i]:{...p[i], m2:Number(e.target.value)}}))}
+                        style={{ ...inputStyle(), padding:"4px 8px", fontSize:12,
+                          width:70 }} />
+                      <span style={{ color:"var(--muted)", fontSize:11 }}>m²</span>
+                      <span style={{ color:"var(--muted)", fontSize:10, marginLeft:"auto" }}>
+                        {f.quelle}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            <div style={{ display:"flex", gap:10, marginTop:16 }}>
+              <button onClick={reset}
+                style={{ flex:1, background:"var(--surface2)", color:"var(--muted)",
+                  border:"1px solid var(--border)", borderRadius:12, padding:14,
+                  cursor:"pointer", fontFamily:"inherit" }}>Verwerfen</button>
+              <button onClick={uebernehmen} disabled={anzahlAusgewaehlt===0}
+                style={{ flex:2,
+                  background: anzahlAusgewaehlt>0 ? "var(--yellow)" : "var(--surface2)",
+                  color: anzahlAusgewaehlt>0 ? "#1a1200" : "var(--muted)",
+                  border:"none", borderRadius:12, padding:14, fontWeight:800,
+                  cursor: anzahlAusgewaehlt>0 ? "pointer" : "default", fontSize:15,
+                  fontFamily:"inherit" }}>
+                💾 {anzahlAusgewaehlt} Feld{anzahlAusgewaehlt!==1?"er":""} übernehmen
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Schnellerstellung: Vorlage | Einzeln | Liste ────────────────────────
+function SchnellErstellung({ onSave, onClose }) {
+  const [modus, setModus] = useState("vorlage"); // vorlage | einzeln | liste | plan
+
+  if (modus === "plan") {
+    return <PlanErkennung onSave={onSave} onClose={onClose} onZurueck={() => setModus("vorlage")} />;
+  }
+
+  // ── Einzeln: minimales Formular ──
+  const [titel,     setTitel]     = useState("");
+  const [typ,       setTyp]       = useState("beton");
+  const [m2,        setM2]        = useState("");
+  const [betonsorte,setBetonsorte]= useState("");
+
+  // ── Liste: mehrzeiliger Text ──
+  const [listeText, setListeText] = useState("");
+
+  function ausVorlage(v) {
+    onSave([{
+      ...leereAufgabe(),
+      id: Date.now() + Math.random(),
+      titel: v.name,
+      typ: v.typ,
+      betonsorte: v.betonsorte,
+    }]);
+  }
+
+  function einzelnSpeichern() {
+    if (!titel.trim()) return;
+    onSave([{
+      ...leereAufgabe(),
+      id: Date.now() + Math.random(),
+      titel: titel.trim(),
+      typ,
+      m2: Number(m2) || 0,
+      betonsorte,
+    }]);
+  }
+
+  function listeSpeichern() {
+    // Jede Zeile = eine Aufgabe. Format: "Titel" oder "Titel | 45" (mit m²)
+    const zeilen = listeText.split("\n").map(l => l.trim()).filter(Boolean);
+    if (zeilen.length === 0) return;
+    const neue = zeilen.map(zeile => {
+      const [titelTeil, m2Teil] = zeile.split("|").map(s => s.trim());
+      return {
+        ...leereAufgabe(),
+        id: Date.now() + Math.random(),
+        titel: titelTeil || zeile,
+        typ: "beton",
+        m2: m2Teil ? Number(m2Teil.replace(/[^\d.,]/g,"").replace(",",".")) || 0 : 0,
+      };
+    });
+    onSave(neue);
+  }
+
+  return (
+    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
+      background:"var(--bg)", zIndex:500, overflowY:"auto",
+      WebkitOverflowScrolling:"touch",
+      fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
+
+      <div style={{ background:"var(--surface)", padding:"14px 18px",
+        borderBottom:"3px solid var(--yellow)", position:"sticky", top:0,
+        zIndex:10, display:"flex", justifyContent:"space-between",
+        alignItems:"center" }}>
+        <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:17 }}>
+          ➕ Aufgabe(n) anlegen
+        </div>
+        <button onClick={onClose}
+          style={{ background:"var(--surface2)", border:"1px solid var(--border)",
+            color:"var(--text)", borderRadius:8, padding:"6px 14px",
+            cursor:"pointer", fontSize:14, fontFamily:"inherit" }}>✕</button>
+      </div>
+
+      <div style={{ padding:"18px 16px 100px" }}>
+        {/* Modus-Umschalter */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6, marginBottom:18 }}>
+          {[["vorlage","📋 Vorlage"],["einzeln","✏️ Einzeln"],["liste","📝 Liste"],["plan","📐 DXF"]].map(([k,l]) => (
+            <button key={k} onClick={() => setModus(k)}
+              style={{ background: modus===k ? "var(--yellow)" : "var(--surface2)",
+                color: modus===k ? "#1a1200" : "var(--muted)",
+                border:`1.5px solid ${modus===k ? "var(--yellow)" : "var(--border)"}`,
+                borderRadius:10, padding:9, fontWeight: modus===k ? 700 : 400,
+                cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>{l}</button>
+          ))}
+        </div>
+
+        {/* VORLAGE: ein Tap → sofort angelegt */}
+        {modus === "vorlage" && (
+          <div>
+            <div style={{ color:"var(--muted)", fontSize:12, marginBottom:12,
+              lineHeight:1.5 }}>
+              Häufige Aufgabentypen antippen — wird sofort mit sinnvollen
+              Standardwerten angelegt. Details kannst du danach ergänzen.
+            </div>
+            {AUFGABEN_VORLAGEN.map((v, i) => (
+              <div key={i} onClick={() => ausVorlage(v)}
+                style={{ background:"var(--surface)", borderRadius:12,
+                  padding:"14px 16px", marginBottom:8, cursor:"pointer",
+                  border:"1.5px solid var(--border)",
+                  borderLeftWidth:4,
+                  borderLeftColor:AUFGABEN_TYPEN[v.typ]?.farbe,
+                  display:"flex", alignItems:"center", gap:12 }}>
+                <span style={{ fontSize:22 }}>{v.icon}</span>
+                <div style={{ flex:1 }}>
+                  <div style={{ color:"var(--text)", fontWeight:700, fontSize:14 }}>
+                    {v.name}
+                  </div>
+                  <div style={{ color:"var(--muted)", fontSize:11, marginTop:2 }}>
+                    {AUFGABEN_TYPEN[v.typ]?.label}
+                    {v.betonsorte && ` · ${v.betonsorte}`}
+                  </div>
+                </div>
+                <div style={{ color:"var(--muted)", fontSize:20 }}>›</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* EINZELN: minimales Formular */}
+        {modus === "einzeln" && (
+          <div>
+            <div style={{ marginBottom:14 }}>
+              <Label>Titel *</Label>
+              <input value={titel} onChange={e=>setTitel(e.target.value)}
+                placeholder="z.B. Bodenplatte B1" style={inputStyle()}
+                autoFocus />
+            </div>
+            <div style={{ marginBottom:14 }}>
+              <Label>Typ</Label>
+              <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginTop:6 }}>
+                {Object.entries(AUFGABEN_TYPEN).filter(([k])=>k!=="mangel").map(([k,t]) => (
+                  <button key={k} onClick={() => setTyp(k)}
+                    style={{ background: typ===k ? t.farbe+"22" : "var(--surface2)",
+                      border:`1.5px solid ${typ===k ? t.farbe : "var(--border)"}`,
+                      borderRadius:20, padding:"6px 12px", cursor:"pointer",
+                      fontSize:12, fontWeight: typ===k ? 700 : 400,
+                      color: typ===k ? t.farbe : "var(--muted)",
+                      fontFamily:"inherit" }}>
+                    {t.icon} {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {typ === "beton" && (
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10,
+                marginBottom:14 }}>
+                <div>
+                  <Label>Fläche (m²)</Label>
+                  <input type="number" value={m2} onChange={e=>setM2(e.target.value)}
+                    placeholder="0" style={inputStyle()} />
+                </div>
+                <div>
+                  <Label>Betonsorte</Label>
+                  <input value={betonsorte} onChange={e=>setBetonsorte(e.target.value)}
+                    placeholder="C25/30" style={inputStyle()} />
+                </div>
+              </div>
+            )}
+            <button onClick={einzelnSpeichern} disabled={!titel.trim()}
+              style={{ width:"100%", background: titel.trim() ? "var(--yellow)" : "var(--surface2)",
+                color: titel.trim() ? "#1a1200" : "var(--muted)",
+                border:"none", borderRadius:12, padding:14, fontWeight:800,
+                cursor: titel.trim() ? "pointer" : "default", fontSize:15,
+                fontFamily:"inherit", marginTop:4 }}>
+              💾 Anlegen
+            </button>
+          </div>
+        )}
+
+        {/* LISTE: mehrere auf einmal */}
+        {modus === "liste" && (
+          <div>
+            <div style={{ color:"var(--muted)", fontSize:12, marginBottom:10,
+              lineHeight:1.5 }}>
+              Ein Betonfeld pro Zeile. Optional Fläche mit „|" trennen:
+              <br/><code style={{ background:"var(--surface2)", padding:"1px 6px",
+                borderRadius:4, fontSize:11 }}>Bodenplatte B1 | 120</code>
+            </div>
+            <textarea rows={10} value={listeText}
+              onChange={e=>setListeText(e.target.value)}
+              placeholder={"Bodenplatte B1 | 120\nBodenplatte B2 | 135\nWand C1 Nord | 64\nWand C2 Ost"}
+              style={{ width:"100%", background:"var(--surface2)", color:"var(--text)",
+                border:"1.5px solid var(--border)", borderRadius:10, padding:12,
+                fontSize:13, resize:"none", boxSizing:"border-box",
+                fontFamily:"monospace", marginBottom:14 }} />
+            <button onClick={listeSpeichern} disabled={!listeText.trim()}
+              style={{ width:"100%", background: listeText.trim() ? "var(--yellow)" : "var(--surface2)",
+                color: listeText.trim() ? "#1a1200" : "var(--muted)",
+                border:"none", borderRadius:12, padding:14, fontWeight:800,
+                cursor: listeText.trim() ? "pointer" : "default", fontSize:15,
+                fontFamily:"inherit" }}>
+              💾 {listeText.split("\n").filter(l=>l.trim()).length || 0} Aufgabe(n) anlegen
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
 function AufgabenKarte({ aufgabe, onClick, kolonnen }) {
   const typ    = AUFGABEN_TYPEN[aufgabe.typ]    || AUFGABEN_TYPEN.allgemein;
   const status = AUFGABEN_STATUS[aufgabe.status] || AUFGABEN_STATUS.offen;
@@ -7005,7 +6733,7 @@ function AufgabenFormular({ initial, kolonnen, onSave, onClose }) {
 }
 
 // ─── Aufgaben-View (Haupt-Tab) ────────────────────────────────────────────────
-function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected }) {
+function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, darfBearbeiten = true }) {
   const [ansicht,     setAnsicht]     = useState("liste");  // liste | kanban
   const [filter,      setFilter]      = useState("alle");
   const [neuAufgabe,  setNeuAufgabe]  = useState(false);
@@ -7028,6 +6756,31 @@ function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected }) {
     }
     setNeuAufgabe(false);
     setEditAufgabe(null);
+  }
+
+  function handleSchnellSave(neueAufgaben) {
+    setAufgaben(prev => [...neueAufgaben, ...prev]);
+    setNeuAufgabe(false);
+  }
+
+  if (neuAufgabe) {
+    return (
+      <SchnellErstellung
+        onSave={handleSchnellSave}
+        onClose={() => setNeuAufgabe(false)}
+      />
+    );
+  }
+
+  if (editAufgabe) {
+    return (
+      <AufgabenFormular
+        initial={editAufgabe}
+        kolonnen={kolonnen}
+        onSave={handleSave}
+        onClose={() => setEditAufgabe(null)}
+      />
+    );
   }
 
   function statusWechsel(id, neuerStatus) {
@@ -7089,13 +6842,15 @@ function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected }) {
               onClick={() => setFilter(k)}>{l}</FilterBtn>
           ))}
         </div>
-        <button onClick={() => setNeuAufgabe(true)}
-          style={{ background:"var(--yellow)", color:"#1a1200", border:"none",
-            borderRadius:10, padding:"8px 14px", fontWeight:700,
-            cursor:"pointer", fontSize:13, fontFamily:"inherit",
-            flexShrink:0, marginLeft:8 }}>
-          + Aufgabe
-        </button>
+        {darfBearbeiten && (
+          <button onClick={() => setNeuAufgabe(true)}
+            style={{ background:"var(--yellow)", color:"#1a1200", border:"none",
+              borderRadius:10, padding:"8px 14px", fontWeight:700,
+              cursor:"pointer", fontSize:13, fontFamily:"inherit",
+              flexShrink:0, marginLeft:8 }}>
+            + Aufgabe
+          </button>
+        )}
       </div>
 
       {/* Kanban / Liste Toggle */}
@@ -7123,7 +6878,7 @@ function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected }) {
           )}
           {gefiltert.map(a => (
             <AufgabenKarte key={a.id} aufgabe={a} kolonnen={kolonnen}
-              onClick={() => setEditAufgabe(a)} />
+              onClick={() => darfBearbeiten && setEditAufgabe(a)} />
           ))}
         </div>
       )}
@@ -7147,7 +6902,7 @@ function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected }) {
                     fontWeight:700 }}>{spalte.length}</div>
                 </div>
                 {spalte.map(a => (
-                  <div key={a.id} onClick={() => setEditAufgabe(a)}
+                  <div key={a.id} onClick={() => darfBearbeiten && setEditAufgabe(a)}
                     style={{ background:"var(--surface)", borderRadius:10,
                       padding:"10px 12px", marginBottom:6, cursor:"pointer",
                       borderLeft:`3px solid ${AUFGABEN_TYPEN[a.typ]?.farbe || "var(--muted)"}`,
@@ -7181,7 +6936,7 @@ function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected }) {
 }
 
 // ─── Mängel-View ──────────────────────────────────────────────────────────────
-function MaengelView({ aufgaben, setAufgaben, kolonnen }) {
+function MaengelView({ aufgaben, setAufgaben, kolonnen, darfBearbeiten = true }) {
   const maengel = aufgaben.filter(a => a.ist_mangel);
   const [neuMangel, setNeuMangel] = useState(false);
   const [edit,      setEdit]      = useState(null);
@@ -7194,6 +6949,17 @@ function MaengelView({ aufgaben, setAufgaben, kolonnen }) {
       setAufgaben(prev => [mitMangel, ...prev]);
     }
     setNeuMangel(false); setEdit(null);
+  }
+
+  if (neuMangel || edit) {
+    return (
+      <AufgabenFormular
+        initial={edit ? edit : { ...leereAufgabe(), typ:"mangel", ist_mangel:true }}
+        kolonnen={kolonnen}
+        onSave={handleSave}
+        onClose={() => { setNeuMangel(false); setEdit(null); }}
+      />
+    );
   }
 
   const offen     = maengel.filter(m=>m.status!=="abgeschlossen").length;
@@ -7225,12 +6991,14 @@ function MaengelView({ aufgaben, setAufgaben, kolonnen }) {
         <div style={{ color:"var(--text)", fontWeight:700, fontSize:15 }}>
           Mängelliste
         </div>
-        <button onClick={() => setNeuMangel(true)}
-          style={{ background:"var(--red)", color:"#fff", border:"none",
-            borderRadius:10, padding:"8px 14px", fontWeight:700,
-            cursor:"pointer", fontSize:13, fontFamily:"inherit" }}>
-          + Mangel
-        </button>
+        {darfBearbeiten && (
+          <button onClick={() => setNeuMangel(true)}
+            style={{ background:"var(--red)", color:"#fff", border:"none",
+              borderRadius:10, padding:"8px 14px", fontWeight:700,
+              cursor:"pointer", fontSize:13, fontFamily:"inherit" }}>
+            + Mangel
+          </button>
+        )}
       </div>
 
       {maengel.length === 0 && (
@@ -7243,7 +7011,7 @@ function MaengelView({ aufgaben, setAufgaben, kolonnen }) {
       )}
 
       {maengel.map(m => (
-        <div key={m.id} onClick={() => setEdit(m)}
+        <div key={m.id} onClick={() => darfBearbeiten && setEdit(m)}
           style={{ background:"var(--surface)", borderRadius:14,
             padding:"14px 16px", marginBottom:10, cursor:"pointer",
             borderLeft:"4px solid var(--red)",
@@ -8606,6 +8374,90 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
     link.click(); URL.revokeObjectURL(url);
   }
 
+  // ── LV-Vorlage Auswahl als eigener Screen ──
+  if (vonVorlage) {
+    return (
+      <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
+        background:"var(--bg)", zIndex:700, overflowY:"auto",
+        WebkitOverflowScrolling:"touch",
+        fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
+        <div style={{ background:"var(--surface)", padding:"14px 18px",
+          borderBottom:"3px solid var(--yellow)", position:"sticky", top:0,
+          display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+          <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:16 }}>
+            📋 LV-Vorlage laden
+          </div>
+          <button onClick={() => setVonVorlage(false)}
+            style={{ background:"var(--surface2)", border:"1px solid var(--border)",
+              color:"var(--text)", borderRadius:8, padding:"6px 14px",
+              cursor:"pointer", fontFamily:"inherit" }}>✕</button>
+        </div>
+        <div style={{ padding:"20px 16px" }}>
+          {lvVorlagen.length === 0 && (
+            <div style={{ color:"var(--muted)", textAlign:"center", padding:24 }}>
+              Keine Vorlagen vorhanden · Administrator anlegen lassen
+            </div>
+          )}
+          {lvVorlagen.map(v => (
+            <div key={v.id} onClick={() => vorlageLaden(v)}
+              style={{ background:"var(--surface)", borderRadius:12,
+                padding:"12px 14px", marginBottom:8, cursor:"pointer",
+                border:"1.5px solid var(--border)" }}>
+              <div style={{ color:"var(--text)", fontWeight:700 }}>{v.name}</div>
+              <div style={{ color:"var(--muted)", fontSize:12, marginTop:3 }}>
+                {v.positionen.length} Positionen · {v.gewerk}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Aufgaben-Import als eigener Screen ──
+  if (vonAufgabe) {
+    return (
+      <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
+        background:"var(--bg)", zIndex:700, overflowY:"auto",
+        WebkitOverflowScrolling:"touch",
+        fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
+        <div style={{ background:"var(--surface)", padding:"14px 18px",
+          borderBottom:"3px solid var(--green)", position:"sticky", top:0,
+          display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+          <div style={{ color:"var(--green)", fontWeight:700, fontSize:16 }}>
+            ✅ Aus Aufgaben importieren
+          </div>
+          <button onClick={() => setVonAufgabe(false)}
+            style={{ background:"var(--surface2)", border:"1px solid var(--border)",
+              color:"var(--text)", borderRadius:8, padding:"6px 14px",
+              cursor:"pointer", fontFamily:"inherit" }}>✕</button>
+        </div>
+        <div style={{ padding:"20px 16px" }}>
+          {aufgaben.length === 0 && (
+            <div style={{ color:"var(--muted)", textAlign:"center", padding:24 }}>
+              Keine Aufgaben vorhanden
+            </div>
+          )}
+          {aufgaben.map(aufg => (
+            <div key={aufg.id} onClick={() => aufgabeImportieren(aufg)}
+              style={{ background:"var(--surface)", borderRadius:12,
+                padding:"12px 14px", marginBottom:8, cursor:"pointer",
+                border:"1.5px solid var(--border)",
+                borderLeftWidth:4,
+                borderLeftColor:AUFGABEN_TYPEN[aufg.typ]?.farbe||"var(--muted)" }}>
+              <div style={{ color:"var(--text)", fontWeight:700 }}>
+                {AUFGABEN_TYPEN[aufg.typ]?.icon} {aufg.titel}
+              </div>
+              <div style={{ color:"var(--muted)", fontSize:12, marginTop:3 }}>
+                {aufg.m2 ? aufg.m2+" m²" : ""} · {AUFGABEN_TYPEN[aufg.typ]?.label}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       {/* Header */}
@@ -8811,219 +8663,15 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
         )}
       </div>
 
-      {/* Vorlage Modal */}
-      {vonVorlage && (
-        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"var(--bg)", zIndex:700, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
-          <div style={{ background:"var(--surface)", borderRadius:"20px 20px 0 0",
-            padding:22, width:"100%", maxWidth:480, maxHeight:"70vh",
-            overflowY:"auto" }}>
-            <div style={{ display:"flex", justifyContent:"space-between",
-              alignItems:"center", marginBottom:14 }}>
-              <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:16 }}>
-                📋 LV-Vorlage laden
-              </div>
-              <button onClick={() => setVonVorlage(false)}
-                style={{ background:"none", border:"none", color:"var(--muted)",
-                  fontSize:24, cursor:"pointer" }}>✕</button>
-            </div>
-            {lvVorlagen.length === 0 && (
-              <div style={{ color:"var(--muted)", textAlign:"center", padding:24 }}>
-                Keine Vorlagen vorhanden · Administrator anlegen lassen
-              </div>
-            )}
-            {lvVorlagen.map(v => (
-              <div key={v.id} onClick={() => vorlageLaden(v)}
-                style={{ background:"var(--surface2)", borderRadius:12,
-                  padding:"12px 14px", marginBottom:8, cursor:"pointer",
-                  border:"1.5px solid var(--border)" }}>
-                <div style={{ color:"var(--text)", fontWeight:700 }}>{v.name}</div>
-                <div style={{ color:"var(--muted)", fontSize:12, marginTop:3 }}>
-                  {v.positionen.length} Positionen · {v.gewerk}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Aufgaben Modal */}
-      {vonAufgabe && (
-        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"var(--bg)", zIndex:700, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
-          <div style={{ background:"var(--surface)", borderRadius:"20px 20px 0 0",
-            padding:22, width:"100%", maxWidth:480, maxHeight:"70vh",
-            overflowY:"auto" }}>
-            <div style={{ display:"flex", justifyContent:"space-between",
-              alignItems:"center", marginBottom:14 }}>
-              <div style={{ color:"var(--green)", fontWeight:700, fontSize:16 }}>
-                ✅ Aus Aufgaben importieren
-              </div>
-              <button onClick={() => setVonAufgabe(false)}
-                style={{ background:"none", border:"none", color:"var(--muted)",
-                  fontSize:24, cursor:"pointer" }}>✕</button>
-            </div>
-            {aufgaben.length === 0 && (
-              <div style={{ color:"var(--muted)", textAlign:"center", padding:24 }}>
-                Keine Aufgaben vorhanden
-              </div>
-            )}
-            {aufgaben.map(aufg => (
-              <div key={aufg.id} onClick={() => aufgabeImportieren(aufg)}
-                style={{ background:"var(--surface2)", borderRadius:12,
-                  padding:"12px 14px", marginBottom:8, cursor:"pointer",
-                  border:"1.5px solid var(--border)",
-                  borderLeftWidth:4,
-                  borderLeftColor:AUFGABEN_TYPEN[aufg.typ]?.farbe||"var(--muted)" }}>
-                <div style={{ color:"var(--text)", fontWeight:700 }}>
-                  {AUFGABEN_TYPEN[aufg.typ]?.icon} {aufg.titel}
-                </div>
-                <div style={{ color:"var(--muted)", fontSize:12, marginTop:3 }}>
-                  {aufg.m2 ? aufg.m2+" m²" : ""} · {AUFGABEN_TYPEN[aufg.typ]?.label}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
-
-const MOCK_PROJEKTE = [
-  {
-    id: 1,
-    name: "Neubau Wohnanlage Nord",
-    adresse: "Hauptstraße 22, 80331 München",
-    projektnummer: "PRJ-2025-001",
-    bauleiter: "Thomas Huber",
-    auftraggeber: "Stadtbau München GmbH",
-    typ: "hochbau",
-    farbe: "#F5C400",
-    felder: MOCK_FELDER,
-    kolonnen: MOCK_KOLONNEN,
-    berichte: MOCK_BERICHTE,
-  },
-  {
-    id: 2,
-    name: "Tiefgarage Westpark",
-    adresse: "Westparkstraße 8, 81373 München",
-    projektnummer: "PRJ-2025-002",
-    bauleiter: "Maria Schmidt",
-    auftraggeber: "Immobilien AG Bayern",
-    typ: "tiefgarage",
-    farbe: "#4A9EE0",
-    felder: [
-      { id:101, name:"TG-A1 – Rampe",       status:"done",     m2:65,  geplant:"2025-05-20", betoniert:"2025-05-20", dauer_tage:1, festigkeit:100, abhaengigkeiten:[] },
-      { id:102, name:"TG-B1 – Ebene 1",     status:"in_progress", m2:420, geplant:"2025-06-15", betoniert:null, dauer_tage:3, festigkeit:null, abhaengigkeiten:[101] },
-      { id:103, name:"TG-B2 – Ebene 2",     status:"planned",  m2:420, geplant:"2025-07-05", betoniert:null, dauer_tage:3, festigkeit:null, abhaengigkeiten:[102] },
-    ],
-    kolonnen: [
-      { id:11, name:"Kolonne Wagner", vorarbeiter:"Günter Wagner", einsatz:"TG-B1 – Ebene 1", stunden:8, mitarbeiter:[ {id:1101,name:"Günter Wagner",rolle:"Vorarbeiter",erfasstIdent:null},{id:1102,name:"Daniel Klein",rolle:"Facharbeiter",erfasstIdent:null},{id:1103,name:"Emil Roth",rolle:"Facharbeiter",erfasstIdent:null},{id:1104,name:"Niko Braun",rolle:"Facharbeiter",erfasstIdent:null},{id:1105,name:"Sven Wolff",rolle:"Helfer",erfasstIdent:null},{id:1106,name:"Tim Kruse",rolle:"Helfer",erfasstIdent:null} ] },
-      { id:12, name:"Kolonne Bauer", vorarbeiter:"Anna Bauer", einsatz:"Schalung TG-B2", stunden:7, mitarbeiter:[ {id:1201,name:"Anna Bauer",rolle:"Vorarbeiter",erfasstIdent:null},{id:1202,name:"Tom Lehmann",rolle:"Facharbeiter",erfasstIdent:null},{id:1203,name:"Sara Kaya",rolle:"Facharbeiter",erfasstIdent:null},{id:1204,name:"Marc Stein",rolle:"Helfer",erfasstIdent:null} ] },
-    ],
-    berichte: [
-      { id:11, datum:"22.06.2025", wetter:"☀️ 14°C", arbeiter:10, taetigkeit:"Betonage TG-B1 Ebene 1 in vollem Gange. 180m² fertig.", maengel:0 },
-    ],
-  },
-  {
-    id: 3,
-    name: "Brücke B13 Instandsetzung",
-    adresse: "B13, km 42.3, 85221 Dachau",
-    projektnummer: "PRJ-2025-003",
-    bauleiter: "Klaus Weber",
-    auftraggeber: "Staatl. Bauamt Dachau",
-    typ: "hochbau",
-    farbe: "#2EAF6A",
-    felder: [
-      { id:201, name:"Widerlager West",  status:"done",    m2:28, geplant:"2025-06-01", betoniert:"2025-06-01", dauer_tage:1, festigkeit:100, abhaengigkeiten:[] },
-      { id:202, name:"Widerlager Ost",   status:"planned", m2:28, geplant:"2025-06-28", betoniert:null,         dauer_tage:1, festigkeit:null, abhaengigkeiten:[201] },
-      { id:203, name:"Überbau Feld 1",   status:"planned", m2:85, geplant:"2025-07-15", betoniert:null,         dauer_tage:2, festigkeit:null, abhaengigkeiten:[201,202] },
-    ],
-    kolonnen: [
-      { id:21, name:"Kolonne Müller", vorarbeiter:"Karl Müller", einsatz:"Schalung Widerlager Ost", stunden:8, mitarbeiter:[ {id:2101,name:"Karl Müller",rolle:"Vorarbeiter",erfasstIdent:null},{id:2102,name:"Ben Hartmann",rolle:"Facharbeiter",erfasstIdent:null},{id:2103,name:"Joe Lange",rolle:"Facharbeiter",erfasstIdent:null},{id:2104,name:"Nico Franke",rolle:"Facharbeiter",erfasstIdent:null},{id:2105,name:"Paul Werner",rolle:"Helfer",erfasstIdent:null} ] },
-    ],
-    berichte: [],
-  },
-];
 
 function leerProjekt() {
   return { id: Date.now(), name:"", adresse:"", projektnummer:"", bauleiter:"", auftraggeber:"",
     typ: "hochbau",
     farbe: ["#F5C400","#4A9EE0","#2EAF6A","#C45C2A","#9B59B6"][Math.floor(Math.random()*5)],
     felder:[], kolonnen:[], berichte:[] };
-}
-
-// ─── Projekt-Liste (Startscreen) ─────────────────────────────────────────────
-function ProjektListe({ projekte, onSelect, onNeu }) {
-  return (
-    <div style={{ background:"var(--bg)", minHeight:"100dvh", fontFamily:"'Segoe UI', system-ui, sans-serif", color:"var(--text)" }}>
-      {/* Header */}
-      <div style={{ background: "var(--surface)", padding:"18px 18px 14px", borderBottom:`2px solid ${'var(--yellow)'}` }}>
-        <div style={{ color: "var(--yellow)", fontWeight:800, fontSize:22, letterSpacing:-0.5 }}>★ POLARIS</div>
-        <div style={{ color: "var(--muted)", fontSize:12, marginTop:2 }}>Baustellenmanagement</div>
-      </div>
-
-      <div style={{ padding:"20px 16px 100px" }}>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
-          <div style={{ color: "var(--text)", fontWeight:700, fontSize:16 }}>Meine Baustellen</div>
-          <div style={{ background: "var(--surface)", color: "var(--muted)", fontSize:12, padding:"4px 10px", borderRadius:20 }}>
-            {projekte.length} Projekte
-          </div>
-        </div>
-
-        {projekte.map(p => {
-          const done  = p.felder.filter(f=>f.status==="done").length;
-          const total = p.felder.length;
-          const pct   = total > 0 ? Math.round(done/total*100) : 0;
-          const delayed = p.felder.filter(f=>f.status!=="done" && f.geplant && new Date(f.geplant)<new Date()).length;
-          return (
-            <div key={p.id} onClick={() => onSelect(p.id)}
-              style={{ background: "var(--surface)", borderRadius:14, padding:"16px 18px", marginBottom:12,
-                border:`2px solid ${'var(--border)'}`, cursor:"pointer",
-                borderLeft:`4px solid ${p.farbe}` }}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
-                <div style={{ flex:1 }}>
-                  <div style={{ color: "var(--text)", fontWeight:700, fontSize:15 }}>{p.name}</div>
-                  <div style={{ color: "var(--muted)", fontSize:12, marginTop:3 }}>📍 {p.adresse}</div>
-                  <div style={{ display:"flex", gap:10, marginTop:6, flexWrap:"wrap" }}>
-                    <Chip icon={PROJEKTTYPEN[p.typ]?.icon||"🏗️"} label={PROJEKTTYPEN[p.typ]?.label||p.typ} />
-                    <Chip icon="🔢" label={p.projektnummer} />
-                    <Chip icon="👤" label={p.bauleiter} />
-                  </div>
-                </div>
-                <div style={{ color: "var(--muted)", fontSize:22, marginLeft:10 }}>›</div>
-              </div>
-              {/* Progress */}
-              {total > 0 && (
-                <div style={{ marginTop:12 }}>
-                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
-                    <div style={{ color: "var(--muted)", fontSize:11 }}>{done}/{total} {PROJEKTTYPEN[p.typ]?.fortschrittLabel||"Felder fertig"}</div>
-                    <div style={{ display:"flex", gap:8 }}>
-                      {delayed > 0 && <div style={{ color: "var(--red)", fontSize:11 }}>⚠️ {delayed} Verzug</div>}
-                      <div style={{ color: p.farbe, fontSize:11, fontWeight:700 }}>{pct}%</div>
-                    </div>
-                  </div>
-                  <div style={{ background: "var(--border)", borderRadius:4, height:6 }}>
-                    <div style={{ background: p.farbe, width:`${pct}%`, height:"100%", borderRadius:4, transition:"width 0.5s" }} />
-                  </div>
-                </div>
-              )}
-              {total === 0 && (
-                <div style={{ color: "var(--muted)", fontSize:12, marginTop:8 }}>Noch keine Betonfelder angelegt</div>
-              )}
-            </div>
-          );
-        })}
-
-        {/* Neues Projekt */}
-        <div onClick={onNeu}
-          style={{ border:`2px dashed ${'var(--yellow)'}`, borderRadius:14, padding:"20px",
-            textAlign:"center", cursor:"pointer", background: "var(--surface)", marginTop:4 }}>
-          <div style={{ fontSize:28 }}>➕</div>
-          <div style={{ color: "var(--yellow)", fontWeight:700, marginTop:6 }}>Neue Baustelle anlegen</div>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 // ─── Neues Projekt Formular ──────────────────────────────────────────────────
@@ -9185,85 +8833,19 @@ function ProjektFormular({ initial, onSave, onClose, subs = [] }) {
   );
 }
 
-// ─── Projekt-Header ──────────────────────────────────────────────────────────
-function ProjektHeader({ projekt, onBack, onEdit, sbConnected }) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  return (
-    <div style={{ background:"var(--surface)", padding:"12px 16px",
-      display:"flex", justifyContent:"space-between", alignItems:"center",
-      borderBottom:`3px solid ${projekt.farbe}`, position:"sticky", top:0, zIndex:50,
-      boxShadow:"0 2px 8px rgba(0,0,0,0.08)" }}>
-      <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-        <button onClick={onBack}
-          style={{ background:"var(--surface2)", border:"1.5px solid var(--border)",
-            color:"var(--text)", borderRadius:10, padding:"8px 14px",
-            cursor:"pointer", fontSize:18, fontWeight:700, fontFamily:"inherit" }}>‹</button>
-        <div>
-          <div style={{ color:"var(--text)", fontWeight:800, fontSize:14,
-            maxWidth:180, overflow:"hidden", textOverflow:"ellipsis",
-            whiteSpace:"nowrap" }}>{projekt.name}</div>
-          <div style={{ color:"var(--muted)", fontSize:10 }}>
-            {projekt.projektnummer} · {projekt.bauleiter}
-          </div>
-        </div>
-      </div>
-      <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-        <div style={{ background: sbConnected ? "var(--green)" : "var(--muted)",
-          width:7, height:7, borderRadius:4 }} />
-        <button onClick={() => setMenuOpen(true)}
-          style={{ background:"var(--surface2)", border:"1px solid var(--border)",
-            color:"var(--text)", borderRadius:8, padding:"6px 10px",
-            cursor:"pointer", fontSize:16, fontFamily:"inherit" }}>⋯</button>
-      </div>
-      {menuOpen && (
-        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, zIndex:600 }}
-          onClick={() => setMenuOpen(false)}>
-          <div style={{ position:"absolute", top:56, right:14,
-            background:"var(--surface)", borderRadius:14, padding:8,
-            minWidth:200, border:"1.5px solid var(--border)",
-            boxShadow:"0 8px 24px rgba(0,0,0,0.15)" }}
-            onClick={e => e.stopPropagation()}>
-            <MenuItem icon="✏️" label="Baustelle bearbeiten"
-              onClick={() => { onEdit(); setMenuOpen(false); }} />
-            <MenuItem icon={PROJEKTTYPEN[projekt.typ]?.icon||"🏗️"}
-              label={PROJEKTTYPEN[projekt.typ]?.label||"Unbekannt"}
-              onClick={() => setMenuOpen(false)} muted />
-            <MenuItem icon="📋" label={`AG: ${projekt.auftraggeber}`}
-              onClick={() => setMenuOpen(false)} muted />
-            <MenuItem icon="📍" label={projekt.adresse}
-              onClick={() => setMenuOpen(false)} muted small />
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function MenuItem({ icon, label, onClick, muted, small }) {
-  return (
-    <div onClick={onClick}
-      style={{ display:"flex", gap:10, alignItems:"center", padding:"11px 12px",
-        borderRadius:10, cursor:"pointer" }}>
-      <span style={{ fontSize:16 }}>{icon}</span>
-      <span style={{ color: muted ? "var(--muted)" : "var(--text)",
-        fontSize: small ? 11 : 13 }}>{label}</span>
-    </div>
-  );
-}
-
 // ROOT APP
 // ════════════════════════════════════════════════════════════════════════════
 export default function PolierApp() {
   const theme   = useTheme();
   const auth    = useAuth();
-  const [projekte,      setProjekte]    = useState(MOCK_PROJEKTE);
+  const [projekte,      setProjekte]    = useState([]);
   const [aktivId,       setAktivId]     = useState(null);
   const [tab,           setTab]         = useState("dashboard");
   const [sbConnected,   setSbConn]      = useState(false);
   const [neuProjekt,    setNeuProjekt]  = useState(false);
   const [editProjekt,   setEditProjekt] = useState(false);
-  const [eigeneFirma,   setEigeneFirma] = useState(MOCK_EIGENE_FIRMA);
-  const [subs,          setSubs]        = useState(MOCK_SUBS);
+  const [eigeneFirma,   setEigeneFirma] = useState({ name:"", strasse:"", plz:"", ort:"", telefon:"", email:"", geschaeftsfuehrer:"", steuernummer:"", gewerke:[], logo:null });
+  const [subs,          setSubs]        = useState([]);
   const [homeTab,       setHomeTab]     = useState("projekte");
   const [aufgaben,      setAufgaben]    = useState([]);
   const [zeitbuchungen, setZeitbuchungen] = useState([]);
@@ -9376,7 +8958,13 @@ export default function PolierApp() {
           </div>
         </div>
         <div style={{ padding:"20px 16px" }}>
-          <StempeluhrView profil={aktiveProfil} projekte={projekte} session={auth.session} />
+          <StempeluhrView profil={aktiveProfil}
+            projekte={aktiveProfil?.kolonne_id
+              ? projekte.filter(p => (p.kolonnen||[]).some(k => k.id === aktiveProfil.kolonne_id)).length > 0
+                ? projekte.filter(p => (p.kolonnen||[]).some(k => k.id === aktiveProfil.kolonne_id))
+                : projekte
+              : projekte}
+            session={auth.session} />
         </div>
       </div>
     );
@@ -9406,13 +8994,7 @@ export default function PolierApp() {
 
   function setFelder(fn)   { updateProjekt(aktivId, { felder:   typeof fn==="function" ? fn(felder)   : fn }); }
   function setBerichte(fn) { updateProjekt(aktivId, { berichte: typeof fn==="function" ? fn(berichte) : fn }); }
-
-  function handleFelderImport(newFelder) {
-    setFelder(prev => {
-      const maxId = prev.reduce((m,f)=>Math.max(m,f.id),0);
-      return [...prev, ...newFelder.map((f,i)=>({...f, id:maxId+i+1}))];
-    });
-  }
+  function setKolonnen(fn) { updateProjekt(aktivId, { kolonnen: typeof fn==="function" ? fn(kolonnen) : fn }); }
 
   function handleSaveProjekt(p) {
     if (projekte.find(x=>x.id===p.id)) {
@@ -9433,6 +9015,18 @@ export default function PolierApp() {
 
   // ── Home Screen (Baustellen + Firmen) ──
   if (!aktivId) {
+
+    // Baustelle anlegen → direkt Formular zeigen
+    if (neuProjekt) {
+      return (
+        <ProjektFormular
+          subs={subs}
+          onSave={handleSaveProjekt}
+          onClose={() => setNeuProjekt(false)}
+        />
+      );
+    }
+
     return (
       <>
         <div style={{ background:"var(--bg)", minHeight:"100dvh",
@@ -9605,14 +9199,19 @@ export default function PolierApp() {
           </div>
         </div>
 
-        {neuProjekt && (
-          <ProjektFormular
-            subs={subs}
-            onSave={handleSaveProjekt}
-            onClose={() => setNeuProjekt(false)}
-          />
-        )}
       </>
+    );
+  }
+
+  // ── Projekt bearbeiten ──
+  if (editProjekt && projekt) {
+    return (
+      <ProjektFormular
+        initial={projekt}
+        subs={subs}
+        onSave={handleSaveProjekt}
+        onClose={() => setEditProjekt(false)}
+      />
     );
   }
 
@@ -9624,11 +9223,11 @@ export default function PolierApp() {
     { id:"maengel",       icon:"⚠️",  label:"Mängel",      rollen:["administrator","bauleiter","polier","vorarbeiter"] },
     { id:"gantt",         icon:"📅",  label:"Zeitplan",    rollen:["administrator","bauleiter","polier"] },
     { id:"kosten",        icon:"💰",  label:"Kosten",      rollen:["administrator","bauleiter","polier"] },
-    { id:"scanner",       icon:"📷",  label:"Scanner",     rollen:["administrator","polier"] },
     { id:"wetter",        icon:"🌤️", label:"Wetter",      rollen:["administrator","bauleiter","polier","vorarbeiter"] },
     { id:"kolonnen",      icon:"👷",  label:"Kolonnen",    rollen:["administrator","bauleiter","polier","vorarbeiter"] },
     { id:"tagebuch",      icon:"📋",  label:"Tagebuch",    rollen:["administrator","polier","vorarbeiter"] },
     { id:"stempeln",      icon:"⏱️",  label:"Stempeln",    rollen:["administrator","polier","vorarbeiter","facharbeiter"] },
+    { id:"stunden",       icon:"📊",  label:"Stunden",     rollen:["administrator","bauleiter","polier","vorarbeiter"] },
     { id:"angebot",       icon:"📄",  label:"Angebot",     rollen:["administrator","bauleiter","polier"] },
     { id:"admin_params",  icon:"⚙️",  label:"Parameter",   rollen:["administrator"] },
     { id:"nutzer",        icon:"👥",  label:"Nutzer",      rollen:["administrator"] },
@@ -9688,20 +9287,25 @@ export default function PolierApp() {
       <div style={{ padding:"16px 14px 100px", background:"var(--bg)", minHeight:"100dvh" }}>
         {tab === "dashboard" && <DashboardView felder={felder} kolonnen={kolonnen} sbConnected={sbConnected} />}
         {tab === "gantt"     && <GanttView felder={felder} />}
-        {tab === "scanner"   && <ScannerView onFelderImport={handleFelderImport} projektTyp={projekt.typ} />}
         {tab === "wetter"    && <WeatherView />}
-        {tab === "kolonnen"  && <KolonnenView kolonnen={kolonnen} projekt={projekt} />}
+        {tab === "kolonnen"  && <KolonnenView kolonnen={kolonnen} projekt={projekt} setKolonnen={setKolonnen} darfBearbeiten={rolleConfig?.kannBearbeiten !== false} />}
         {tab === "tagebuch"  && <TagesbuchView
             berichte={berichte} setBerichte={setBerichte} sbConnected={sbConnected}
             projekt={projekt} eigeneFirma={eigeneFirma} kolonnen={kolonnen}
             offlineSpeichern={offline.speichereOffline}
             aufgaben={aufgaben} setAufgaben={setAufgaben}
           />}
-        {tab === "aufgaben"      && <AufgabenView aufgaben={aufgaben} setAufgaben={setAufgaben} kolonnen={kolonnen} sbConnected={sbConnected} />}
-        {tab === "maengel"       && <MaengelView aufgaben={aufgaben} setAufgaben={setAufgaben} kolonnen={kolonnen} />}
+        {tab === "aufgaben"      && <AufgabenView aufgaben={aufgaben} setAufgaben={setAufgaben} kolonnen={kolonnen} sbConnected={sbConnected} darfBearbeiten={rolleConfig?.kannBearbeiten !== false} />}
+        {tab === "maengel"       && <MaengelView aufgaben={aufgaben} setAufgaben={setAufgaben} kolonnen={kolonnen} darfBearbeiten={rolleConfig?.kannBearbeiten !== false} />}
         {tab === "kosten"        && <KostenView projekt={projekt} aufgaben={aufgaben} kolonnen={kolonnen} zeitbuchungen={zeitbuchungen} />}
-        {tab === "zeiten"        && <ZeiterfassungView projekt={projekt} />}
-        {tab === "stempeln"      && <StempeluhrView profil={aktiveProfil} projekte={projekte} session={auth.session} />}
+        {tab === "stempeln"      && <StempeluhrView profil={aktiveProfil}
+            projekte={aktiveProfil?.kolonne_id
+              ? projekte.filter(p => (p.kolonnen||[]).some(k => k.id === aktiveProfil.kolonne_id)).length > 0
+                ? projekte.filter(p => (p.kolonnen||[]).some(k => k.id === aktiveProfil.kolonne_id))
+                : projekte
+              : projekte}
+            session={auth.session} kolonnen={kolonnen} />}
+        {tab === "stunden"       && <StundenExportView profil={aktiveProfil} session={auth.session} projekte={projekte} darfAlleSehen={rolleConfig?.kannBearbeiten !== false && aktiveRolle !== "vorarbeiter"} />}
         {tab === "angebot"       && <AngebotView projekt={projekt} aufgaben={aufgaben} einheitspreise={einheitspreise} lvVorlagen={lvVorlagen} eigeneFirma={eigeneFirma} />}
         {tab === "admin_params" && <AdminParameterView einheitspreise={einheitspreise} setEinheitspreise={setEinheitspreise} lvVorlagen={lvVorlagen} setLvVorlagen={setLvVorlagen} />}
         {tab === "nutzer"       && <NutzerVerwaltungView session={auth.session} kolonnen={kolonnen} />}
@@ -9728,21 +9332,7 @@ export default function PolierApp() {
         ))}
       </div>
 
-      {editProjekt && (
-        <ProjektFormular
-          initial={projekt}
-          subs={subs}
-          onSave={handleSaveProjekt}
-          onClose={() => setEditProjekt(false)}
-        />
-      )}
-      {neuProjekt && (
-        <ProjektFormular
-          subs={subs}
-          onSave={handleSaveProjekt}
-          onClose={() => setNeuProjekt(false)}
-        />
-      )}
+
       <PWABanner pwa={pwa} />
     </div>
   );
