@@ -8844,6 +8844,12 @@ export default function PolierApp() {
     }
   }, [auth.profil?.firma_id]);
 
+  // Supabase-Verbindungsstatus — MUSS vor allen early returns stehen (Rules of Hooks)
+  useEffect(() => {
+    if (SUPABASE_URL.includes("DEIN")) { setSbConn(false); return; }
+    setSbConn(true);
+  }, []);
+
   // ── Demo-Rolle (ohne Supabase) ──
   const demoRolle = localStorage.getItem("polaris-demo-rolle");
   const aktiveProfil = auth.profil || (demoRolle ? {
@@ -8970,12 +8976,6 @@ export default function PolierApp() {
     setEditProjekt(false);
     if (!aktivId) setAktivId(p.id);
   }
-
-  // Supabase
-  useEffect(() => {
-    if (SUPABASE_URL.includes("DEIN")) { setSbConn(false); return; }
-    setSbConn(true);
-  }, []);
 
   // ── Home Screen (Baustellen + Firmen) ──
   if (!aktivId) {
