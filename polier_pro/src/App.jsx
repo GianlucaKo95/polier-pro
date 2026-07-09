@@ -2013,41 +2013,149 @@ function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eigeneFirm
 // ════════════════════════════════════════════════════════════════════════════
 // DASHBOARD
 // ════════════════════════════════════════════════════════════════════════════
-function DashboardView({ felder, kolonnen, sbConnected }) {
-  const totalM2  = felder.reduce((s,f) => s + f.m2, 0);
-  const doneM2   = felder.filter(f => f.status === "done").reduce((s,f) => s + f.m2, 0);
-  const totalMann= kolonnen.reduce((s,k) => s + (k.mitarbeiter?.length || k.mitglieder || 0), 0);
-  const offen    = felder.filter(f => f.status !== "done").length;
-  const delayed  = felder.filter(f => f.status !== "done" && new Date(f.geplant) < new Date("2025-06-22")).length;
+function DashboardView({ aufgaben, kolonnen, sbConnected, onNavigate, projekt, wetter }) {
+  const offeneAufgaben = aufgaben.filter(a => a.status !== "abgeschlossen");
+  const kritisch  = aufgaben.filter(a => a.prioritaet === "kritisch" && a.status !== "abgeschlossen").length;
+  const maengel   = aufgaben.filter(a => a.ist_mangel && a.status !== "abgeschlossen").length;
+  const ueberfaellig = aufgaben.filter(a => a.faellig_am &&
+    new Date(a.faellig_am) < new Date() && a.status !== "abgeschlossen").length;
+  const inArbeit  = aufgaben.filter(a => a.status === "in_arbeit").length;
+  const totalMann = kolonnen.reduce((s,k) => s + (k.mitarbeiter?.length || 0), 0);
+
+  const betonM2Gesamt = aufgaben.filter(a=>a.typ==="beton").reduce((s,a)=>s+(a.m2||0),0);
+  const betonM2Fertig = aufgaben.filter(a=>a.typ==="beton" && a.status==="abgeschlossen").reduce((s,a)=>s+(a.m2||0),0);
+
+  function springeZu(tabId, filter) {
+    if (filter) onNavigate(tabId, filter);
+    else onNavigate(tabId);
+  }
 
   return (
     <div>
       <WeatherView compact />
-      <PushBanner erlaubt={push?.erlaubt} berechtigung={push?.berechtigung} />
-      <OfflineSyncBanner pending={offline?.pending} syncing={offline?.syncing} online={!pwa?.offline} />
       <SupabaseStatus connected={sbConnected} />
+
+      {/* Kennzahlen — jede Kachel ist ein Sprungziel */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
+        <div onClick={() => springeZu("aufgaben","offen")}
+          style={{ background:"var(--surface)", borderRadius:12, padding:"14px 16px",
+            borderBottom:"3px solid var(--muted)", cursor:"pointer" }}>
+          <div style={{ color:"var(--muted)", fontSize:11, textTransform:"uppercase",
+            letterSpacing:0.8 }}>Offene Aufgaben</div>
+          <div style={{ color:"var(--text)", fontSize:26, fontWeight:800 }}>
+            {offeneAufgaben.length}
+          </div>
+        </div>
+        <div onClick={() => springeZu("aufgaben","kritisch")}
+          style={{ background:"var(--surface)", borderRadius:12, padding:"14px 16px",
+            borderBottom:`3px solid ${kritisch>0 ? "var(--red)" : "var(--green)"}`,
+            cursor:"pointer" }}>
+          <div style={{ color:"var(--muted)", fontSize:11, textTransform:"uppercase",
+            letterSpacing:0.8 }}>Kritisch</div>
+          <div style={{ color:"var(--text)", fontSize:26, fontWeight:800 }}>
+            {kritisch}
+          </div>
+        </div>
+        <div onClick={() => springeZu("aufgaben","maengel")}
+          style={{ background:"var(--surface)", borderRadius:12, padding:"14px 16px",
+            borderBottom:`3px solid ${maengel>0 ? "var(--red)" : "var(--green)"}`,
+            cursor:"pointer" }}>
+          <div style={{ color:"var(--muted)", fontSize:11, textTransform:"uppercase",
+            letterSpacing:0.8 }}>Mängel</div>
+          <div style={{ color:"var(--text)", fontSize:26, fontWeight:800 }}>
+            {maengel}
+          </div>
+        </div>
+        <div onClick={() => springeZu("aufgaben","alle")}
+          style={{ background:"var(--surface)", borderRadius:12, padding:"14px 16px",
+            borderBottom:`3px solid ${ueberfaellig>0 ? "var(--orange)" : "var(--green)"}`,
+            cursor:"pointer" }}>
+          <div style={{ color:"var(--muted)", fontSize:11, textTransform:"uppercase",
+            letterSpacing:0.8 }}>Überfällig</div>
+          <div style={{ color:"var(--text)", fontSize:26, fontWeight:800 }}>
+            {ueberfaellig}
+          </div>
+        </div>
+      </div>
+
+      {/* Betonage-Fortschritt — Sprung zu gefilterten Betonaufgaben */}
+      {betonM2Gesamt > 0 && (
+        <div onClick={() => springeZu("aufgaben","beton")}
+          style={{ background:"var(--surface)", borderRadius:14, padding:16,
+            marginBottom:14, cursor:"pointer", border:"1.5px solid var(--border)" }}>
+          <div style={{ display:"flex", justifyContent:"space-between",
+            alignItems:"center", marginBottom:8 }}>
+            <div style={{ color:"var(--text)", fontWeight:700, fontSize:14 }}>
+              🏗️ Betonage-Fortschritt
+            </div>
+            <div style={{ color:"var(--yellow)", fontWeight:800, fontSize:14 }}>
+              {betonM2Fertig}/{betonM2Gesamt} m²
+            </div>
+          </div>
+          <div style={{ background:"var(--surface2)", borderRadius:6, height:8,
+            overflow:"hidden", border:"1px solid var(--border)" }}>
+            <div style={{ background:"var(--yellow)", height:"100%", borderRadius:6,
+              width:`${betonM2Gesamt>0 ? (betonM2Fertig/betonM2Gesamt*100) : 0}%`,
+              transition:"width 0.5s" }} />
+          </div>
+        </div>
+      )}
+
+      {/* Schnellzugriff auf Hauptbereiche */}
+      <div style={{ color:"var(--text)", fontWeight:700, marginBottom:10, fontSize:14 }}>
+        Schnellzugriff
+      </div>
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:16 }}>
         {[
-          { l:"m² betoniert", v:`${doneM2}/${totalM2}`, u:"m²", col: "var(--green)" },
-          { l:"Mann heute",   v:totalMann,               u:"",   col: "var(--yellow)"  },
-          { l:"Felder offen", v:offen,                   u:"",   col: "var(--muted)" },
-          { l:"Verzug",       v:delayed,                 u:"",   col: delayed > 0 ? "var(--red)" : "var(--green)" },
-        ].map(k => (
-          <div key={k.l} style={{ background: "var(--surface)", borderRadius:10, padding:"14px 16px", borderBottom:`3px solid ${k.col}` }}>
-            <div style={{ color: "var(--muted)", fontSize:11, textTransform:"uppercase", letterSpacing:0.8 }}>{k.l}</div>
-            <div style={{ color: "var(--text)", fontSize:24, fontWeight:800 }}>{k.v}<span style={{ fontSize:12, fontWeight:400, marginLeft:2 }}>{k.u}</span></div>
-          </div>
+          ["tagebuch","📋","Tagebuch"],
+          ["kolonnen","👷",`Kolonnen (${totalMann} Mann)`],
+          ["stempeln","⏱️","Stempeln"],
+          ["gantt","📅","Zeitplan"],
+        ].map(([tid, icon, label]) => (
+          <button key={tid} onClick={() => springeZu(tid)}
+            style={{ background:"var(--surface)", border:"1.5px solid var(--border)",
+              borderRadius:12, padding:"12px 14px", cursor:"pointer",
+              display:"flex", alignItems:"center", gap:10,
+              fontFamily:"inherit", textAlign:"left" }}>
+            <span style={{ fontSize:20 }}>{icon}</span>
+            <span style={{ color:"var(--text)", fontSize:12, fontWeight:600 }}>{label}</span>
+          </button>
         ))}
       </div>
-      <div style={{ color: "var(--text)", fontWeight:700, marginBottom:10 }}>Aktive Kolonnen</div>
-      {kolonnen.map(k => (
-        <div key={k.id} style={{ background: "var(--surface)", borderRadius:8, padding:"10px 14px", marginBottom:8,
-          display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+
+      {/* Aktive Kolonnen — Sprung zur Kolonnenübersicht */}
+      <div style={{ display:"flex", justifyContent:"space-between",
+        alignItems:"center", marginBottom:10 }}>
+        <div style={{ color:"var(--text)", fontWeight:700, fontSize:14 }}>Aktive Kolonnen</div>
+        {kolonnen.length > 0 && (
+          <button onClick={() => springeZu("kolonnen")}
+            style={{ background:"none", border:"none", color:"var(--yellow)",
+              fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:"inherit" }}>
+            Alle ansehen →
+          </button>
+        )}
+      </div>
+      {kolonnen.length === 0 && (
+        <div style={{ background:"var(--surface)", borderRadius:12, padding:"20px 16px",
+          textAlign:"center", color:"var(--muted)", fontSize:13,
+          border:"1px solid var(--border)" }}>
+          Noch keine Kolonnen eingeteilt
+        </div>
+      )}
+      {kolonnen.slice(0,3).map(k => (
+        <div key={k.id} onClick={() => springeZu("kolonnen")}
+          style={{ background:"var(--surface)", borderRadius:10, padding:"10px 14px",
+            marginBottom:8, cursor:"pointer",
+            display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div>
-            <div style={{ color: "var(--text)", fontSize:13, fontWeight:600 }}>{k.name}</div>
-            <div style={{ color: "var(--muted)", fontSize:12 }}>{k.einsatz}</div>
+            <div style={{ color:"var(--text)", fontSize:13, fontWeight:600 }}>{k.name}</div>
+            {k.vorarbeiter && (
+              <div style={{ color:"var(--muted)", fontSize:11 }}>👷 {k.vorarbeiter}</div>
+            )}
           </div>
-          <div style={{ color: "var(--yellow)", fontSize:13, fontWeight:700 }}>👷 {k.mitglieder}</div>
+          <div style={{ color:"var(--yellow)", fontSize:13, fontWeight:700 }}>
+            {(k.mitarbeiter||[]).length} Mann
+          </div>
         </div>
       ))}
     </div>
@@ -3109,15 +3217,15 @@ function EinladungGenerieren({ session, firmaId, kolonnen }) {
 }
 
 // ─── Plan Guard – zeigt Upgrade-Screen wenn Limit erreicht ───────────────
-function PlanGuard({ firma, kinder, ressource }) {
-  if (!firma) return kinder;
+function PlanGuard({ firma, children, ressource }) {
+  if (!firma) return children;
 
   const trial_abgelaufen = firma.plan === "trial" &&
     firma.trial_ends_at && new Date(firma.trial_ends_at) < new Date();
   const abo_inaktiv = firma.plan_status === "cancelled" ||
     firma.plan_status === "expired";
 
-  if (!trial_abgelaufen && !abo_inaktiv) return kinder;
+  if (!trial_abgelaufen && !abo_inaktiv) return children;
 
   return (
     <div style={{ background:"var(--bg)", minHeight:"100dvh",
@@ -6733,10 +6841,11 @@ function AufgabenFormular({ initial, kolonnen, onSave, onClose }) {
 }
 
 // ─── Aufgaben-View (Haupt-Tab) ────────────────────────────────────────────────
-function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, darfBearbeiten = true }) {
+function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, darfBearbeiten = true, initialFilter = "alle" }) {
   const [ansicht,     setAnsicht]     = useState("liste");  // liste | kanban
-  const [filter,      setFilter]      = useState("alle");
+  const [filter,      setFilter]      = useState(initialFilter);
   const [neuAufgabe,  setNeuAufgabe]  = useState(false);
+  const [neuMangel,   setNeuMangel]   = useState(false);
   const [editAufgabe, setEditAufgabe] = useState(null);
   const [detail,      setDetail]      = useState(null);
 
@@ -6768,6 +6877,17 @@ function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, darfBearbe
       <SchnellErstellung
         onSave={handleSchnellSave}
         onClose={() => setNeuAufgabe(false)}
+      />
+    );
+  }
+
+  if (neuMangel) {
+    return (
+      <AufgabenFormular
+        initial={{ ...leereAufgabe(), typ:"mangel", ist_mangel:true }}
+        kolonnen={kolonnen}
+        onSave={handleSave}
+        onClose={() => setNeuMangel(false)}
       />
     );
   }
@@ -6843,12 +6963,13 @@ function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, darfBearbe
           ))}
         </div>
         {darfBearbeiten && (
-          <button onClick={() => setNeuAufgabe(true)}
-            style={{ background:"var(--yellow)", color:"#1a1200", border:"none",
+          <button onClick={() => filter === "maengel" ? setNeuMangel(true) : setNeuAufgabe(true)}
+            style={{ background: filter === "maengel" ? "var(--red)" : "var(--yellow)",
+              color: filter === "maengel" ? "#fff" : "#1a1200", border:"none",
               borderRadius:10, padding:"8px 14px", fontWeight:700,
               cursor:"pointer", fontSize:13, fontFamily:"inherit",
               flexShrink:0, marginLeft:8 }}>
-            + Aufgabe
+            {filter === "maengel" ? "+ Mangel" : "+ Aufgabe"}
           </button>
         )}
       </div>
@@ -6872,8 +6993,12 @@ function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, darfBearbe
           {gefiltert.length === 0 && (
             <div style={{ textAlign:"center", padding:"40px 20px",
               color:"var(--muted)" }}>
-              <div style={{ fontSize:40, marginBottom:8 }}>✅</div>
-              <div>Keine Aufgaben gefunden</div>
+              <div style={{ fontSize:40, marginBottom:8 }}>
+                {filter === "maengel" ? "✅" : "✅"}
+              </div>
+              <div>
+                {filter === "maengel" ? "Keine Mängel erfasst" : "Keine Aufgaben gefunden"}
+              </div>
             </div>
           )}
           {gefiltert.map(a => (
@@ -6921,169 +7046,6 @@ function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, darfBearbe
             );
           })}
         </div>
-      )}
-
-      {(neuAufgabe || editAufgabe) && (
-        <AufgabenFormular
-          initial={editAufgabe}
-          kolonnen={kolonnen}
-          onSave={handleSave}
-          onClose={() => { setNeuAufgabe(false); setEditAufgabe(null); }}
-        />
-      )}
-    </div>
-  );
-}
-
-// ─── Mängel-View ──────────────────────────────────────────────────────────────
-function MaengelView({ aufgaben, setAufgaben, kolonnen, darfBearbeiten = true }) {
-  const maengel = aufgaben.filter(a => a.ist_mangel);
-  const [neuMangel, setNeuMangel] = useState(false);
-  const [edit,      setEdit]      = useState(null);
-
-  function handleSave(a) {
-    const mitMangel = { ...a, ist_mangel:true, typ:"mangel" };
-    if (edit) {
-      setAufgaben(prev => prev.map(x => x.id===mitMangel.id ? mitMangel : x));
-    } else {
-      setAufgaben(prev => [mitMangel, ...prev]);
-    }
-    setNeuMangel(false); setEdit(null);
-  }
-
-  if (neuMangel || edit) {
-    return (
-      <AufgabenFormular
-        initial={edit ? edit : { ...leereAufgabe(), typ:"mangel", ist_mangel:true }}
-        kolonnen={kolonnen}
-        onSave={handleSave}
-        onClose={() => { setNeuMangel(false); setEdit(null); }}
-      />
-    );
-  }
-
-  const offen     = maengel.filter(m=>m.status!=="abgeschlossen").length;
-  const behoben   = maengel.filter(m=>m.status==="abgeschlossen").length;
-
-  return (
-    <div>
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr",
-        gap:8, marginBottom:16 }}>
-        {[
-          ["Gesamt",    maengel.length, "var(--muted)"],
-          ["Offen",     offen,          "var(--red)"],
-          ["Behoben",   behoben,        "var(--green)"],
-        ].map(([l,v,c]) => (
-          <div key={l} style={{ background:"var(--surface)", borderRadius:12,
-            padding:"12px 14px", border:"1.5px solid var(--border)",
-            position:"relative", overflow:"hidden" }}>
-            <div style={{ position:"absolute", top:0, left:0, right:0,
-              height:3, background:c }} />
-            <div style={{ color:"var(--muted)", fontSize:10, fontWeight:700,
-              textTransform:"uppercase", marginBottom:4 }}>{l}</div>
-            <div style={{ color:"var(--text)", fontWeight:900, fontSize:22 }}>{v}</div>
-          </div>
-        ))}
-      </div>
-
-      <div style={{ display:"flex", justifyContent:"space-between",
-        alignItems:"center", marginBottom:12 }}>
-        <div style={{ color:"var(--text)", fontWeight:700, fontSize:15 }}>
-          Mängelliste
-        </div>
-        {darfBearbeiten && (
-          <button onClick={() => setNeuMangel(true)}
-            style={{ background:"var(--red)", color:"#fff", border:"none",
-              borderRadius:10, padding:"8px 14px", fontWeight:700,
-              cursor:"pointer", fontSize:13, fontFamily:"inherit" }}>
-            + Mangel
-          </button>
-        )}
-      </div>
-
-      {maengel.length === 0 && (
-        <div style={{ textAlign:"center", padding:"40px 20px", color:"var(--muted)" }}>
-          <div style={{ fontSize:40, marginBottom:8 }}>✅</div>
-          <div style={{ fontWeight:700, color:"var(--text)", marginBottom:4 }}>
-            Keine Mängel erfasst
-          </div>
-        </div>
-      )}
-
-      {maengel.map(m => (
-        <div key={m.id} onClick={() => darfBearbeiten && setEdit(m)}
-          style={{ background:"var(--surface)", borderRadius:14,
-            padding:"14px 16px", marginBottom:10, cursor:"pointer",
-            borderLeft:"4px solid var(--red)",
-            border:"1.5px solid var(--border)",
-            borderLeftWidth:4, borderLeftColor:"var(--red)" }}>
-          <div style={{ display:"flex", justifyContent:"space-between",
-            alignItems:"flex-start", marginBottom:6 }}>
-            <div style={{ flex:1 }}>
-              <div style={{ color:"var(--text)", fontWeight:700, fontSize:14 }}>
-                {m.titel}
-              </div>
-              {m.mangel_verursacher && (
-                <div style={{ color:"var(--muted)", fontSize:11, marginTop:2 }}>
-                  🔧 {m.mangel_verursacher}
-                </div>
-              )}
-              {m.beschreibung && (
-                <div style={{ color:"var(--text2)", fontSize:12, marginTop:4,
-                  lineHeight:1.4 }}>{m.beschreibung}</div>
-              )}
-            </div>
-            <div style={{ background: AUFGABEN_STATUS[m.status]?.bg,
-              color: AUFGABEN_STATUS[m.status]?.farbe,
-              borderRadius:20, padding:"2px 8px", fontSize:10, fontWeight:700,
-              marginLeft:8, flexShrink:0 }}>
-              {AUFGABEN_STATUS[m.status]?.label}
-            </div>
-          </div>
-
-          {/* Plan-Preview */}
-          {m.plan_bild_url && m.plan_x !== null && (
-            <div style={{ position:"relative", borderRadius:8, overflow:"hidden",
-              height:80, marginTop:8 }}>
-              <img src={m.plan_bild_url} alt="Plan"
-                style={{ width:"100%", height:"100%", objectFit:"cover" }} />
-              <div style={{ position:"absolute",
-                left:`${m.plan_x}%`, top:`${m.plan_y}%`,
-                transform:"translate(-50%,-50%)",
-                width:20, height:20, borderRadius:10,
-                background:"var(--red)", border:"2px solid #fff",
-                display:"flex", alignItems:"center", justifyContent:"center",
-                fontSize:10, color:"#fff", fontWeight:700 }}>!</div>
-            </div>
-          )}
-
-          {/* Fotos */}
-          {m.fotos?.length > 0 && (
-            <div style={{ display:"flex", gap:5, marginTop:8 }}>
-              {m.fotos.slice(0,3).map((url,i) => (
-                <img key={i} src={url} alt="" style={{ width:44, height:44,
-                  borderRadius:6, objectFit:"cover" }} />
-              ))}
-              {m.fotos.length > 3 && (
-                <div style={{ width:44, height:44, borderRadius:6,
-                  background:"var(--surface2)", display:"flex",
-                  alignItems:"center", justifyContent:"center",
-                  color:"var(--muted)", fontSize:11, fontWeight:700 }}>
-                  +{m.fotos.length-3}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      ))}
-
-      {(neuMangel || edit) && (
-        <AufgabenFormular
-          initial={edit ? edit : { ...leereAufgabe(), typ:"mangel", ist_mangel:true }}
-          kolonnen={kolonnen}
-          onSave={handleSave}
-          onClose={() => { setNeuMangel(false); setEdit(null); }}
-        />
       )}
     </div>
   );
@@ -8841,6 +8803,8 @@ export default function PolierApp() {
   const [projekte,      setProjekte]    = useState([]);
   const [aktivId,       setAktivId]     = useState(null);
   const [tab,           setTab]         = useState("dashboard");
+  const [aufgabenFilter,setAufgabenFilter] = useState("alle"); // für Dashboard-Sprungziele
+  const [zeigeMehr,     setZeigeMehr]    = useState(false);
   const [sbConnected,   setSbConn]      = useState(false);
   const [neuProjekt,    setNeuProjekt]  = useState(false);
   const [editProjekt,   setEditProjekt] = useState(false);
@@ -9215,12 +9179,22 @@ export default function PolierApp() {
     );
   }
 
+  // ── Neue Baustelle (aus dem Aktenregister heraus aufrufbar) ──
+  if (neuProjekt) {
+    return (
+      <ProjektFormular
+        subs={subs}
+        onSave={handleSaveProjekt}
+        onClose={() => setNeuProjekt(false)}
+      />
+    );
+  }
+
   // ── Baustellen-Ansicht ──
   // Rollenbasierte Tabs
   const ALLE_TABS = [
     { id:"dashboard",     icon:"📊",  label:"Übersicht",   rollen:["administrator","bauleiter","polier","vorarbeiter"] },
     { id:"aufgaben",      icon:"✅",  label:"Aufgaben",    rollen:["administrator","bauleiter","polier","vorarbeiter"] },
-    { id:"maengel",       icon:"⚠️",  label:"Mängel",      rollen:["administrator","bauleiter","polier","vorarbeiter"] },
     { id:"gantt",         icon:"📅",  label:"Zeitplan",    rollen:["administrator","bauleiter","polier"] },
     { id:"kosten",        icon:"💰",  label:"Kosten",      rollen:["administrator","bauleiter","polier"] },
     { id:"wetter",        icon:"🌤️", label:"Wetter",      rollen:["administrator","bauleiter","polier","vorarbeiter"] },
@@ -9233,6 +9207,13 @@ export default function PolierApp() {
     { id:"nutzer",        icon:"👥",  label:"Nutzer",      rollen:["administrator"] },
   ];
   const TABS = ALLE_TABS.filter(t => !aktiveRolle || t.rollen.includes(aktiveRolle));
+
+  // ── Navigation gruppieren: Hauptfunktionen sichtbar, Rest unter "Mehr" ──
+  const HAUPT_TAB_IDS = ["dashboard", "aufgaben", "tagebuch", "kolonnen", "stempeln"];
+  const hauptTabs = TABS.filter(t => HAUPT_TAB_IDS.includes(t.id))
+    .sort((a,b) => HAUPT_TAB_IDS.indexOf(a.id) - HAUPT_TAB_IDS.indexOf(b.id));
+  const mehrTabs  = TABS.filter(t => !HAUPT_TAB_IDS.includes(t.id));
+  const aktivInMehr = mehrTabs.some(t => t.id === tab);
 
   return (
     <div style={{ background:"var(--bg)", minHeight:"100dvh",
@@ -9285,7 +9266,12 @@ export default function PolierApp() {
       {/* ── CONTENT ── */}
       <PlanGuard firma={firma} ressource="app">
       <div style={{ padding:"16px 14px 100px", background:"var(--bg)", minHeight:"100dvh" }}>
-        {tab === "dashboard" && <DashboardView felder={felder} kolonnen={kolonnen} sbConnected={sbConnected} />}
+        {tab === "dashboard" && <DashboardView aufgaben={aufgaben} kolonnen={kolonnen} sbConnected={sbConnected} projekt={projekt}
+            onNavigate={(tabId, filter) => {
+              if (filter) setAufgabenFilter(filter);
+              else setAufgabenFilter("alle");
+              setTab(tabId);
+            }} />}
         {tab === "gantt"     && <GanttView felder={felder} />}
         {tab === "wetter"    && <WeatherView />}
         {tab === "kolonnen"  && <KolonnenView kolonnen={kolonnen} projekt={projekt} setKolonnen={setKolonnen} darfBearbeiten={rolleConfig?.kannBearbeiten !== false} />}
@@ -9295,8 +9281,7 @@ export default function PolierApp() {
             offlineSpeichern={offline.speichereOffline}
             aufgaben={aufgaben} setAufgaben={setAufgaben}
           />}
-        {tab === "aufgaben"      && <AufgabenView aufgaben={aufgaben} setAufgaben={setAufgaben} kolonnen={kolonnen} sbConnected={sbConnected} darfBearbeiten={rolleConfig?.kannBearbeiten !== false} />}
-        {tab === "maengel"       && <MaengelView aufgaben={aufgaben} setAufgaben={setAufgaben} kolonnen={kolonnen} darfBearbeiten={rolleConfig?.kannBearbeiten !== false} />}
+        {tab === "aufgaben"      && <AufgabenView aufgaben={aufgaben} setAufgaben={setAufgaben} kolonnen={kolonnen} sbConnected={sbConnected} darfBearbeiten={rolleConfig?.kannBearbeiten !== false} initialFilter={aufgabenFilter} />}
         {tab === "kosten"        && <KostenView projekt={projekt} aufgaben={aufgaben} kolonnen={kolonnen} zeitbuchungen={zeitbuchungen} />}
         {tab === "stempeln"      && <StempeluhrView profil={aktiveProfil}
             projekte={aktiveProfil?.kolonne_id
@@ -9318,8 +9303,8 @@ export default function PolierApp() {
         display:"flex", zIndex:50,
         boxShadow:"0 -2px 12px rgba(0,0,0,0.10)",
         paddingBottom:"env(safe-area-inset-bottom)" }}>
-        {TABS.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)}
+        {hauptTabs.map(t => (
+          <button key={t.id} onClick={() => { setTab(t.id); setZeigeMehr(false); }}
             style={{ flex:1, padding:"10px 0 12px", background:"none",
               border:"none", cursor:"pointer", fontFamily:"inherit",
               borderTop:`3px solid ${tab===t.id ? projekt.farbe : "transparent"}`,
@@ -9330,8 +9315,51 @@ export default function PolierApp() {
               fontWeight: tab===t.id ? 800 : 500 }}>{t.label}</div>
           </button>
         ))}
+        {mehrTabs.length > 0 && (
+          <button onClick={() => setZeigeMehr(m => !m)}
+            style={{ flex:1, padding:"10px 0 12px", background:"none",
+              border:"none", cursor:"pointer", fontFamily:"inherit",
+              borderTop:`3px solid ${(aktivInMehr || zeigeMehr) ? projekt.farbe : "transparent"}`,
+              transition:"border-color 0.15s" }}>
+            <div style={{ fontSize:20 }}>⋯</div>
+            <div style={{ color: (aktivInMehr || zeigeMehr) ? projekt.farbe : "var(--muted)",
+              fontSize:9, marginTop:2,
+              fontWeight: (aktivInMehr || zeigeMehr) ? 800 : 500 }}>Mehr</div>
+          </button>
+        )}
       </div>
 
+      {/* ── MEHR-MENÜ (Bottom Sheet) ── */}
+      {zeigeMehr && (
+        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
+          background:"rgba(0,0,0,0.4)", zIndex:60 }}
+          onClick={() => setZeigeMehr(false)}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ position:"absolute", bottom:0, left:0, right:0,
+              background:"var(--surface)", borderRadius:"20px 20px 0 0",
+              padding:"20px 16px", paddingBottom:"calc(20px + env(safe-area-inset-bottom))",
+              boxShadow:"0 -4px 20px rgba(0,0,0,0.2)" }}>
+            <div style={{ width:36, height:4, background:"var(--border)",
+              borderRadius:2, margin:"0 auto 18px" }} />
+            <div style={{ color:"var(--text)", fontWeight:700, fontSize:15,
+              marginBottom:14 }}>Weitere Funktionen</div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10 }}>
+              {mehrTabs.map(t => (
+                <button key={t.id} onClick={() => { setTab(t.id); setZeigeMehr(false); }}
+                  style={{ background: tab===t.id ? "var(--ybg)" : "var(--surface2)",
+                    border:`1.5px solid ${tab===t.id ? "var(--yellow)" : "var(--border)"}`,
+                    borderRadius:14, padding:"14px 8px", cursor:"pointer",
+                    display:"flex", flexDirection:"column", alignItems:"center",
+                    gap:6, fontFamily:"inherit" }}>
+                  <span style={{ fontSize:22 }}>{t.icon}</span>
+                  <span style={{ color: tab===t.id ? "var(--ydark)" : "var(--text2)",
+                    fontSize:11, fontWeight:600, textAlign:"center" }}>{t.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <PWABanner pwa={pwa} />
     </div>
