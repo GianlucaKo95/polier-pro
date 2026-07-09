@@ -96,10 +96,13 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 async function sbFetch(path, opts = {}) {
   try {
+    const authHeader = opts.headers?.Authorization || `Bearer ${SUPABASE_ANON_KEY}`;
+    const nutzeEchtenToken = authHeader !== `Bearer ${SUPABASE_ANON_KEY}`;
+
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
       headers: {
         "apikey": SUPABASE_ANON_KEY,
-        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        "Authorization": authHeader,
         "Content-Type": "application/json",
         "Prefer": "return=representation",
         ...opts.headers,
@@ -107,8 +110,12 @@ async function sbFetch(path, opts = {}) {
       ...opts,
     });
     if (res.status === 401) {
-      // Token ist ungültig/abgelaufen — globales Event für automatischen Logout
-      window.dispatchEvent(new CustomEvent("polaris-auth-invalid"));
+      // Nur bei Requests mit echtem User-Token deutet 401 auf eine ungültige
+      // Session hin. Ein 401 mit dem öffentlichen Anon-Key sagt nichts über
+      // den Login-Status aus und darf keinen Logout auslösen.
+      if (nutzeEchtenToken) {
+        window.dispatchEvent(new CustomEvent("polaris-auth-invalid"));
+      }
       return null;
     }
     if (!res.ok) return null;
@@ -3979,17 +3986,27 @@ function useAuth() {
     return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, [session?.access_token]);
 
-  // Globaler 401-Handler: bei ungültigem Token automatisch abmelden
+  // 401-Handler: bei ungültigem Token die Session verifizieren bevor abgemeldet wird.
+  // Ein einzelner fehlgeschlagener Request (z.B. RLS-Policy verweigert Zugriff auf
+  // eine bestimmte Tabelle) ist kein Beweis dass die gesamte Session ungültig ist —
+  // nur ein zusätzlicher fehlgeschlagener Profil-Check rechtfertigt den Logout.
   useEffect(() => {
-    function handleAuthInvalid() {
-      localStorage.removeItem("polaris-session");
-      setSession(null);
-      setProfil(null);
-      setFehler("Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.");
+    async function handleAuthInvalid() {
+      if (!session?.access_token) return;
+      const p = await sbGetProfile(session.access_token);
+      if (!p) {
+        // Session wirklich ungültig — jetzt abmelden
+        localStorage.removeItem("polaris-session");
+        setSession(null);
+        setProfil(null);
+        setFehler("Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.");
+      }
+      // Profil ließ sich laden → Session ist gültig, der 401 kam von einer
+      // einzelnen Tabelle/RLS-Policy. Kein Logout nötig.
     }
     window.addEventListener("polaris-auth-invalid", handleAuthInvalid);
     return () => window.removeEventListener("polaris-auth-invalid", handleAuthInvalid);
-  }, []);
+  }, [session?.access_token]);
 
   async function anmelden(email, password) {
     setLoading(true); setFehler("");
