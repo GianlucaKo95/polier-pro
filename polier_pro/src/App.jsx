@@ -161,14 +161,40 @@ const STATUS_LABEL = { done:"✅ Fertig", in_progress:"🔄 Läuft", planned:"�
 // ════════════════════════════════════════════════════════════════════════════
 // WEATHER COMPONENT (Open-Meteo API)
 // ════════════════════════════════════════════════════════════════════════════
-function WeatherView({ compact = false }) {
+function WeatherView({ compact = false, adresse = null, projektId = null }) {
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loc, setLoc] = useState({ lat: 48.137, lon: 11.576, name: "München" });
+  const [standortAufgeloest, setStandortAufgeloest] = useState(false);
+
+  // Baustellen-Adresse einmalig zu Koordinaten auflösen, wenn vorhanden.
+  // Fällt zurück auf München nur wenn keine Adresse hinterlegt ist oder
+  // das Geocoding fehlschlägt (z.B. bei unvollständiger/falscher Adresse).
+  useEffect(() => {
+    let abgebrochen = false;
+    setStandortAufgeloest(false);
+
+    if (!adresse || !adresse.trim()) {
+      setStandortAufgeloest(true);
+      return;
+    }
+
+    geocodeAdresse(adresse).then(result => {
+      if (abgebrochen) return;
+      if (result) {
+        setLoc({ lat: result.lat, lon: result.lon, name: result.name });
+      }
+      // Bei fehlgeschlagenem Geocoding bleibt der bisherige/Default-Standort bestehen
+      setStandortAufgeloest(true);
+    });
+
+    return () => { abgebrochen = true; };
+  }, [adresse]);
 
   useEffect(() => {
+    if (!standortAufgeloest) return; // erst Wetter laden wenn Standort feststeht
     fetchWeather(loc.lat, loc.lon);
-  }, [loc.lat, loc.lon]);
+  }, [loc.lat, loc.lon, standortAufgeloest]);
 
   async function fetchWeather(lat, lon) {
     setLoading(true);
@@ -2039,7 +2065,7 @@ function DashboardView({ aufgaben, kolonnen, sbConnected, onNavigate, projekt, w
 
   return (
     <div>
-      <WeatherView compact />
+      <WeatherView compact adresse={projekt?.adresse} projektId={projekt?.id} />
       <SupabaseStatus connected={sbConnected} />
 
       {/* Kennzahlen — jede Kachel ist ein Sprungziel */}
@@ -3110,30 +3136,47 @@ function EinladungGenerieren({ session, firmaId, kolonnen }) {
   const [tage,       setTage]       = useState(7);
   const [link,       setLink]       = useState("");
   const [laden,      setLaden]      = useState(false);
+  const [fehler,     setFehler]     = useState("");
 
   async function generieren() {
-    setLaden(true);
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/einladungen`, {
-      method: "POST",
-      headers: {
-        "apikey":        SUPABASE_ANON_KEY,
-        "Authorization": `Bearer ${session?.access_token}`,
-        "Content-Type":  "application/json",
-        "Prefer":        "return=representation",
-      },
-      body: JSON.stringify({
-        firma_id:     firmaId,
-        rolle,
-        kolonne_id:   kolonneId || null,
-        email:        email || null,
-        läuft_ab_at:  new Date(Date.now() + tage * 86400000).toISOString(),
-        max_nutzungen: 1,
-      }),
-    });
-    const data = await res.json();
-    if (data?.[0]?.token) {
-      const baseUrl = window.location.origin;
-      setLink(`${baseUrl}?einladung=${data[0].token}`);
+    if (!firmaId) {
+      setFehler("Firma konnte nicht ermittelt werden. Bitte Seite neu laden und erneut versuchen.");
+      return;
+    }
+    setLaden(true); setFehler("");
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/einladungen`, {
+        method: "POST",
+        headers: {
+          "apikey":        SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type":  "application/json",
+          "Prefer":        "return=representation",
+        },
+        body: JSON.stringify({
+          firma_id:     firmaId,
+          rolle,
+          kolonne_id:   kolonneId || null,
+          email:        email || null,
+          läuft_ab_at:  new Date(Date.now() + tage * 86400000).toISOString(),
+          max_nutzungen: 1,
+        }),
+      });
+      if (!res.ok) {
+        const errText = await res.text();
+        setFehler(`Einladung konnte nicht erstellt werden (${res.status}). ${errText.slice(0,150)}`);
+        setLaden(false);
+        return;
+      }
+      const data = await res.json();
+      if (data?.[0]?.token) {
+        const baseUrl = window.location.origin;
+        setLink(`${baseUrl}?einladung=${data[0].token}`);
+      } else {
+        setFehler("Einladung wurde nicht erstellt — keine Rückmeldung vom Server.");
+      }
+    } catch (e) {
+      setFehler("Netzwerkfehler beim Erstellen der Einladung: " + e.message);
     }
     setLaden(false);
   }
@@ -3189,6 +3232,14 @@ function EinladungGenerieren({ session, firmaId, kolonnen }) {
           onChange={e => setEmail(e.target.value)}
           placeholder="mitarbeiter@firma.de" style={inputStyle()} />
       </div>
+
+      {fehler && (
+        <div style={{ background:"var(--rbg)", color:"var(--red)", borderRadius:10,
+          padding:"10px 14px", marginBottom:12, fontSize:12,
+          border:"1px solid var(--red)" }}>
+          ❌ {fehler}
+        </div>
+      )}
 
       <button onClick={generieren} disabled={laden}
         style={{ width:"100%", background:"var(--yellow)", color:"#1a1200",
@@ -4387,6 +4438,28 @@ async function reverseGeocode(lat, lng) {
   } catch { return `${lat.toFixed(5)}, ${lng.toFixed(5)}`; }
 }
 
+// Vorwärts-Geocoding: Adresstext → Koordinaten (für Wetter am Baustellen-Standort).
+// Wird pro Adresse einmalig aufgelöst und im Projekt zwischengespeichert,
+// damit nicht bei jedem Wetter-Abruf erneut gegen Nominatim angefragt wird.
+async function geocodeAdresse(adresse) {
+  if (!adresse || !adresse.trim()) return null;
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(adresse)}&format=json&limit=1&countrycodes=de,at,ch`,
+      { headers: { "Accept-Language": "de" } }
+    );
+    const data = await res.json();
+    if (data?.[0]) {
+      return {
+        lat:  parseFloat(data[0].lat),
+        lon:  parseFloat(data[0].lon),
+        name: data[0].display_name?.split(",")[0] || adresse,
+      };
+    }
+    return null;
+  } catch { return null; }
+}
+
 // Tätigkeiten für Zeitbuchung — wird für Kalkulation, Lohnabrechnung und
 // Kostenauswertung benötigt (analog zu Aktivitäten in 123erfasst).
 const TAETIGKEITEN = {
@@ -5133,7 +5206,7 @@ function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
 }
 
 // ─── Nutzerverwaltung (nur Administrator) ─────────────────────────────────
-function NutzerVerwaltungView({ session, kolonnen = [] }) {
+function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null }) {
   const [nutzer,      setNutzer]      = useState([]);
   const [einladungen, setEinladungen] = useState([]);
   const [laden,       setLaden]       = useState(true);
@@ -5502,7 +5575,7 @@ function NutzerVerwaltungView({ session, kolonnen = [] }) {
           <div style={{ padding:"20px 16px" }}>
             <EinladungGenerieren
               session={session}
-              firmaId={null}
+              firmaId={firmaId}
               kolonnen={kolonnen}
             />
           </div>
@@ -9290,7 +9363,7 @@ export default function PolierApp() {
               setTab(tabId);
             }} />}
         {tab === "gantt"     && <GanttView felder={felder} />}
-        {tab === "wetter"    && <WeatherView />}
+        {tab === "wetter"    && <WeatherView adresse={projekt?.adresse} projektId={projekt?.id} />}
         {tab === "kolonnen"  && <KolonnenView kolonnen={kolonnen} projekt={projekt} setKolonnen={setKolonnen} darfBearbeiten={rolleConfig?.kannBearbeiten !== false} />}
         {tab === "tagebuch"  && <TagesbuchView
             berichte={berichte} setBerichte={setBerichte} sbConnected={sbConnected}
@@ -9310,7 +9383,7 @@ export default function PolierApp() {
         {tab === "stunden"       && <StundenExportView profil={aktiveProfil} session={auth.session} projekte={projekte} darfAlleSehen={rolleConfig?.kannBearbeiten !== false && aktiveRolle !== "vorarbeiter"} />}
         {tab === "angebot"       && <AngebotView projekt={projekt} aufgaben={aufgaben} einheitspreise={einheitspreise} lvVorlagen={lvVorlagen} eigeneFirma={eigeneFirma} />}
         {tab === "admin_params" && <AdminParameterView einheitspreise={einheitspreise} setEinheitspreise={setEinheitspreise} lvVorlagen={lvVorlagen} setLvVorlagen={setLvVorlagen} />}
-        {tab === "nutzer"       && <NutzerVerwaltungView session={auth.session} kolonnen={kolonnen} />}
+        {tab === "nutzer"       && <NutzerVerwaltungView session={auth.session} kolonnen={kolonnen} firmaId={firma?.id} />}
       </div>
       </PlanGuard>
 
