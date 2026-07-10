@@ -253,7 +253,20 @@ create or replace function firma_registrieren(
 declare
   v_firma_id int;
   v_slug     text;
+  v_bestehende_firma_id int;
 begin
+  -- Schutz vor Duplikaten: Falls der Nutzer bereits einer Firma zugeordnet
+  -- ist, KEINE neue Firma anlegen, sondern die bestehende zurückgeben.
+  -- Ohne diesen Check erzeugt jeder erneute Onboarding-Durchlauf
+  -- (z.B. nach Cache-Verlust im Browser) eine weitere Firmen-Zeile.
+  select firma_id into v_bestehende_firma_id
+  from profile
+  where id = p_user_id and firma_id is not null;
+
+  if v_bestehende_firma_id is not null then
+    return v_bestehende_firma_id;
+  end if;
+
   -- Slug generieren
   v_slug := lower(regexp_replace(p_firma_name, '[^a-zA-Z0-9]+', '-', 'g'));
   v_slug := v_slug || '-' || floor(random()*9000+1000)::text;

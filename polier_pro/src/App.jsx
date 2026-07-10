@@ -8909,10 +8909,22 @@ export default function PolierApp() {
   const push = usePushNotifications(projekte, eigeneFirma);
   const offline = useOfflineSync(pwa.online === false ? false : true, sbConnected);
 
-  // Onboarding: einmalig beim ersten Start
-  const [onboardingDone, setOnboardingDone] = useState(
+  // Onboarding: gilt als abgeschlossen wenn entweder localStorage es sagt
+  // ODER der eingeloggte Nutzer in Supabase bereits einer Firma zugeordnet ist.
+  // localStorage allein reicht nicht — bei neuem Gerät/Browser/gelöschtem Cache
+  // würde die App sonst fälschlich erneut das Onboarding zeigen, obwohl in der
+  // Datenbank längst eine Firma für diesen Nutzer existiert (führt zu
+  // wiederholt angelegten Firmen für denselben Account).
+  const [onboardingLocal, setOnboardingLocal] = useState(
     () => !!localStorage.getItem(ONBOARDING_KEY)
   );
+  const onboardingDone = onboardingLocal || !!auth.profil?.firma_id;
+
+  function setOnboardingDone(val) {
+    if (val) localStorage.setItem(ONBOARDING_KEY, "1");
+    else localStorage.removeItem(ONBOARDING_KEY);
+    setOnboardingLocal(val);
+  }
 
   const [zeigeRegistrierung, setZeigeRegistrierung] = useState(false);
   const [firma,              setFirma]              = useState(null);
@@ -9030,8 +9042,42 @@ export default function PolierApp() {
     );
   }
 
-  function handleOnboardingComplete(firma, ersterPolier) {
-    setEigeneFirma(prev => ({ ...prev, ...firma }));
+  async function handleOnboardingComplete(firmaDaten, ersterPolier) {
+    setEigeneFirma(prev => ({ ...prev, ...firmaDaten }));
+
+    // Falls echter Supabase-Login vorliegt (kein Demo-Modus): Firma jetzt
+    // WIRKLICH in der Datenbank anlegen, sonst geht die Zuordnung beim
+    // nächsten Login verloren und das Onboarding beginnt erneut von vorn.
+    if (auth.session?.access_token && !auth.profil?.firma_id) {
+      try {
+        const rpcRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/firma_registrieren`, {
+          method: "POST",
+          headers: {
+            "apikey":        SUPABASE_ANON_KEY,
+            "Authorization": `Bearer ${auth.session.access_token}`,
+            "Content-Type":  "application/json",
+          },
+          body: JSON.stringify({
+            p_user_id:    auth.session.user?.id,
+            p_firma_name: firmaDaten?.name || "Meine Firma",
+            p_email:      auth.session.user?.email || "",
+          }),
+        });
+        if (rpcRes.ok) {
+          setOnboardingDone(true);
+          // auth.profil kennt die neue firma_id erst nach einem frischen
+          // Profil-Fetch. useAuth lädt das Profil beim Mounten anhand des
+          // Tokens neu — ein Reload ist der zuverlässigste Weg, damit
+          // auth.profil.firma_id ab sofort korrekt gesetzt ist.
+          window.location.reload();
+          return;
+        }
+      } catch {
+        // Bei Netzwerkfehler bleibt Onboarding zumindest lokal abgeschlossen;
+        // die Firma kann bei Bedarf später über den Registrierungs-Flow nachgeholt werden.
+      }
+    }
+
     setOnboardingDone(true);
     // neuProjekt wird im Home-Screen durch leere Projektliste gezeigt
   }
