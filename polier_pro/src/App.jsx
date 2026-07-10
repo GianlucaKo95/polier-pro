@@ -2468,11 +2468,55 @@ const ALLE_GEWERKE = [
   { key:"garten",       label:"Garten / Außenanlagen",     icon:"🌿" },
 ];
 
-function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboardingReset }) {
+function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboardingReset, session = null, firmaId = null }) {
   const [screen, setScreen]     = useState("home"); // home | eigene | subs | subEdit
   const [editSub, setEditSub]   = useState(null);
   const [editOwn, setEditOwn]   = useState(false);
   const [tmpFirma, setTmpFirma] = useState(owneFirma);
+  const [speichern, setSpeichern] = useState(false);
+  const [speicherFehler, setSpeicherFehler] = useState("");
+
+  async function firmaSpeichern() {
+    setEigeneFirma(tmpFirma);
+
+    // Bei echtem Login (mit firmaId aus Supabase) auch in der Datenbank
+    // aktualisieren — sonst gehen Änderungen beim nächsten Login/Gerät
+    // wieder verloren, weil sie nur lokal im State standen.
+    if (session?.access_token && firmaId) {
+      setSpeichern(true); setSpeicherFehler("");
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/firmen?id=eq.${firmaId}`, {
+          method: "PATCH",
+          headers: {
+            "apikey":        SUPABASE_ANON_KEY,
+            "Authorization": `Bearer ${session.access_token}`,
+            "Content-Type":  "application/json",
+            "Prefer":        "return=minimal",
+          },
+          body: JSON.stringify({
+            name:              tmpFirma.name || "",
+            adresse:           tmpFirma.strasse || "",
+            plz:               tmpFirma.plz || "",
+            ort:               tmpFirma.ort || "",
+            telefon:           tmpFirma.telefon || "",
+            email:             tmpFirma.email || "",
+            steuernummer:      tmpFirma.steuernummer || "",
+            logo_url:          tmpFirma.logo || null,
+            geschaeftsfuehrer: tmpFirma.geschaeftsfuehrer || "",
+            gewerke:           tmpFirma.gewerke || [],
+          }),
+        });
+        if (!res.ok) {
+          setSpeicherFehler("Änderungen konnten nicht auf dem Server gespeichert werden.");
+        }
+      } catch {
+        setSpeicherFehler("Netzwerkfehler beim Speichern.");
+      }
+      setSpeichern(false);
+    }
+
+    setScreen("home");
+  }
 
   return (
     <div>
@@ -2615,10 +2659,18 @@ function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboardingRese
             </div>
           </div>
 
-          <button onClick={() => { setEigeneFirma(tmpFirma); setScreen("home"); }}
+          {speicherFehler && (
+            <div style={{ background:"var(--rbg)", color:"var(--red)", borderRadius:10,
+              padding:"10px 14px", marginBottom:12, fontSize:12,
+              border:"1px solid var(--red)" }}>
+              ❌ {speicherFehler}
+            </div>
+          )}
+
+          <button onClick={firmaSpeichern} disabled={speichern}
             style={{ width:"100%", background: "var(--yellow)", color:"#1C2027", border:"none",
               borderRadius:10, padding:14, fontWeight:700, cursor:"pointer", fontSize:15 }}>
-            💾 Speichern
+            {speichern ? "⏳ Speichert…" : "💾 Speichern"}
           </button>
         </div>
       )}
@@ -8934,7 +8986,11 @@ export default function PolierApp() {
     ? new URLSearchParams(window.location.search).get("einladung")
     : null;
 
-  // Firma laden wenn eingeloggt
+  // Firma laden wenn eingeloggt — und lokalen eigeneFirma-State (der für
+  // PDFs, Onboarding-Anzeige etc. verwendet wird) mit den echten Daten
+  // aus der firmen-Tabelle synchronisieren. Ohne dieses Mapping blieb
+  // eigeneFirma dauerhaft leer und die App zeigte "Firma hinterlegen"
+  // trotz bereits vorhandener Firma in der Datenbank.
   useEffect(() => {
     if (auth.profil?.firma_id && auth.session?.access_token) {
       fetch(`${SUPABASE_URL}/rest/v1/firmen?id=eq.${auth.profil.firma_id}&select=*`, {
@@ -8942,7 +8998,24 @@ export default function PolierApp() {
           "apikey":        SUPABASE_ANON_KEY,
           "Authorization": `Bearer ${auth.session.access_token}`,
         },
-      }).then(r => r.json()).then(d => { if (d?.[0]) setFirma(d[0]); });
+      }).then(r => r.json()).then(d => {
+        if (d?.[0]) {
+          setFirma(d[0]);
+          setEigeneFirma(prev => ({
+            ...prev,
+            name:              d[0].name || "",
+            strasse:           d[0].adresse || "",
+            plz:               d[0].plz || "",
+            ort:               d[0].ort || "",
+            telefon:           d[0].telefon || "",
+            email:             d[0].email || "",
+            steuernummer:      d[0].steuernummer || "",
+            logo:              d[0].logo_url || null,
+            geschaeftsfuehrer: d[0].geschaeftsfuehrer || "",
+            gewerke:           d[0].gewerke || [],
+          }));
+        }
+      });
     }
   }, [auth.profil?.firma_id]);
 
@@ -9294,6 +9367,8 @@ export default function PolierApp() {
                 subs={subs}
                 setSubs={setSubs}
                 onOnboardingReset={() => setOnboardingDone(false)}
+                session={auth.session}
+                firmaId={firma?.id}
               />
             )}
           </div>
