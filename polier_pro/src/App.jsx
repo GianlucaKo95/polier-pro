@@ -161,35 +161,39 @@ const STATUS_LABEL = { done:"✅ Fertig", in_progress:"🔄 Läuft", planned:"�
 // ════════════════════════════════════════════════════════════════════════════
 // WEATHER COMPONENT (Open-Meteo API)
 // ════════════════════════════════════════════════════════════════════════════
-function WeatherView({ compact = false, adresse = null, projektId = null }) {
+function WeatherView({ compact = false, ort = null, plz = null, projektId = null }) {
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loc, setLoc] = useState({ lat: 48.137, lon: 11.576, name: "München" });
   const [standortAufgeloest, setStandortAufgeloest] = useState(false);
 
-  // Baustellen-Adresse einmalig zu Koordinaten auflösen, wenn vorhanden.
-  // Fällt zurück auf München nur wenn keine Adresse hinterlegt ist oder
-  // das Geocoding fehlschlägt (z.B. bei unvollständiger/falscher Adresse).
+  // PLZ ist eindeutig und daher die zuverlässigste Suchgrundlage —
+  // Ortsnamen können mehrfach vorkommen (z.B. "Neustadt" >20x in
+  // Deutschland). Ohne PLZ wird notfalls nur nach dem Ortsnamen gesucht.
   useEffect(() => {
     let abgebrochen = false;
     setStandortAufgeloest(false);
 
-    if (!adresse || !adresse.trim()) {
+    if (!plz?.trim() && !ort?.trim()) {
       setStandortAufgeloest(true);
       return;
     }
 
-    geocodeAdresse(adresse).then(result => {
+    const suche = plz?.trim()
+      ? geocodePLZ(plz, ort)
+      : geocodeAdresse(ort); // Fallback: nur Ortsname ohne PLZ vorhanden
+
+    suche.then(result => {
       if (abgebrochen) return;
       if (result) {
-        setLoc({ lat: result.lat, lon: result.lon, name: result.name });
+        setLoc({ lat: result.lat, lon: result.lon, name: ort || result.name });
       }
       // Bei fehlgeschlagenem Geocoding bleibt der bisherige/Default-Standort bestehen
       setStandortAufgeloest(true);
     });
 
     return () => { abgebrochen = true; };
-  }, [adresse]);
+  }, [plz, ort]);
 
   useEffect(() => {
     if (!standortAufgeloest) return; // erst Wetter laden wenn Standort feststeht
@@ -490,27 +494,6 @@ function GanttView({ felder }) {
 // ════════════════════════════════════════════════════════════════════════════
 // SUPABASE STATUS + SETUP
 // ════════════════════════════════════════════════════════════════════════════
-function SupabaseStatus({ connected }) {
-  return (
-    <div style={{ background: connected ? "var(--gbg)" : "var(--surface2)", borderRadius:10, padding:"10px 14px",
-      border:`1.5px solid ${connected ? "var(--green)" : "var(--border)"}`, marginBottom:14,
-      display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-      <div>
-        <div style={{ color: connected ? "var(--green)" : "var(--muted)", fontWeight:700, fontSize:12 }}>
-          {connected ? "🟢 Supabase verbunden" : "⚫ Supabase nicht konfiguriert"}
-        </div>
-        <div style={{ color: "var(--muted)", fontSize:10 }}>
-          {connected ? "Echtzeit-Daten aktiv" : "Mock-Daten werden angezeigt"}
-        </div>
-      </div>
-      {!connected && (
-        <div style={{ color: "var(--yellow)", fontSize:11, textAlign:"right" }}>
-          URL + Key<br/>eintragen →
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ════════════════════════════════════════════════════════════════════════════
 // BETONFELDER (mit Supabase)
@@ -1770,7 +1753,6 @@ function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eigeneFirm
 
   return (
     <div>
-      <SupabaseStatus connected={sbConnected} />
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
         <div style={{ color: "var(--text)", fontWeight:700 }}>Bautagebuch</div>
         <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
@@ -2065,8 +2047,7 @@ function DashboardView({ aufgaben, kolonnen, sbConnected, onNavigate, projekt, w
 
   return (
     <div>
-      <WeatherView compact adresse={projekt?.adresse} projektId={projekt?.id} />
-      <SupabaseStatus connected={sbConnected} />
+      <WeatherView compact ort={projekt?.ort} plz={projekt?.plz} projektId={projekt?.id} />
 
       {/* Kennzahlen — jede Kachel ist ein Sprungziel */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
@@ -4493,6 +4474,37 @@ async function reverseGeocode(lat, lng) {
 // Vorwärts-Geocoding: Adresstext → Koordinaten (für Wetter am Baustellen-Standort).
 // Wird pro Adresse einmalig aufgelöst und im Projekt zwischengespeichert,
 // damit nicht bei jedem Wetter-Abruf erneut gegen Nominatim angefragt wird.
+// Geocoding primär über PLZ — eindeutig, im Gegensatz zu Ortsnamen die
+// mehrfach vorkommen können (z.B. "Neustadt" existiert über 20x in
+// Deutschland). Nominatims strukturierter "postalcode"-Parameter liefert
+// zuverlässig den korrekten Ort zurück statt einer Freitext-Suche.
+async function geocodePLZ(plz, ort = "") {
+  if (!plz || !plz.trim()) return null;
+  try {
+    const params = new URLSearchParams({
+      postalcode: plz.trim(),
+      format: "json",
+      limit: "1",
+      countrycodes: "de,at,ch",
+    });
+    if (ort?.trim()) params.set("city", ort.trim());
+
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?${params.toString()}`,
+      { headers: { "Accept-Language": "de" } }
+    );
+    const data = await res.json();
+    if (data?.[0]) {
+      return {
+        lat:  parseFloat(data[0].lat),
+        lon:  parseFloat(data[0].lon),
+        name: ort?.trim() || data[0].display_name?.split(",")[0] || plz,
+      };
+    }
+    return null;
+  } catch { return null; }
+}
+
 async function geocodeAdresse(adresse) {
   if (!adresse || !adresse.trim()) return null;
   try {
@@ -8772,7 +8784,7 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
 }
 
 function leerProjekt() {
-  return { id: Date.now(), name:"", adresse:"", projektnummer:"", bauleiter:"", auftraggeber:"",
+  return { id: Date.now(), name:"", adresse:"", plz:"", ort:"", projektnummer:"", bauleiter:"", auftraggeber:"",
     typ: "hochbau",
     farbe: ["#F5C400","#4A9EE0","#2EAF6A","#C45C2A","#9B59B6"][Math.floor(Math.random()*5)],
     felder:[], kolonnen:[], berichte:[] };
@@ -8849,7 +8861,32 @@ function ProjektFormular({ initial, onSave, onClose, subs = [] }) {
 
         {[
           ["Projektname *",  "name",          "Neubau Wohnanlage Nord"],
-          ["Adresse",        "adresse",       "Musterstraße 1, 80331 München"],
+          ["Straße + Nr.",   "adresse",       "Musterstraße 1"],
+        ].map(([label, key, ph]) => (
+          <div key={key} style={{ marginBottom:13 }}>
+            <Label>{label}</Label>
+            <input value={p[key]} onChange={e => setP(prev=>({...prev,[key]:e.target.value}))}
+              placeholder={ph} style={inputStyle()} />
+          </div>
+        ))}
+
+        {/* PLZ + Ort getrennt — Ort wird für die Wetter-Standortsuche genutzt,
+            eine vollständige Straßenadresse ist dafür nicht nötig und führte
+            bisher zu missverständlicher Anzeige (Straßenname statt Stadt). */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 2fr", gap:10, marginBottom:13 }}>
+          <div>
+            <Label>PLZ</Label>
+            <input value={p.plz||""} onChange={e => setP(prev=>({...prev,plz:e.target.value}))}
+              placeholder="80331" style={inputStyle()} />
+          </div>
+          <div>
+            <Label>Ort *</Label>
+            <input value={p.ort||""} onChange={e => setP(prev=>({...prev,ort:e.target.value}))}
+              placeholder="München" style={inputStyle()} />
+          </div>
+        </div>
+
+        {[
           ["Projektnummer",  "projektnummer", "PRJ-2025-001"],
           ["Bauleiter",      "bauleiter",     "Max Mustermann"],
           ["Auftraggeber",   "auftraggeber",  "Muster GmbH"],
@@ -9301,7 +9338,7 @@ export default function PolierApp() {
                           <div style={{ color:"var(--text)", fontWeight:700,
                             fontSize:15 }}>{p.name}</div>
                           <div style={{ color:"var(--muted)", fontSize:12,
-                            marginTop:2 }}>📍 {p.adresse}</div>
+                            marginTop:2 }}>📍 {[p.adresse, [p.plz, p.ort].filter(Boolean).join(" ")].filter(Boolean).join(", ")}</div>
                           <div style={{ display:"flex", gap:8, marginTop:6,
                             flexWrap:"wrap" }}>
                             <Chip icon={PROJEKTTYPEN[p.typ]?.icon||"🏗️"} label={PROJEKTTYPEN[p.typ]?.label||p.typ} />
@@ -9484,7 +9521,7 @@ export default function PolierApp() {
               setTab(tabId);
             }} />}
         {tab === "gantt"     && <GanttView felder={felder} />}
-        {tab === "wetter"    && <WeatherView adresse={projekt?.adresse} projektId={projekt?.id} />}
+        {tab === "wetter"    && <WeatherView ort={projekt?.ort} plz={projekt?.plz} projektId={projekt?.id} />}
         {tab === "kolonnen"  && <KolonnenView kolonnen={kolonnen} projekt={projekt} setKolonnen={setKolonnen} darfBearbeiten={rolleConfig?.kannBearbeiten !== false} />}
         {tab === "tagebuch"  && <TagesbuchView
             berichte={berichte} setBerichte={setBerichte} sbConnected={sbConnected}
