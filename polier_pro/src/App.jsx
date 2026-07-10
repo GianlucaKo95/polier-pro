@@ -125,6 +125,143 @@ async function sbFetch(path, opts = {}) {
   }
 }
 
+// ─── CRUD-Helfer: Aufgaben (inkl. Mängel, inkl. Betonfelder-Daten) ────────
+// Bei einer neuen Aufgabe hat p.id noch einen lokal generierten Zeitstempel
+// (Date.now()) statt der echten DB-ID — istNeu erkennt das über ID-Größe,
+// da Postgres bigint-identity-Werte klein anfangen (typischerweise < 1e9),
+// während Date.now() immer > 1.7e12 liefert.
+async function sbAufgabeSpeichern(a, projektId, session, istNeu) {
+  if (!session?.access_token || !projektId) return null;
+  const payload = {
+    projekt_id:         projektId,
+    titel:               a.titel || "",
+    typ:                 a.typ || "allgemein",
+    status:               a.status || "offen",
+    prioritaet:          a.prioritaet || "mittel",
+    faellig_am:          a.faellig_am || null,
+    zustaendig:          a.zustaendig || "",
+    beschreibung:        a.beschreibung || "",
+    fotos:               a.fotos || [],
+    ist_mangel:          !!a.ist_mangel,
+    mangel_verursacher:  a.mangel_verursacher || "",
+    plan_x:              a.plan_x ?? null,
+    plan_y:              a.plan_y ?? null,
+    plan_bild_url:       a.plan_bild_url || null,
+    m2:                  a.m2 || 0,
+    betonsorte:          a.betonsorte || "",
+    festigkeit:          a.festigkeit ?? null,
+    budget_pos:          a.budget_pos || "",
+    kolonne_id:          typeof a.kolonne_id === "number" && a.kolonne_id < 1e12 ? a.kolonne_id : null,
+  };
+  try {
+    const res = await fetch(
+      istNeu ? `${SUPABASE_URL}/rest/v1/aufgaben` : `${SUPABASE_URL}/rest/v1/aufgaben?id=eq.${a.id}`,
+      {
+        method: istNeu ? "POST" : "PATCH",
+        headers: {
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+          "Prefer": "return=representation",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.[0] || null;
+  } catch { return null; }
+}
+
+async function sbAufgabeLoeschen(id, session) {
+  if (!session?.access_token) return false;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/aufgaben?id=eq.${id}`, {
+      method: "DELETE",
+      headers: {
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${session.access_token}`,
+      },
+    });
+    return res.ok;
+  } catch { return false; }
+}
+
+// ─── CRUD-Helfer: Kolonnen ─────────────────────────────────────────────────
+async function sbKolonneSpeichern(k, projektId, session, istNeu) {
+  if (!session?.access_token || !projektId) return null;
+  const payload = {
+    projekt_id:   projektId,
+    name:         k.name || "",
+    vorarbeiter:  k.vorarbeiter || "",
+    mitarbeiter:  k.mitarbeiter || [],
+  };
+  try {
+    const res = await fetch(
+      istNeu ? `${SUPABASE_URL}/rest/v1/kolonnen` : `${SUPABASE_URL}/rest/v1/kolonnen?id=eq.${k.id}`,
+      {
+        method: istNeu ? "POST" : "PATCH",
+        headers: {
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+          "Prefer": "return=representation",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.[0] || null;
+  } catch { return null; }
+}
+
+async function sbKolonneLoeschen(id, session) {
+  if (!session?.access_token) return false;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/kolonnen?id=eq.${id}`, {
+      method: "DELETE",
+      headers: {
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${session.access_token}`,
+      },
+    });
+    return res.ok;
+  } catch { return false; }
+}
+
+// ─── CRUD-Helfer: Tagesberichte (Bautagebuch) ──────────────────────────────
+async function sbBerichtSpeichern(b, projektId, session) {
+  if (!session?.access_token || !projektId) return null;
+  const payload = {
+    projekt_id:      projektId,
+    datum:           b.datumRaw || new Date().toISOString().slice(0,10),
+    wetter:          b.wetter || "",
+    wetter_data:     b.wetterData || null,
+    arbeiter:        b.arbeiter || 0,
+    taetigkeit:      b.taetigkeit || "",
+    besonderheiten:  b.besonderheiten || "",
+    material:        b.material || "",
+    maengel_anzahl:  b.maengel || 0,
+    bilder:          b.bilder || [],
+  };
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/tagesberichte`, {
+      method: "POST",
+      headers: {
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${session.access_token}`,
+        "Content-Type": "application/json",
+        "Prefer": "return=representation",
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.[0] || null;
+  } catch { return null; }
+}
+
 // ─── Fallback Mock Data (wenn Supabase nicht konfiguriert) ───────────────────
 
 // ─── Wetter Utilities ────────────────────────────────────────────────────────
@@ -5659,10 +5796,6 @@ function Aktenregister({ projekte, aktivId, onSelect, onNeu }) {
       <div style={{ display:"flex", overflowX:"auto", padding:"0 12px",
         scrollbarWidth:"none", msOverflowStyle:"none" }}>
         {projekte.map((p, i) => {
-          const eltern  = p.felder.filter(f => !f.parentId);
-          const done    = eltern.filter(f => f.status === "done").length;
-          const total   = eltern.length;
-          const pct     = total > 0 ? Math.round(done/total*100) : 0;
           const aktiv   = p.id === aktivId;
           return (
             <div key={p.id} style={{ display:"flex", alignItems:"stretch" }}>
@@ -5686,7 +5819,7 @@ function Aktenregister({ projekte, aktivId, onSelect, onNeu }) {
                 </div>
                 <span style={{ fontSize:10, color: aktiv ? "var(--text2)" : "var(--muted)",
                   paddingBottom:8, whiteSpace:"nowrap" }}>
-                  {pct}% · {PROJEKTTYPEN[p.typ]?.icon || "🏗️"}
+                  {PROJEKTTYPEN[p.typ]?.icon || "🏗️"} {PROJEKTTYPEN[p.typ]?.label || p.typ}
                 </span>
               </button>
             </div>
@@ -5706,11 +5839,11 @@ function Aktenregister({ projekte, aktivId, onSelect, onNeu }) {
 }
 
 // ─── Projekt Info Strip ───────────────────────────────────────────────────────
-function ProjektInfoStrip({ projekt }) {
+function ProjektInfoStrip({ projekt, aufgaben = [] }) {
   if (!projekt) return null;
-  const eltern = projekt.felder.filter(f => !f.parentId);
-  const done   = eltern.filter(f => f.status === "done").length;
-  const total  = eltern.length;
+  const relevante = aufgaben.filter(a => a.typ === "beton");
+  const done   = relevante.filter(a => a.status === "abgeschlossen").length;
+  const total  = relevante.length;
   const pct    = total > 0 ? Math.round(done/total*100) : 0;
   return (
     <div style={{ background:"var(--surface2)", borderBottom:"1px solid var(--border)",
@@ -8980,6 +9113,9 @@ export default function PolierApp() {
   const theme   = useTheme();
   const auth    = useAuth();
   const [projekte,      setProjekte]    = useState([]);
+  const [projekteLaden, setProjekteLaden] = useState(false);
+  const [projekteLadeFehler, setProjekteLadeFehler] = useState("");
+
   const [aktivId,       setAktivId]     = useState(null);
   const [tab,           setTab]         = useState("dashboard");
   const [aufgabenFilter,setAufgabenFilter] = useState("alle"); // für Dashboard-Sprungziele
@@ -8990,7 +9126,6 @@ export default function PolierApp() {
   const [eigeneFirma,   setEigeneFirma] = useState({ name:"", strasse:"", plz:"", ort:"", telefon:"", email:"", geschaeftsfuehrer:"", steuernummer:"", gewerke:[], logo:null });
   const [subs,          setSubs]        = useState([]);
   const [homeTab,       setHomeTab]     = useState("projekte");
-  const [aufgaben,      setAufgaben]    = useState([]);
   const [zeitbuchungen, setZeitbuchungen] = useState([]);
   const [einheitspreise,setEinheitspreise]= useState(DEFAULT_EINHEITSPREISE);
   const [lvVorlagen,    setLvVorlagen]    = useState(DEFAULT_LV_VORLAGEN);
@@ -9028,14 +9163,23 @@ export default function PolierApp() {
   // aus der firmen-Tabelle synchronisieren. Ohne dieses Mapping blieb
   // eigeneFirma dauerhaft leer und die App zeigte "Firma hinterlegen"
   // trotz bereits vorhandener Firma in der Datenbank.
+  const [firmaLadeFehler, setFirmaLadeFehler] = useState("");
   useEffect(() => {
     if (auth.profil?.firma_id && auth.session?.access_token) {
+      setFirmaLadeFehler("");
       fetch(`${SUPABASE_URL}/rest/v1/firmen?id=eq.${auth.profil.firma_id}&select=*`, {
         headers: {
           "apikey":        SUPABASE_ANON_KEY,
           "Authorization": `Bearer ${auth.session.access_token}`,
         },
-      }).then(r => r.json()).then(d => {
+      }).then(async r => {
+        if (!r.ok) {
+          const body = await r.text();
+          setFirmaLadeFehler(`Firma konnte nicht geladen werden (HTTP ${r.status}): ${body.slice(0,200)}`);
+          return null;
+        }
+        return r.json();
+      }).then(d => {
         if (d?.[0]) {
           setFirma(d[0]);
           setEigeneFirma(prev => ({
@@ -9051,16 +9195,109 @@ export default function PolierApp() {
             geschaeftsfuehrer: d[0].geschaeftsfuehrer || "",
             gewerke:           d[0].gewerke || [],
           }));
+        } else if (d !== null) {
+          setFirmaLadeFehler(`Keine Firma mit ID ${auth.profil.firma_id} gefunden — profile.firma_id zeigt ins Leere.`);
         }
+      }).catch(e => {
+        setFirmaLadeFehler("Netzwerkfehler beim Laden der Firma: " + e.message);
       });
     }
-  }, [auth.profil?.firma_id]);
+  }, [auth.profil?.firma_id, auth.session?.access_token]);
+
+  // Projekte aus Supabase laden, sobald die Firma bekannt ist.
+  // Ohne dies existierten Baustellen nur im Browser-Speicher — Neuladen,
+  // Gerätewechsel oder Cache-Verlust hätte alle Baustellen gelöscht.
+  useEffect(() => {
+    if (!firma?.id || !auth.session?.access_token) return;
+    setProjekteLaden(true);
+    setProjekteLadeFehler("");
+    fetch(`${SUPABASE_URL}/rest/v1/projekte?firma_id=eq.${firma.id}&archiviert=eq.false&order=created_at.desc`, {
+      headers: {
+        "apikey":        SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${auth.session.access_token}`,
+      },
+    }).then(async r => {
+      if (!r.ok) {
+        const body = await r.text();
+        setProjekteLadeFehler(`Baustellen konnten nicht geladen werden (HTTP ${r.status}): ${body.slice(0,200)}`);
+        return [];
+      }
+      return r.json();
+    }).then(data => {
+      if (Array.isArray(data)) {
+        setProjekte(data.map(p => ({
+          id: p.id, name: p.name, adresse: p.adresse, plz: p.plz, ort: p.ort,
+          projektnummer: p.projektnummer, bauleiter: p.bauleiter,
+          auftraggeber: p.auftraggeber, typ: p.typ, farbe: p.farbe,
+        })));
+      }
+      setProjekteLaden(false);
+    }).catch(e => {
+      setProjekteLadeFehler("Netzwerkfehler beim Laden der Baustellen: " + e.message);
+      setProjekteLaden(false);
+    });
+  }, [firma?.id, auth.session?.access_token]);
 
   // Supabase-Verbindungsstatus — MUSS vor allen early returns stehen (Rules of Hooks)
   useEffect(() => {
     if (SUPABASE_URL.includes("DEIN")) { setSbConn(false); return; }
     setSbConn(true);
   }, []);
+
+  // Aufgaben, Kolonnen und Berichte sind normalisierte, eigenständige
+  // Tabellen (nicht mehr im Projekt-Objekt verschachtelt) — bei jedem
+  // Wechsel der aktiven Baustelle neu aus Supabase laden.
+  const [aktProjektAufgaben,  setAktProjektAufgaben]  = useState([]);
+  const [aktProjektKolonnen,  setAktProjektKolonnen]  = useState([]);
+  const [aktProjektBerichte,  setAktProjektBerichte]  = useState([]);
+  const [projektDatenLaden,   setProjektDatenLaden]   = useState(false);
+  const [projektDatenFehler,  setProjektDatenFehler]  = useState("");
+
+  useEffect(() => {
+    if (!aktivId || !auth.session?.access_token) {
+      setAktProjektAufgaben([]); setAktProjektKolonnen([]); setAktProjektBerichte([]);
+      return;
+    }
+    let abgebrochen = false;
+    setProjektDatenLaden(true);
+    setProjektDatenFehler("");
+
+    const headers = {
+      "apikey":        SUPABASE_ANON_KEY,
+      "Authorization": `Bearer ${auth.session.access_token}`,
+    };
+
+    Promise.all([
+      fetch(`${SUPABASE_URL}/rest/v1/aufgaben?projekt_id=eq.${aktivId}&order=created_at.desc`, { headers }),
+      fetch(`${SUPABASE_URL}/rest/v1/kolonnen?projekt_id=eq.${aktivId}&order=created_at.asc`, { headers }),
+      fetch(`${SUPABASE_URL}/rest/v1/tagesberichte?projekt_id=eq.${aktivId}&order=datum.desc`, { headers }),
+    ]).then(async ([aRes, kRes, bRes]) => {
+      if (abgebrochen) return;
+      const fehler = [];
+      if (!aRes.ok) fehler.push(`Aufgaben: HTTP ${aRes.status}`);
+      if (!kRes.ok) fehler.push(`Kolonnen: HTTP ${kRes.status}`);
+      if (!bRes.ok) fehler.push(`Berichte: HTTP ${bRes.status}`);
+      if (fehler.length) {
+        setProjektDatenFehler("Projektdaten konnten nicht vollständig geladen werden: " + fehler.join(", "));
+      }
+
+      const aufgabenData = aRes.ok ? await aRes.json() : [];
+      const kolonnenData = kRes.ok ? await kRes.json() : [];
+      const berichteData = bRes.ok ? await bRes.json() : [];
+
+      if (abgebrochen) return;
+      setAktProjektAufgaben(aufgabenData);
+      setAktProjektKolonnen(kolonnenData);
+      setAktProjektBerichte(berichteData);
+      setProjektDatenLaden(false);
+    }).catch(e => {
+      if (abgebrochen) return;
+      setProjektDatenFehler("Netzwerkfehler beim Laden der Projektdaten: " + e.message);
+      setProjektDatenLaden(false);
+    });
+
+    return () => { abgebrochen = true; };
+  }, [aktivId, auth.session?.access_token]);
 
   // ── Demo-Rolle (ohne Supabase) ──
   const demoRolle = localStorage.getItem("polaris-demo-rolle");
@@ -9108,9 +9345,14 @@ export default function PolierApp() {
     />;
   }
 
-  function abmelden() {
+  async function abmelden() {
     localStorage.removeItem("polaris-demo-rolle");
-    auth.abmelden?.();
+    // WICHTIG: auth.abmelden() ist async (wartet auf sbSignOut + löscht
+    // localStorage danach). Ohne await läuft window.location.reload()
+    // bereits BEVOR die Session aus dem localStorage entfernt wurde —
+    // die neu geladene Seite findet die alte Session dann sofort wieder
+    // und meldet automatisch erneut an.
+    await auth.abmelden?.();
     window.location.reload();
   }
 
@@ -9193,6 +9435,7 @@ export default function PolierApp() {
   }
 
   // Onboarding anzeigen wenn noch nicht abgeschlossen
+
   if (!onboardingDone) {
     return <OnboardingFlow onComplete={handleOnboardingComplete} />;
   }
@@ -9204,23 +9447,117 @@ export default function PolierApp() {
     setProjekte(prev => prev.map(p => p.id===id ? { ...p, ...changes } : p));
   }
 
-  const felder    = projekt?.felder   || [];
-  const berichte  = projekt?.berichte || [];
-  const kolonnen  = projekt?.kolonnen || [];
 
-  function setFelder(fn)   { updateProjekt(aktivId, { felder:   typeof fn==="function" ? fn(felder)   : fn }); }
-  function setBerichte(fn) { updateProjekt(aktivId, { berichte: typeof fn==="function" ? fn(berichte) : fn }); }
-  function setKolonnen(fn) { updateProjekt(aktivId, { kolonnen: typeof fn==="function" ? fn(kolonnen) : fn }); }
+  const felder    = aktProjektAufgaben;
+  const berichte  = aktProjektBerichte;
+  const kolonnen  = aktProjektKolonnen;
 
-  function handleSaveProjekt(p) {
-    if (projekte.find(x=>x.id===p.id)) {
-      setProjekte(prev => prev.map(x=>x.id===p.id ? p : x));
-    } else {
-      setProjekte(prev => [...prev, p]);
+  // ── Aufgaben: laden + speichern direkt gegen Supabase ──
+  async function setFelder(fn) {
+    const neu = typeof fn === "function" ? fn(felder) : fn;
+    // Diff bestimmen: was ist neu, was geändert, was gelöscht
+    const alteIds = new Set(felder.map(a => a.id));
+    const neueIds = new Set(neu.map(a => a.id));
+
+    for (const a of neu) {
+      const istNeu = !alteIds.has(a.id) || typeof a.id !== "number" || a.id > 1e12;
+      await sbAufgabeSpeichern(a, aktivId, auth.session, istNeu);
     }
-    setNeuProjekt(false);
-    setEditProjekt(false);
-    if (!aktivId) setAktivId(p.id);
+    for (const alteId of alteIds) {
+      if (!neueIds.has(alteId)) await sbAufgabeLoeschen(alteId, auth.session);
+    }
+    setAktProjektAufgaben(neu);
+  }
+
+  // ── Berichte: laden + speichern direkt gegen Supabase ──
+  async function setBerichte(fn) {
+    const neu = typeof fn === "function" ? fn(berichte) : fn;
+    const alteIds = new Set(berichte.map(b => b.id));
+    for (const b of neu) {
+      if (!alteIds.has(b.id)) await sbBerichtSpeichern(b, aktivId, auth.session);
+    }
+    setAktProjektBerichte(neu);
+  }
+
+  // ── Kolonnen: laden + speichern direkt gegen Supabase ──
+  async function setKolonnen(fn) {
+    const neu = typeof fn === "function" ? fn(kolonnen) : fn;
+    const alteIds = new Set(kolonnen.map(k => k.id));
+    const neueIds = new Set(neu.map(k => k.id));
+
+    for (const k of neu) {
+      const istNeu = !alteIds.has(k.id) || typeof k.id !== "number" || k.id > 1e12;
+      await sbKolonneSpeichern(k, aktivId, auth.session, istNeu);
+    }
+    for (const alteId of alteIds) {
+      if (!neueIds.has(alteId)) await sbKolonneLoeschen(alteId, auth.session);
+    }
+    setAktProjektKolonnen(neu);
+  }
+
+  async function handleSaveProjekt(p) {
+    const istNeu = !projekte.find(x => x.id === p.id);
+    const payload = {
+      firma_id:      firma?.id,
+      name:          p.name || "",
+      adresse:       p.adresse || "",
+      plz:           p.plz || "",
+      ort:           p.ort || "",
+      projektnummer: p.projektnummer || "",
+      bauleiter:     p.bauleiter || "",
+      auftraggeber:  p.auftraggeber || "",
+      typ:           p.typ || "hochbau",
+      farbe:         p.farbe || "#F5C400",
+    };
+
+    // Ohne Firma (z.B. Demo-Modus ohne echten Login) nur lokal halten —
+    // sonst würde der Supabase-Call mit firma_id=null fehlschlagen.
+    if (!firma?.id || !auth.session?.access_token) {
+      if (istNeu) setProjekte(prev => [...prev, p]);
+      else setProjekte(prev => prev.map(x => x.id===p.id ? p : x));
+      setNeuProjekt(false); setEditProjekt(false);
+      if (!aktivId) setAktivId(p.id);
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        istNeu
+          ? `${SUPABASE_URL}/rest/v1/projekte`
+          : `${SUPABASE_URL}/rest/v1/projekte?id=eq.${p.id}`,
+        {
+          method: istNeu ? "POST" : "PATCH",
+          headers: {
+            "apikey":        SUPABASE_ANON_KEY,
+            "Authorization": `Bearer ${auth.session.access_token}`,
+            "Content-Type":  "application/json",
+            "Prefer":        "return=representation",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+      if (!res.ok) {
+        const body = await res.text();
+        setProjekteLadeFehler(`Baustelle konnte nicht gespeichert werden (HTTP ${res.status}): ${body.slice(0,200)}`);
+        return;
+      }
+      const data = await res.json();
+      const gespeichert = data?.[0];
+      if (gespeichert) {
+        const normalisiert = {
+          id: gespeichert.id, name: gespeichert.name, adresse: gespeichert.adresse,
+          plz: gespeichert.plz, ort: gespeichert.ort, projektnummer: gespeichert.projektnummer,
+          bauleiter: gespeichert.bauleiter, auftraggeber: gespeichert.auftraggeber,
+          typ: gespeichert.typ, farbe: gespeichert.farbe,
+        };
+        if (istNeu) setProjekte(prev => [...prev, normalisiert]);
+        else setProjekte(prev => prev.map(x => x.id===p.id ? normalisiert : x));
+        setNeuProjekt(false); setEditProjekt(false);
+        if (!aktivId) setAktivId(normalisiert.id);
+      }
+    } catch (e) {
+      setProjekteLadeFehler("Netzwerkfehler beim Speichern der Baustelle: " + e.message);
+    }
   }
 
   // ── Home Screen (Baustellen + Firmen) ──
@@ -9286,6 +9623,14 @@ export default function PolierApp() {
           </div>
 
           <div style={{ padding:"16px 14px 100px" }}>
+            {firmaLadeFehler && (
+              <div style={{ background:"var(--rbg)", color:"var(--red)", borderRadius:12,
+                padding:"12px 16px", marginBottom:14, fontSize:12,
+                border:"1px solid var(--red)" }}>
+                ⚠️ {firmaLadeFehler}
+              </div>
+            )}
+
             {homeTab === "projekte" && (
               <>
                 <div style={{ display:"flex", justifyContent:"space-between",
@@ -9509,12 +9854,12 @@ export default function PolierApp() {
       </div>
 
       {/* ── PROJEKT INFO STRIP ── */}
-      <ProjektInfoStrip projekt={projekt} />
+      <ProjektInfoStrip projekt={projekt} aufgaben={felder} />
 
       {/* ── CONTENT ── */}
       <PlanGuard firma={firma} ressource="app">
       <div style={{ padding:"16px 14px 100px", background:"var(--bg)", minHeight:"100dvh" }}>
-        {tab === "dashboard" && <DashboardView aufgaben={aufgaben} kolonnen={kolonnen} sbConnected={sbConnected} projekt={projekt}
+        {tab === "dashboard" && <DashboardView aufgaben={felder} kolonnen={kolonnen} sbConnected={sbConnected} projekt={projekt}
             onNavigate={(tabId, filter) => {
               if (filter) setAufgabenFilter(filter);
               else setAufgabenFilter("alle");
@@ -9527,10 +9872,10 @@ export default function PolierApp() {
             berichte={berichte} setBerichte={setBerichte} sbConnected={sbConnected}
             projekt={projekt} eigeneFirma={eigeneFirma} kolonnen={kolonnen}
             offlineSpeichern={offline.speichereOffline}
-            aufgaben={aufgaben} setAufgaben={setAufgaben}
+            aufgaben={felder} setAufgaben={setFelder}
           />}
-        {tab === "aufgaben"      && <AufgabenView aufgaben={aufgaben} setAufgaben={setAufgaben} kolonnen={kolonnen} sbConnected={sbConnected} darfBearbeiten={rolleConfig?.kannBearbeiten !== false} initialFilter={aufgabenFilter} />}
-        {tab === "kosten"        && <KostenView projekt={projekt} aufgaben={aufgaben} kolonnen={kolonnen} zeitbuchungen={zeitbuchungen} />}
+        {tab === "aufgaben"      && <AufgabenView aufgaben={felder} setAufgaben={setFelder} kolonnen={kolonnen} sbConnected={sbConnected} darfBearbeiten={rolleConfig?.kannBearbeiten !== false} initialFilter={aufgabenFilter} />}
+        {tab === "kosten"        && <KostenView projekt={projekt} aufgaben={felder} kolonnen={kolonnen} zeitbuchungen={zeitbuchungen} />}
         {tab === "stempeln"      && <StempeluhrView profil={aktiveProfil}
             projekte={aktiveProfil?.kolonne_id
               ? projekte.filter(p => (p.kolonnen||[]).some(k => k.id === aktiveProfil.kolonne_id)).length > 0
@@ -9539,7 +9884,7 @@ export default function PolierApp() {
               : projekte}
             session={auth.session} kolonnen={kolonnen} />}
         {tab === "stunden"       && <StundenExportView profil={aktiveProfil} session={auth.session} projekte={projekte} darfAlleSehen={rolleConfig?.kannBearbeiten !== false && aktiveRolle !== "vorarbeiter"} />}
-        {tab === "angebot"       && <AngebotView projekt={projekt} aufgaben={aufgaben} einheitspreise={einheitspreise} lvVorlagen={lvVorlagen} eigeneFirma={eigeneFirma} />}
+        {tab === "angebot"       && <AngebotView projekt={projekt} aufgaben={felder} einheitspreise={einheitspreise} lvVorlagen={lvVorlagen} eigeneFirma={eigeneFirma} />}
         {tab === "admin_params" && <AdminParameterView einheitspreise={einheitspreise} setEinheitspreise={setEinheitspreise} lvVorlagen={lvVorlagen} setLvVorlagen={setLvVorlagen} />}
         {tab === "nutzer"       && <NutzerVerwaltungView session={auth.session} kolonnen={kolonnen} firmaId={firma?.id} />}
       </div>
