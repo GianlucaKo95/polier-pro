@@ -1,0 +1,55 @@
+/* ─── Design Tokens ─── */
+/* Automatischer Dark/Light Mode via CSS-Variablen. Vorher als JS-String
+   in App.jsx zur Laufzeit per document.head.appendChild() injiziert — das
+   lief außerhalb von Reacts Kontrolle, brach bei Hot-Module-Reload
+   (jeder Save im Dev-Server hätte das erneut ausgeführt) und wäre bei
+   serverseitigem Rendering (kein `document` vorhanden) abgestürzt.
+   Als reguläres CSS-Import funktioniert das mit Vite nativ, ohne
+   Sonderbehandlung. */
+
+:root {
+  --bg:      #DDE1E8;
+  --surface: #FFFFFF;
+  --surface2:#EEF1F6;
+  --border:  rgba(0,0,0,0.10);
+  --border2: rgba(0,0,0,0.16);
+  --text:    #0B1120;
+  --text2:   #3A4560;
+  --muted:   #7A8499;
+  --yellow:  #F5C400;
+  --ydark:   #A07800;
+  --ybg:     #FFF8DC;
+  --green:   #15803D;
+  --gbg:     #DCFCE7;
+  --red:     #B91C1C;
+  --rbg:     #FEE2E2;
+  --blue:    #1D4ED8;
+  --bbg:     #DBEAFE;
+  --orange:  #C2410C;
+  --obg:     #FFEDD5;
+  --radius:  14px;
+  --radius-sm: 10px;
+  --radius-lg: 20px;
+}
+[data-theme="dark"] {
+  --bg:      #0B1120;
+  --surface: #161F30;
+  --surface2:#1E2A3F;
+  --border:  rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.14);
+  --text:    #F0F4FF;
+  --text2:   #8B9EC8;
+  --muted:   #4A5878;
+  --ydark:   #F5C400;
+  --ybg:     #1A1500;
+  --gbg:     #052e16;
+  --rbg:     #450a0a;
+  --bbg:     #0f1f4a;
+  --obg:     #2a1200;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg) !important;
+  color: var(--text) !important;
+  transition: background 0.25s, color 0.25s;
+}

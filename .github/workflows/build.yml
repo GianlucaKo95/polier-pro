@@ -60,6 +60,10 @@ jobs:
       - name: Buildx
         uses: docker/setup-buildx-action@v3
 
+      # Supabase-Zugangsdaten kommen aus GitHub Repo Secrets, NICHT aus dem
+      # Code. Einmalig einrichten unter: Repo → Settings → Secrets and
+      # variables → Actions → New repository secret:
+      #   VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
       - name: Build & Push (no cache)
         uses: docker/build-push-action@v6
         with:
@@ -70,3 +74,6 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           no-cache: true
+          build-args: |
+            VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}
+            VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}

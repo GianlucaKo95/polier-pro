@@ -1,0 +1,206 @@
+import { useState, useRef } from "react";
+import { kiTagesabschluss } from "../lib/ai.js";
+import { AUFGABEN_TYPEN, AUFGABEN_PRIO } from "../config/konstanten.js";
+
+export function KITagesabschlussButton({ projekt, kolonnen, wetter, onErgebnis }) {
+  const [offen,    setOffen]    = useState(false);
+  const [diktat,   setDiktat]   = useState("");
+  const [laden,    setLaden]    = useState(false);
+  const [ergebnis, setErgebnis] = useState(null);
+  const [aufnahme, setAufnahme] = useState(false);
+  const srRef = useRef(null);
+
+  function startDiktat() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return;
+    if (!srRef.current) {
+      const er = new SR();
+      er.lang = "de-DE"; er.continuous = true; er.interimResults = false;
+      er.onresult = e => {
+        const t = Array.from(e.results).map(r=>r[0].transcript).join(" ");
+        setDiktat(t);
+      };
+      er.onend = () => setAufnahme(false);
+      srRef.current = er;
+    }
+    if (aufnahme) { srRef.current.stop(); setAufnahme(false); }
+    else { srRef.current.start(); setAufnahme(true); }
+  }
+
+  async function analysieren() {
+    if (!diktat.trim()) return;
+    setLaden(true);
+    const result = await kiTagesabschluss(diktat, projekt, kolonnen, wetter);
+    setErgebnis(result);
+    setLaden(false);
+  }
+
+  function uebernehmen() {
+    onErgebnis(ergebnis);
+    setOffen(false);
+    setDiktat("");
+    setErgebnis(null);
+  }
+
+  return (
+    <>
+      <button onClick={() => setOffen(true)}
+        style={{ background:"var(--yellow)", color:"#1a1200", border:"none",
+          borderRadius:12, padding:"10px 18px", fontWeight:800, cursor:"pointer",
+          fontSize:14, fontFamily:"inherit", display:"flex",
+          alignItems:"center", gap:8 }}>
+        🤖 KI-Tagesabschluss
+      </button>
+
+      {offen && (
+        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"var(--bg)", zIndex:600, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
+          <div style={{ background:"var(--surface)", borderRadius:"20px 20px 0 0",
+            padding:22, width:"100%", maxWidth:520, maxHeight:"92vh",
+            overflowY:"auto", boxShadow:"0 -4px 30px rgba(0,0,0,0.2)" }}>
+
+            <div style={{ display:"flex", justifyContent:"space-between",
+              alignItems:"center", marginBottom:16 }}>
+              <div style={{ fontWeight:800, fontSize:17, color:"var(--text)" }}>
+                🤖 KI-Tagesabschluss
+              </div>
+              <button onClick={() => { setOffen(false); setErgebnis(null); }}
+                style={{ background:"none", border:"none", color:"var(--muted)",
+                  fontSize:24, cursor:"pointer" }}>✕</button>
+            </div>
+
+            {!ergebnis ? (
+              <>
+                <div style={{ color:"var(--text2)", fontSize:13, marginBottom:14,
+                  lineHeight:1.6 }}>
+                  Beschreibe kurz was heute auf der Baustelle passiert ist.
+                  Die KI erstellt automatisch den Tagesbericht, neue Aufgaben und Mängel.
+                </div>
+
+                <div style={{ position:"relative", marginBottom:14 }}>
+                  <textarea rows={6} value={diktat}
+                    onChange={e=>setDiktat(e.target.value)}
+                    placeholder='z.B. "Heute Bodenplatte B1 fertig betoniert, 8 Mann, Kolonne Huber. Elektriker hat Schalung beschädigt, muss morgen repariert werden. Bewehrung C1 fange ich morgen an..."'
+                    style={{ width:"100%", background: aufnahme ? "#0f1f4a" : "var(--surface2)",
+                      color:"var(--text)",
+                      border:`1.5px solid ${aufnahme ? "var(--blue)" : "var(--border)"}`,
+                      borderRadius:12, padding:12, fontSize:13, resize:"none",
+                      boxSizing:"border-box", fontFamily:"inherit",
+                      transition:"border-color 0.2s" }} />
+                  <button onClick={startDiktat}
+                    style={{ position:"absolute", bottom:10, right:10,
+                      background: aufnahme ? "var(--red)" : "var(--surface)",
+                      color: aufnahme ? "#fff" : "var(--muted)",
+                      border:`1px solid ${aufnahme ? "var(--red)" : "var(--border)"}`,
+                      borderRadius:20, padding:"4px 12px", cursor:"pointer",
+                      fontSize:12, fontFamily:"inherit" }}>
+                    {aufnahme ? "⏹ Stopp" : "🎤 Diktieren"}
+                  </button>
+                </div>
+
+                <button onClick={analysieren}
+                  disabled={!diktat.trim() || laden}
+                  style={{ width:"100%",
+                    background: diktat.trim() && !laden ? "var(--yellow)" : "var(--surface2)",
+                    color: diktat.trim() && !laden ? "#1a1200" : "var(--muted)",
+                    border:"none", borderRadius:12, padding:15, fontWeight:800,
+                    fontSize:15, cursor: diktat.trim() ? "pointer" : "default",
+                    fontFamily:"inherit" }}>
+                  {laden ? "⏳ KI analysiert…" : "✨ Analysieren & Vorschlag erstellen"}
+                </button>
+              </>
+            ) : (
+              <>
+                {/* Bericht-Vorschau */}
+                <div style={{ background:"var(--gbg)", borderRadius:12, padding:14,
+                  marginBottom:12, border:"1px solid var(--green)" }}>
+                  <div style={{ color:"var(--green)", fontWeight:700, fontSize:12,
+                    marginBottom:8 }}>📋 Tagesbericht</div>
+                  <div style={{ color:"var(--text)", fontSize:13,
+                    lineHeight:1.6 }}>{ergebnis.bericht?.taetigkeit}</div>
+                  {ergebnis.bericht?.besonderheiten && (
+                    <div style={{ color:"var(--text2)", fontSize:12,
+                      marginTop:6 }}>⚠️ {ergebnis.bericht.besonderheiten}</div>
+                  )}
+                </div>
+
+                {/* Neue Aufgaben */}
+                {ergebnis.neue_aufgaben?.length > 0 && (
+                  <div style={{ marginBottom:12 }}>
+                    <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:12,
+                      marginBottom:8 }}>
+                      ✅ {ergebnis.neue_aufgaben.length} neue Aufgaben erkannt
+                    </div>
+                    {ergebnis.neue_aufgaben.map((a,i) => (
+                      <div key={i} style={{ background:"var(--ybg)", borderRadius:10,
+                        padding:"8px 12px", marginBottom:6,
+                        border:"1px solid var(--yellow)" }}>
+                        <div style={{ color:"var(--text)", fontWeight:600, fontSize:12 }}>
+                          {AUFGABEN_TYPEN[a.typ]?.icon} {a.titel}
+                        </div>
+                        <div style={{ color:"var(--muted)", fontSize:11 }}>
+                          {AUFGABEN_PRIO[a.prioritaet]?.icon} {AUFGABEN_PRIO[a.prioritaet]?.label}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Neue Mängel */}
+                {ergebnis.neue_maengel?.length > 0 && (
+                  <div style={{ marginBottom:12 }}>
+                    <div style={{ color:"var(--red)", fontWeight:700, fontSize:12,
+                      marginBottom:8 }}>
+                      ⚠️ {ergebnis.neue_maengel.length} Mängel erkannt
+                    </div>
+                    {ergebnis.neue_maengel.map((m,i) => (
+                      <div key={i} style={{ background:"var(--rbg)", borderRadius:10,
+                        padding:"8px 12px", marginBottom:6,
+                        border:"1px solid var(--red)" }}>
+                        <div style={{ color:"var(--red)", fontWeight:600, fontSize:12 }}>
+                          {m.titel}
+                        </div>
+                        {m.mangel_verursacher && (
+                          <div style={{ color:"var(--muted)", fontSize:11 }}>
+                            🔧 {m.mangel_verursacher}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Wetter-Warnung */}
+                {ergebnis.wetter_warnung && (
+                  <div style={{ background:"var(--obg)", borderRadius:10, padding:12,
+                    marginBottom:12, border:"1px solid var(--orange)" }}>
+                    <div style={{ color:"var(--orange)", fontWeight:700, fontSize:12 }}>
+                      🌧️ Wetter-Warnung
+                    </div>
+                    <div style={{ color:"var(--text)", fontSize:12, marginTop:4 }}>
+                      {ergebnis.wetter_warnung}
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ display:"flex", gap:10 }}>
+                  <button onClick={() => setErgebnis(null)}
+                    style={{ flex:1, background:"var(--surface2)", color:"var(--muted)",
+                      border:"1.5px solid var(--border)", borderRadius:12, padding:13,
+                      cursor:"pointer", fontFamily:"inherit" }}>
+                    ← Zurück
+                  </button>
+                  <button onClick={uebernehmen}
+                    style={{ flex:2, background:"var(--green)", color:"#fff",
+                      border:"none", borderRadius:12, padding:13, fontWeight:800,
+                      cursor:"pointer", fontSize:15, fontFamily:"inherit" }}>
+                    ✅ Alles übernehmen
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
