@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
     tags: ["v*"]
+  workflow_dispatch: {}
 
 env:
   REGISTRY: ghcr.io
@@ -43,6 +44,28 @@ jobs:
           VERSION=$(grep "^version:" polier_pro/config.yaml | head -1 | cut -d'"' -f2)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Detected version: $VERSION"
+
+      # Diagnose: prüft NUR ob die Secrets überhaupt gesetzt sind (Länge > 0),
+      # ohne den Wert selbst preiszugeben. GitHub maskiert Secret-Werte in
+      # Logs automatisch, aber diese Prüfung macht explizit sichtbar, falls
+      # ein Secret fehlt oder falsch benannt wurde — die häufigste Ursache
+      # für "ERR_NAME_NOT_RESOLVED" beim Login (Fallback-Platzhalter-URL
+      # wird verwendet, weil die echte URL leer beim Build ankam).
+      - name: Verify secrets are set (length check only)
+        run: |
+          URL_LEN=$(echo -n "${{ secrets.VITE_SUPABASE_URL }}" | wc -c)
+          KEY_LEN=$(echo -n "${{ secrets.VITE_SUPABASE_ANON_KEY }}" | wc -c)
+          echo "VITE_SUPABASE_URL length: $URL_LEN characters"
+          echo "VITE_SUPABASE_ANON_KEY length: $KEY_LEN characters"
+          if [ "$URL_LEN" -eq 0 ]; then
+            echo "::error::VITE_SUPABASE_URL secret is EMPTY or not set! Check Settings → Secrets and variables → Actions"
+            exit 1
+          fi
+          if [ "$KEY_LEN" -eq 0 ]; then
+            echo "::error::VITE_SUPABASE_ANON_KEY secret is EMPTY or not set! Check Settings → Secrets and variables → Actions"
+            exit 1
+          fi
+          echo "✅ Both secrets appear to be set correctly."
 
       - name: Docker Meta
         id: meta

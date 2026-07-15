@@ -17,6 +17,17 @@ COPY . .
 # Werte danach fest in die statischen JS-Dateien.
 ARG VITE_SUPABASE_URL
 ARG VITE_SUPABASE_ANON_KEY
+
+# Absicherung: bricht den Build sichtbar ab statt eine App mit leeren/
+# Platzhalter-Credentials zu erzeugen, die erst beim Login mit
+# ERR_NAME_NOT_RESOLVED auffällt. So schlägt eine falsche Secret-
+# Konfiguration schon beim Build fehl, nicht erst beim Nutzer.
+RUN if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_ANON_KEY" ]; then \
+      echo "❌ BUILD ABGEBROCHEN: VITE_SUPABASE_URL oder VITE_SUPABASE_ANON_KEY ist leer."; \
+      echo "   Prüfe GitHub Repo Secrets unter Settings → Secrets and variables → Actions."; \
+      exit 1; \
+    fi
+
 RUN echo "VITE_SUPABASE_URL=${VITE_SUPABASE_URL}" > .env && \
     echo "VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}" >> .env
 
