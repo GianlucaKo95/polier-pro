@@ -32,6 +32,7 @@ import { AngebotView } from "./views/AngebotView.jsx";
 import { AdminParameterView } from "./views/AdminParameterView.jsx";
 import { NutzerVerwaltungView } from "./views/NutzerVerwaltungView.jsx";
 import { PWABanner } from "./components/PWABanner.jsx";
+import { PushBanner } from "./components/PushBanner.jsx";
 
 export class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -842,6 +843,9 @@ export default function PolierApp() {
       {/* ── CONTENT ── */}
       <PlanGuard firma={firma} ressource="app">
       <div style={{ padding:"16px 14px 100px", background:"var(--bg)", minHeight:"100dvh" }}>
+        {tab === "dashboard" && (
+          <PushBanner erlaubt={push.erlaubt} berechtigung={() => push.berechtigung(auth.session)} />
+        )}
         {speicherFehler && (
           <div style={{ background:"var(--rbg)", color:"var(--red)", borderRadius:12,
             padding:"12px 16px", marginBottom:14, fontSize:12,

@@ -18,6 +18,7 @@ export function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
   const [aktionLaeuft,setAktionLaeuft]= useState(false);
   const [gpsError,    setGPSError]    = useState("");
   const [geoWarnung,  setGeoWarnung]  = useState("");
+  const [aktionsFehler, setAktionsFehler] = useState("");
   const projektGeoCache = useRef({});
   const [jetzt,       setJetzt]       = useState(new Date());
   const [buchungen,   setBuchungen]   = useState([]);
@@ -110,6 +111,7 @@ export function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
     // wieder aktiv, da nur gpsLaden geprüft wurde).
     if (aktionLaeuft) return;
     setAktionLaeuft(true);
+    setAktionsFehler("");
     try {
       const pos = await holeGPS();
       const buchung = {
@@ -131,7 +133,14 @@ export function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
           headers: { "Authorization": `Bearer ${session.access_token}` },
           body: JSON.stringify(buchung),
         });
-        if (data?.[0]) { setAktiveBuchung(data[0]); }
+        // Ohne erfolgreiche Server-Antwort NICHT auf "eingestempelt" wechseln
+        // — sonst zeigt die UI einen aktiven Status ohne aktiveBuchung, und
+        // "Ausstempeln" läuft später ins Leere, bis der Nutzer neu lädt.
+        if (!data?.[0]) {
+          setAktionsFehler("Einstempeln fehlgeschlagen — bitte Verbindung prüfen und erneut versuchen.");
+          return;
+        }
+        setAktiveBuchung(data[0]);
       } else {
         // Demo-Modus: lokal
         const demo = { ...buchung, id: Date.now() };
@@ -147,14 +156,19 @@ export function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
   async function pauseStart() {
     if (!aktiveBuchung || aktionLaeuft) return;
     setAktionLaeuft(true);
+    setAktionsFehler("");
     try {
       const update = { pause_start_at: new Date().toISOString(), status: "pause" };
       if (session?.access_token) {
-        await sbFetch(`zeitbuchungen?id=eq.${aktiveBuchung.id}`, {
+        const data = await sbFetch(`zeitbuchungen?id=eq.${aktiveBuchung.id}`, {
           method: "PATCH",
           headers: { "Authorization": `Bearer ${session.access_token}` },
           body: JSON.stringify(update),
         });
+        if (!data?.length) {
+          setAktionsFehler("Pause konnte nicht gestartet werden — bitte Verbindung prüfen.");
+          return;
+        }
       }
       setAktiveBuchung(prev => ({ ...prev, ...update }));
       setStatus("pause");
@@ -166,14 +180,19 @@ export function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
   async function pauseEnde() {
     if (!aktiveBuchung || aktionLaeuft) return;
     setAktionLaeuft(true);
+    setAktionsFehler("");
     try {
       const update = { pause_ende_at: new Date().toISOString(), status: "aktiv" };
       if (session?.access_token) {
-        await sbFetch(`zeitbuchungen?id=eq.${aktiveBuchung.id}`, {
+        const data = await sbFetch(`zeitbuchungen?id=eq.${aktiveBuchung.id}`, {
           method: "PATCH",
           headers: { "Authorization": `Bearer ${session.access_token}` },
           body: JSON.stringify(update),
         });
+        if (!data?.length) {
+          setAktionsFehler("Pause konnte nicht beendet werden — bitte Verbindung prüfen.");
+          return;
+        }
       }
       setAktiveBuchung(prev => ({ ...prev, ...update }));
       setStatus("ein");
@@ -185,6 +204,7 @@ export function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
   async function ausstempeln() {
     if (aktionLaeuft || !aktiveBuchung) return;
     setAktionLaeuft(true);
+    setAktionsFehler("");
     try {
       const pos = await holeGPS();
 
@@ -205,11 +225,18 @@ export function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
       };
 
       if (session?.access_token) {
-        await sbFetch(`zeitbuchungen?id=eq.${aktiveBuchung.id}`, {
+        const data = await sbFetch(`zeitbuchungen?id=eq.${aktiveBuchung.id}`, {
           method: "PATCH",
           headers: { "Authorization": `Bearer ${session.access_token}` },
           body: JSON.stringify(update),
         });
+        // Ohne Bestätigung vom Server NICHT auf "ausgestempelt" wechseln —
+        // sonst bleibt die Buchung serverseitig aktiv, während die UI dem
+        // Nutzer zeigt, die Arbeitszeit sei bereits abgeschlossen erfasst.
+        if (!data?.length) {
+          setAktionsFehler("Ausstempeln fehlgeschlagen — bitte Verbindung prüfen und erneut versuchen.");
+          return;
+        }
       }
       setAktiveBuchung(null);
       setStatus("aus");
@@ -271,6 +298,9 @@ export function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
         )}
         {geoWarnung && (
           <div style={{ marginTop:8, fontSize:11, color:"var(--orange)" }}>{geoWarnung}</div>
+        )}
+        {aktionsFehler && (
+          <div style={{ marginTop:8, fontSize:11, color:"var(--red)" }}>⚠️ {aktionsFehler}</div>
         )}
       </div>
 
