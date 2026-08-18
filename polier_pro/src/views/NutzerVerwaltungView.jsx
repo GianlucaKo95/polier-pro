@@ -10,6 +10,7 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
   const [ansicht,     setAnsicht]     = useState("nutzer"); // nutzer | einladungen
   const [editNutzer,  setEditNutzer]  = useState(null);
   const [zeigeEinladen, setZeigeEinladen] = useState(false);
+  const [aktionsFehler, setAktionsFehler] = useState("");
 
   useEffect(() => { ladeAlles(); }, []);
 
@@ -29,39 +30,47 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
   }
 
   async function rolleAendern(id, neueRolle) {
-    await sbFetch(`profile?id=eq.${id}`, {
+    setAktionsFehler("");
+    const ok = await sbFetch(`profile?id=eq.${id}`, {
       method: "PATCH",
       headers: { "Authorization": `Bearer ${session?.access_token}` },
       body: JSON.stringify({ rolle: neueRolle }),
     });
+    if (!ok?.length) { setAktionsFehler("Rolle konnte nicht geändert werden."); return; }
     setNutzer(prev => prev.map(n => n.id === id ? { ...n, rolle: neueRolle } : n));
   }
 
   async function aktivitaetToggle(id, aktiv) {
-    await sbFetch(`profile?id=eq.${id}`, {
+    setAktionsFehler("");
+    const ok = await sbFetch(`profile?id=eq.${id}`, {
       method: "PATCH",
       headers: { "Authorization": `Bearer ${session?.access_token}` },
       body: JSON.stringify({ aktiv: !aktiv }),
     });
+    if (!ok?.length) { setAktionsFehler("Status konnte nicht geändert werden."); return; }
     setNutzer(prev => prev.map(n => n.id === id ? { ...n, aktiv: !aktiv } : n));
   }
 
   async function kolonneAendern(id, kolonneId) {
-    await sbFetch(`profile?id=eq.${id}`, {
+    setAktionsFehler("");
+    const ok = await sbFetch(`profile?id=eq.${id}`, {
       method: "PATCH",
       headers: { "Authorization": `Bearer ${session?.access_token}` },
       body: JSON.stringify({ kolonne_id: kolonneId || null }),
     });
+    if (!ok?.length) { setAktionsFehler("Kolonne konnte nicht geändert werden."); return; }
     setNutzer(prev => prev.map(n => n.id === id
       ? { ...n, kolonne_id: kolonneId || null } : n));
   }
 
   async function einladungWiderrufen(id) {
-    await sbFetch(`einladungen?id=eq.${id}`, {
+    setAktionsFehler("");
+    const ok = await sbFetch(`einladungen?id=eq.${id}`, {
       method: "PATCH",
       headers: { "Authorization": `Bearer ${session?.access_token}` },
       body: JSON.stringify({ aktiv: false }),
     });
+    if (!ok?.length) { setAktionsFehler("Einladung konnte nicht widerrufen werden."); return; }
     setEinladungen(prev => prev.map(e => e.id === id ? { ...e, aktiv: false } : e));
   }
 
@@ -93,6 +102,14 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
           + Einladen
         </button>
       </div>
+
+      {aktionsFehler && (
+        <div style={{ background:"var(--rbg)", color:"var(--red)", borderRadius:12,
+          padding:"10px 14px", marginBottom:14, fontSize:12,
+          border:"1px solid var(--red)" }}>
+          ⚠️ {aktionsFehler}
+        </div>
+      )}
 
       {/* Stats */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr",

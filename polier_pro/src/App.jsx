@@ -86,6 +86,7 @@ export default function PolierApp() {
   const [projekte,      setProjekte]    = useState([]);
   const [projekteLaden, setProjekteLaden] = useState(false);
   const [projekteLadeFehler, setProjekteLadeFehler] = useState("");
+  const [speicherFehler, setSpeicherFehler] = useState("");
 
   const [aktivId,       setAktivId]     = useState(null);
   const [tab,           setTab]         = useState("dashboard");
@@ -405,24 +406,38 @@ export default function PolierApp() {
     const alteIds = new Set(felder.map(a => a.id));
     const neueIds = new Set(neu.map(a => a.id));
 
+    setSpeicherFehler("");
+    let fehler = false;
     for (const a of neu) {
       const istNeu = !alteIds.has(a.id) || typeof a.id !== "number" || a.id > 1e12;
-      await sbAufgabeSpeichern(a, aktivId, auth.session, istNeu);
+      const ok = await sbAufgabeSpeichern(a, aktivId, auth.session, istNeu);
+      if (!ok) fehler = true;
     }
     for (const alteId of alteIds) {
       if (!neueIds.has(alteId)) await sbAufgabeLoeschen(alteId, auth.session);
     }
     setAktProjektAufgaben(neu);
+    // Die lokale Ansicht wird trotzdem aktualisiert (kein Datenverlust in der
+    // UI), aber der Nutzer erfährt, dass die Änderung nicht auf dem Server
+    // angekommen ist — vorher wurde ein fehlgeschlagenes Speichern still als
+    // Erfolg behandelt.
+    if (fehler) setSpeicherFehler("Eine Aufgabe konnte nicht gespeichert werden — bitte Verbindung prüfen und erneut versuchen.");
   }
 
   // ── Berichte: laden + speichern direkt gegen Supabase ──
   async function setBerichte(fn) {
     const neu = typeof fn === "function" ? fn(berichte) : fn;
     const alteIds = new Set(berichte.map(b => b.id));
+    setSpeicherFehler("");
+    let fehler = false;
     for (const b of neu) {
-      if (!alteIds.has(b.id)) await sbBerichtSpeichern(b, aktivId, auth.session);
+      if (!alteIds.has(b.id)) {
+        const ok = await sbBerichtSpeichern(b, aktivId, auth.session);
+        if (!ok) fehler = true;
+      }
     }
     setAktProjektBerichte(neu);
+    if (fehler) setSpeicherFehler("Der Tagesbericht konnte nicht gespeichert werden — bitte Verbindung prüfen und erneut versuchen.");
   }
 
   // ── Kolonnen: laden + speichern direkt gegen Supabase ──
@@ -431,10 +446,14 @@ export default function PolierApp() {
     const alteIds = new Set(kolonnen.map(k => k.id));
     const neueIds = new Set(neu.map(k => k.id));
 
+    setSpeicherFehler("");
+    let fehler = false;
     for (const k of neu) {
       const istNeu = !alteIds.has(k.id) || typeof k.id !== "number" || k.id > 1e12;
-      await sbKolonneSpeichern(k, aktivId, auth.session, istNeu);
+      const ok = await sbKolonneSpeichern(k, aktivId, auth.session, istNeu);
+      if (!ok) fehler = true;
     }
+    if (fehler) setSpeicherFehler("Eine Kolonne konnte nicht gespeichert werden — bitte Verbindung prüfen und erneut versuchen.");
     for (const alteId of alteIds) {
       if (!neueIds.has(alteId)) await sbKolonneLoeschen(alteId, auth.session);
     }
@@ -823,6 +842,17 @@ export default function PolierApp() {
       {/* ── CONTENT ── */}
       <PlanGuard firma={firma} ressource="app">
       <div style={{ padding:"16px 14px 100px", background:"var(--bg)", minHeight:"100dvh" }}>
+        {speicherFehler && (
+          <div style={{ background:"var(--rbg)", color:"var(--red)", borderRadius:12,
+            padding:"12px 16px", marginBottom:14, fontSize:12,
+            border:"1px solid var(--red)", display:"flex",
+            justifyContent:"space-between", alignItems:"center", gap:10 }}>
+            <span>⚠️ {speicherFehler}</span>
+            <button onClick={() => setSpeicherFehler("")}
+              style={{ background:"none", border:"none", color:"var(--red)",
+                cursor:"pointer", fontSize:15, fontFamily:"inherit", flexShrink:0 }}>✕</button>
+          </div>
+        )}
         {tab === "dashboard" && <DashboardView aufgaben={felder} kolonnen={kolonnen} sbConnected={sbConnected} projekt={projekt}
             onNavigate={(tabId, filter) => {
               if (filter) setAufgabenFilter(filter);

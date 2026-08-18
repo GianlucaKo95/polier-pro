@@ -20,12 +20,27 @@ from profile p
 join firmen f on f.id = p.firma_id
 where p.id = 'DEINE-USER-UUID';
 
--- Schritt 3: Lösche die überzähligen Duplikate.
--- WICHTIG: Trage die IDs der Firmen ein, die NICHT deine aktuelle_firma_id
--- aus Schritt 2 sind, und die keine echten Projektdaten enthalten.
--- Beispiel (IDs anpassen!):
--- delete from firmen where id in (2,3,4,5,6,7,8,9,10);
+-- Schritt 3a: Vor dem Löschen prüfen, ob in den Kandidaten-Firmen echte
+-- Daten stecken (durch "on delete cascade" würden Projekte, Aufgaben,
+-- Tagesberichte, Zeitbuchungen etc. dieser Firmen automatisch mitgelöscht).
+-- IDs aus Schritt 1/2 eintragen und VOR dem eigentlichen Löschen ausführen:
+-- select
+--   f.id, f.name,
+--   (select count(*) from projekte p where p.firma_id = f.id)      as projekte,
+--   (select count(*) from profile pr where pr.firma_id = f.id)     as nutzer
+-- from firmen f
+-- where f.id in (2,3,4,5,6,7,8,9,10);
+-- Zeigt eine der Kandidaten-Firmen projekte > 0 oder nutzer > 1 (mehr als
+-- den eigenen Account), NICHT löschen ohne die Daten vorher zu migrieren.
 
--- Hinweis: Durch "on delete cascade" in den Foreign Keys werden zugehörige
--- Projekte, Aufgaben etc. dieser Firmen automatisch mitgelöscht. Vorher
--- unbedingt prüfen, ob in den zu löschenden Firmen echte Daten stecken.
+-- Schritt 3b: Lösche die überzähligen Duplikate — nur IDs eintragen, die in
+-- Schritt 3a mit 0 Projekten bestätigt wurden. In einer Transaktion, damit
+-- bei einem Fehler oder falschen IDs mit ROLLBACK abgebrochen werden kann,
+-- statt dass ein Tippfehler sofort und unwiderruflich Daten löscht:
+--
+-- begin;
+-- delete from firmen where id in (2,3,4,5,6,7,8,9,10);
+-- -- Ergebnis prüfen (Anzahl gelöschter Zeilen, ggf. erneut select aus
+-- -- Schritt 1 laufen lassen) — erst dann:
+-- commit;
+-- -- Bei Zweifel stattdessen: rollback;
