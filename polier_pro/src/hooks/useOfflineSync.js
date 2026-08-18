@@ -26,8 +26,8 @@ export function useOfflineSync(online, sbConnected) {
     }
   }, [online, sbConnected]);
 
-  async function speichereOffline(action, data) {
-    await idbQueue(action, data);
+  async function speichereOffline(action, data, token) {
+    await idbQueue(action, data, token);
     setPending(p => p + 1);
   }
 

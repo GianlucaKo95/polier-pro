@@ -14,13 +14,19 @@ export function EinladungScreen({ token, onErfolg }) {
   useEffect(() => { pruefeToken(); }, [token]);
 
   async function pruefeToken() {
-    const { data, error } = await supabase
-      .from("einladungen")
-      .select("*,firmen(name,logo_url)")
-      .eq("token", token);
-    if (!error && data?.[0]) {
-      setEinladung(data[0]);
-      setEmail(data[0].email || "");
+    // Läuft über eine SECURITY DEFINER-RPC (nicht mehr über eine offene
+    // SELECT-Policy): so kann ein anonymer Client nur genau die Einladung
+    // zu einem bekannten Token abrufen, statt alle aktiven Einladungen
+    // aller Firmen auflisten zu können.
+    const { data, error } = await supabase.rpc("einladung_pruefen", { p_token: token });
+    const row = data?.[0];
+    if (!error && row) {
+      setEinladung({
+        token: row.token, email: row.email, rolle: row.rolle,
+        firma_id: row.firma_id, kolonne_id: row.kolonne_id,
+        firmen: { name: row.firma_name, logo_url: row.firma_logo_url },
+      });
+      setEmail(row.email || "");
       setSchritt(1);
     } else {
       setFehler("Diese Einladung ist ungültig oder abgelaufen.");

@@ -1,5 +1,7 @@
+import { escapeHtml } from "./utils.js";
+
 export function buildBerichtHTML(bericht, projekt, eigeneFirma, wetter) {
-  const datum = bericht.datum || new Date().toLocaleDateString("de-DE");
+  const datum = escapeHtml(bericht.datum || new Date().toLocaleDateString("de-DE"));
   const fotos = bericht.bilder || [];
   const logo  = eigeneFirma?.logo || null;
 
@@ -50,16 +52,16 @@ export function buildBerichtHTML(bericht, projekt, eigeneFirma, wetter) {
         ? `<img class="logo" src="${logo}" alt="Logo"/>`
         : `<div class="logo-placeholder">⚒</div>`}
       <div>
-        <div class="firma-name">${eigeneFirma?.name || "Polaris"}</div>
-        <div class="firma-sub">${eigeneFirma?.strasse || ""} · ${eigeneFirma?.plz || ""} ${eigeneFirma?.ort || ""}</div>
-        <div class="firma-sub">${eigeneFirma?.telefon || ""} · ${eigeneFirma?.email || ""}</div>
+        <div class="firma-name">${escapeHtml(eigeneFirma?.name) || "Polaris"}</div>
+        <div class="firma-sub">${escapeHtml(eigeneFirma?.strasse)} · ${escapeHtml(eigeneFirma?.plz)} ${escapeHtml(eigeneFirma?.ort)}</div>
+        <div class="firma-sub">${escapeHtml(eigeneFirma?.telefon)} · ${escapeHtml(eigeneFirma?.email)}</div>
       </div>
     </div>
     <div class="doc-title">
       <h1>Bautagebuch</h1>
       <div class="datum">${datum}</div>
-      <div class="datum" style="margin-top:2px;font-weight:bold;">${projekt?.name || ""}</div>
-      <div class="datum">${projekt?.projektnummer || ""}</div>
+      <div class="datum" style="margin-top:2px;font-weight:bold;">${escapeHtml(projekt?.name)}</div>
+      <div class="datum">${escapeHtml(projekt?.projektnummer)}</div>
     </div>
   </div>
 
@@ -67,9 +69,9 @@ export function buildBerichtHTML(bericht, projekt, eigeneFirma, wetter) {
   <div class="section">
     <div class="section-title">Baustellendaten</div>
     <div class="grid-3">
-      <div class="field"><div class="field-label">Baustelle</div><div class="field-value">${projekt?.name || "—"}</div></div>
-      <div class="field"><div class="field-label">Bauleiter</div><div class="field-value">${projekt?.bauleiter || "—"}</div></div>
-      <div class="field"><div class="field-label">Auftraggeber</div><div class="field-value">${projekt?.auftraggeber || "—"}</div></div>
+      <div class="field"><div class="field-label">Baustelle</div><div class="field-value">${escapeHtml(projekt?.name) || "—"}</div></div>
+      <div class="field"><div class="field-label">Bauleiter</div><div class="field-value">${escapeHtml(projekt?.bauleiter) || "—"}</div></div>
+      <div class="field"><div class="field-label">Auftraggeber</div><div class="field-value">${escapeHtml(projekt?.auftraggeber) || "—"}</div></div>
     </div>
   </div>
 
@@ -93,19 +95,19 @@ export function buildBerichtHTML(bericht, projekt, eigeneFirma, wetter) {
   <!-- TÄTIGKEITEN -->
   <div class="section">
     <div class="section-title">Tätigkeiten</div>
-    <div class="text-block">${bericht.taetigkeit || "—"}</div>
+    <div class="text-block">${escapeHtml(bericht.taetigkeit) || "—"}</div>
   </div>
 
   ${bericht.besonderheiten ? `
   <div class="section">
     <div class="section-title">Besonderheiten / Mängel</div>
-    <div class="text-block">${bericht.besonderheiten}</div>
+    <div class="text-block">${escapeHtml(bericht.besonderheiten)}</div>
   </div>` : ""}
 
   ${bericht.material ? `
   <div class="section">
     <div class="section-title">Materiallieferungen</div>
-    <div class="text-block">${bericht.material}</div>
+    <div class="text-block">${escapeHtml(bericht.material)}</div>
   </div>` : ""}
 
   <!-- KOLONNEN & STUNDEN -->
@@ -114,7 +116,7 @@ export function buildBerichtHTML(bericht, projekt, eigeneFirma, wetter) {
     <div class="section-title">Personal &amp; Stunden</div>
     ${bericht.kolonnen.map(k => `
       <div class="kolonne-row">
-        <span style="font-weight:bold;">${k.name}</span>
+        <span style="font-weight:bold;">${escapeHtml(k.name)}</span>
         <span>${k.mitarbeiter?.length || 0} Personen</span>
         <span style="font-weight:bold;">${k.stunden ? k.stunden.toFixed(1) + " h" : "—"}</span>
       </div>`).join("")}
@@ -151,25 +153,25 @@ export function buildBerichtHTML(bericht, projekt, eigeneFirma, wetter) {
     <div class="grid-2">
       <div>
         <div style="font-size:9pt;color:#666;margin-bottom:4px;">Polier</div>
-        <div class="sig-box"><div class="sig-label">${eigeneFirma?.geschaeftsfuehrer || "Polier"}</div><div class="sig-date">${datum}</div></div>
+        <div class="sig-box"><div class="sig-label">${escapeHtml(eigeneFirma?.geschaeftsfuehrer) || "Polier"}</div><div class="sig-date">${datum}</div></div>
       </div>
       <div>
         <div style="font-size:9pt;color:#666;margin-bottom:4px;">Bauleiter</div>
-        <div class="sig-box"><div class="sig-label">${projekt?.bauleiter || "Bauleiter"}</div><div class="sig-date">${datum}</div></div>
+        <div class="sig-box"><div class="sig-label">${escapeHtml(projekt?.bauleiter) || "Bauleiter"}</div><div class="sig-date">${datum}</div></div>
       </div>
     </div>
   </div>
 
   <div class="footer">
     <span>Erstellt mit Polaris · ${new Date().toLocaleString("de-DE")}</span>
-    <span>${eigeneFirma?.name || ""} · ${projekt?.projektnummer || ""}</span>
+    <span>${escapeHtml(eigeneFirma?.name)} · ${escapeHtml(projekt?.projektnummer)}</span>
   </div>
 </div>
 </body></html>`;
 }
 
 export function buildBetonprotokollHTML(feld, projekt, eigeneFirma, wetter) {
-  const heute = new Date().toLocaleDateString("de-DE");
+  const heute = escapeHtml(new Date().toLocaleDateString("de-DE"));
   const logo  = eigeneFirma?.logo || null;
   return `<!DOCTYPE html>
 <html lang="de">
@@ -209,24 +211,24 @@ export function buildBetonprotokollHTML(feld, projekt, eigeneFirma, wetter) {
     <div style="display:flex;gap:12px;align-items:center;">
       ${logo ? `<img class="logo" src="${logo}" alt="Logo"/>` : `<div class="logo-placeholder">⚒</div>`}
       <div>
-        <div class="firma-name">${eigeneFirma?.name || "Polaris"}</div>
-        <div style="font-size:9pt;color:#666;">${eigeneFirma?.strasse || ""} · ${eigeneFirma?.ort || ""}</div>
+        <div class="firma-name">${escapeHtml(eigeneFirma?.name) || "Polaris"}</div>
+        <div style="font-size:9pt;color:#666;">${escapeHtml(eigeneFirma?.strasse)} · ${escapeHtml(eigeneFirma?.ort)}</div>
       </div>
     </div>
     <div style="text-align:right;">
       <div style="font-size:14pt;font-weight:bold;">Betonierprotokoll</div>
       <div style="font-size:9pt;color:#666;margin-top:3px;">${heute}</div>
-      <div style="font-size:9pt;font-weight:bold;">${projekt?.name || ""}</div>
+      <div style="font-size:9pt;font-weight:bold;">${escapeHtml(projekt?.name)}</div>
     </div>
   </div>
 
   <div class="section-title">Betonfeld</div>
   <div class="grid-3">
-    <div class="field"><div class="field-label">Feldbezeichnung</div><div class="field-value">${feld.name}</div></div>
+    <div class="field"><div class="field-label">Feldbezeichnung</div><div class="field-value">${escapeHtml(feld.name)}</div></div>
     <div class="field"><div class="field-label">Fläche</div><div class="field-value">${feld.m2} m²</div></div>
-    <div class="field"><div class="field-label">Status</div><div class="field-value">${feld.status}</div></div>
-    <div class="field"><div class="field-label">Betonsorte</div><div class="field-value">${feld.betonsorte || "—"}</div></div>
-    <div class="field"><div class="field-label">Bewehrung</div><div class="field-value" style="font-size:10pt;">${feld.bewehrung || "—"}</div></div>
+    <div class="field"><div class="field-label">Status</div><div class="field-value">${escapeHtml(feld.status)}</div></div>
+    <div class="field"><div class="field-label">Betonsorte</div><div class="field-value">${escapeHtml(feld.betonsorte) || "—"}</div></div>
+    <div class="field"><div class="field-label">Bewehrung</div><div class="field-value" style="font-size:10pt;">${escapeHtml(feld.bewehrung) || "—"}</div></div>
     <div class="field"><div class="field-label">Festigkeit</div><div class="field-value ${(feld.festigkeit || 0) >= 95 ? "ok" : ""}">${feld.festigkeit ? feld.festigkeit + "%" : "Ausstehend"}</div></div>
   </div>
 
@@ -254,14 +256,14 @@ export function buildBetonprotokollHTML(feld, projekt, eigeneFirma, wetter) {
   <div class="section-title">Unterschriften</div>
   <div class="grid-2">
     <div><div style="font-size:9pt;color:#666;margin-bottom:4px;">Polier / Verantwortlich</div>
-    <div class="sig-box"><div class="sig-label">${eigeneFirma?.geschaeftsfuehrer || "Polier"} · ${heute}</div></div></div>
+    <div class="sig-box"><div class="sig-label">${escapeHtml(eigeneFirma?.geschaeftsfuehrer) || "Polier"} · ${heute}</div></div></div>
     <div><div style="font-size:9pt;color:#666;margin-bottom:4px;">Bauleiter / Freigabe</div>
-    <div class="sig-box"><div class="sig-label">${projekt?.bauleiter || "Bauleiter"} · ${heute}</div></div></div>
+    <div class="sig-box"><div class="sig-label">${escapeHtml(projekt?.bauleiter) || "Bauleiter"} · ${heute}</div></div></div>
   </div>
 
   <div class="footer">
     <span>Betonierprotokoll · Polaris · ${new Date().toLocaleString("de-DE")}</span>
-    <span>${projekt?.projektnummer || ""}</span>
+    <span>${escapeHtml(projekt?.projektnummer)}</span>
   </div>
 </div>
 </body></html>`;

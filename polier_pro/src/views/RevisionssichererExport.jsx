@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { UnterschriftPad } from "../components/UnterschriftPad.jsx";
+import { escapeHtml, sha256Hex } from "../lib/utils.js";
 
 export function RevisionssichererExport({ bericht, projekt, eigeneFirma, wetter,
   aufgaben, maengel, datum }) {
@@ -8,13 +9,26 @@ export function RevisionssichererExport({ bericht, projekt, eigeneFirma, wetter,
   const [sigPolier,    setSigPolier]    = useState(null);
   const [sigBauleiter, setSigBauleiter] = useState(null);
   const [exportiert,   setExportiert]   = useState(false);
+  const [hash,         setHash]         = useState("");
 
-  const hash = btoa(
-    JSON.stringify({ datum, projekt_id:projekt?.id,
-      bericht_id:bericht?.id, ts:Date.now() })
-  ).slice(0,16).toUpperCase();
+  // Echter Inhalts-Hash statt Base64 von ein paar IDs + Timestamp: der
+  // Hash ändert sich, sobald sich Bericht-Inhalt oder Unterschriften ändern,
+  // und ist damit tatsächlich geeignet, nachträgliche Manipulation am
+  // Dokument zu erkennen.
+  useEffect(() => {
+    const inhalt = JSON.stringify({
+      datum, projekt_id: projekt?.id, bericht_id: bericht?.id,
+      taetigkeit: bericht?.taetigkeit, besonderheiten: bericht?.besonderheiten,
+      maengel: (maengel||[]).map(m => ({ id:m.id, titel:m.titel, status:m.status })),
+      sigPolier, sigBauleiter,
+    });
+    let aktiv = true;
+    sha256Hex(inhalt).then(h => { if (aktiv) setHash(h.slice(0,16).toUpperCase()); });
+    return () => { aktiv = false; };
+  }, [datum, projekt?.id, bericht?.id, bericht?.taetigkeit, bericht?.besonderheiten, maengel, sigPolier, sigBauleiter]);
 
   function exportPDF() {
+    if (!hash) return;
     const offeneMaengel = (maengel||[]).filter(m=>m.status!=="abgeschlossen");
     const html = `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"/>
 <style>
@@ -60,14 +74,14 @@ body { font-family:Arial,sans-serif; font-size:11pt; color:#1a1a1a; }
 <div class="header">
   <div>
     <div class="logo"><span>★</span> POLARIS</div>
-    <div class="firma">${eigeneFirma?.name||""}  ·  ${eigeneFirma?.strasse||""}, ${eigeneFirma?.plz||""} ${eigeneFirma?.ort||""}</div>
-    <div class="firma">${eigeneFirma?.telefon||""}  ·  ${eigeneFirma?.email||""}</div>
+    <div class="firma">${escapeHtml(eigeneFirma?.name)}  ·  ${escapeHtml(eigeneFirma?.strasse)}, ${escapeHtml(eigeneFirma?.plz)} ${escapeHtml(eigeneFirma?.ort)}</div>
+    <div class="firma">${escapeHtml(eigeneFirma?.telefon)}  ·  ${escapeHtml(eigeneFirma?.email)}</div>
   </div>
   <div class="doc-title">
     <h1>Tagesbericht</h1>
-    <div class="meta">${datum||new Date().toLocaleDateString("de-DE")}</div>
-    <div class="meta" style="font-weight:bold">${projekt?.name||""}</div>
-    <div class="meta">${projekt?.projektnummer||""}</div>
+    <div class="meta">${escapeHtml(datum||new Date().toLocaleDateString("de-DE"))}</div>
+    <div class="meta" style="font-weight:bold">${escapeHtml(projekt?.name)}</div>
+    <div class="meta">${escapeHtml(projekt?.projektnummer)}</div>
     <div class="hash-badge">DOC-${hash}</div>
   </div>
 </div>
@@ -75,9 +89,9 @@ body { font-family:Arial,sans-serif; font-size:11pt; color:#1a1a1a; }
 <div class="section">
   <div class="section-title">Baustellendaten</div>
   <div class="grid3">
-    <div class="field"><div class="field-label">Baustelle</div><div class="field-value">${projekt?.name||"—"}</div></div>
-    <div class="field"><div class="field-label">Bauleiter</div><div class="field-value">${projekt?.bauleiter||"—"}</div></div>
-    <div class="field"><div class="field-label">Auftraggeber</div><div class="field-value">${projekt?.auftraggeber||"—"}</div></div>
+    <div class="field"><div class="field-label">Baustelle</div><div class="field-value">${escapeHtml(projekt?.name)||"—"}</div></div>
+    <div class="field"><div class="field-label">Bauleiter</div><div class="field-value">${escapeHtml(projekt?.bauleiter)||"—"}</div></div>
+    <div class="field"><div class="field-label">Auftraggeber</div><div class="field-value">${escapeHtml(projekt?.auftraggeber)||"—"}</div></div>
   </div>
 </div>
 
@@ -92,20 +106,20 @@ ${wetter ? `<div class="section">
 
 <div class="section">
   <div class="section-title">Tätigkeiten</div>
-  <div class="text-block">${bericht?.taetigkeit||"—"}</div>
+  <div class="text-block">${escapeHtml(bericht?.taetigkeit)||"—"}</div>
 </div>
 
 ${bericht?.besonderheiten ? `<div class="section">
   <div class="section-title">Besonderheiten</div>
-  <div class="text-block">${bericht.besonderheiten}</div>
+  <div class="text-block">${escapeHtml(bericht.besonderheiten)}</div>
 </div>` : ""}
 
 ${offeneMaengel.length > 0 ? `<div class="section">
   <div class="section-title">Offene Mängel (${offeneMaengel.length})</div>
   ${offeneMaengel.map(m=>`<div class="mangel-row">
-    <strong>${m.titel}</strong>
-    ${m.mangel_verursacher ? ` · ${m.mangel_verursacher}` : ""}
-    · Status: ${m.status}
+    <strong>${escapeHtml(m.titel)}</strong>
+    ${m.mangel_verursacher ? ` · ${escapeHtml(m.mangel_verursacher)}` : ""}
+    · Status: ${escapeHtml(m.status)}
   </div>`).join("")}
 </div>` : ""}
 
@@ -117,14 +131,14 @@ ${offeneMaengel.length > 0 ? `<div class="section">
       <div class="sig-img">
         ${sigPolier ? `<img src="${sigPolier}" />` : "<span style='color:#ccc'>Nicht unterschrieben</span>"}
       </div>
-      <div class="sig-name">${eigeneFirma?.geschaeftsfuehrer||"Polier"} · ${datum||new Date().toLocaleDateString("de-DE")}</div>
+      <div class="sig-name">${escapeHtml(eigeneFirma?.geschaeftsfuehrer)||"Polier"} · ${escapeHtml(datum||new Date().toLocaleDateString("de-DE"))}</div>
     </div>
     <div class="sig-box">
       <div class="sig-label">Bauleiter</div>
       <div class="sig-img">
         ${sigBauleiter ? `<img src="${sigBauleiter}" />` : "<span style='color:#ccc'>Nicht unterschrieben</span>"}
       </div>
-      <div class="sig-name">${projekt?.bauleiter||"Bauleiter"} · ${datum||new Date().toLocaleDateString("de-DE")}</div>
+      <div class="sig-name">${escapeHtml(projekt?.bauleiter)||"Bauleiter"} · ${escapeHtml(datum||new Date().toLocaleDateString("de-DE"))}</div>
     </div>
   </div>
 </div>
@@ -184,7 +198,7 @@ ${offeneMaengel.length > 0 ? `<div class="section">
                 </div>
               </div>
               <div style={{ color:"#F5C400", fontFamily:"monospace",
-                fontSize:14, fontWeight:800 }}>DOC-{hash}</div>
+                fontSize:14, fontWeight:800 }}>{hash ? `DOC-${hash}` : "…berechne…"}</div>
             </div>
 
             <UnterschriftPad label="Unterschrift Polier" onSave={setSigPolier} />
@@ -209,10 +223,11 @@ ${offeneMaengel.length > 0 ? `<div class="section">
               </div>
             )}
 
-            <button onClick={exportPDF}
-              style={{ width:"100%", background:"var(--yellow)", color:"#1a1200",
+            <button onClick={exportPDF} disabled={!hash}
+              style={{ width:"100%", background: hash ? "var(--yellow)" : "var(--surface2)",
+                color: hash ? "#1a1200" : "var(--muted)",
                 border:"none", borderRadius:12, padding:15, fontWeight:800,
-                fontSize:15, cursor:"pointer", fontFamily:"inherit" }}>
+                fontSize:15, cursor: hash ? "pointer" : "default", fontFamily:"inherit" }}>
               📄 Revisionssicheres PDF exportieren
             </button>
 

@@ -7,9 +7,15 @@ export function UnterschriftPad({ label, onSave }) {
   const lastPos = useRef(null);
 
   function getPos(e) {
-    const rect = canvasRef.current.getBoundingClientRect();
-    const src  = e.touches ? e.touches[0] : e;
-    return { x: src.clientX - rect.left, y: src.clientY - rect.top };
+    const canvas = canvasRef.current;
+    const rect   = canvas.getBoundingClientRect();
+    const src    = e.touches ? e.touches[0] : e;
+    // Canvas hat eine feste interne Auflösung (360×100), wird aber per CSS
+    // auf 100% Breite gestreckt — ohne diese Skalierung landet der Strich
+    // auf jedem breiteren Bildschirm versetzt zur tatsächlichen Zeigerposition.
+    const scaleX = canvas.width  / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return { x: (src.clientX - rect.left) * scaleX, y: (src.clientY - rect.top) * scaleY };
   }
 
   function start(e) {

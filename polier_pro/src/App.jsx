@@ -837,6 +837,7 @@ export default function PolierApp() {
             projekt={projekt} eigeneFirma={eigeneFirma} kolonnen={kolonnen}
             offlineSpeichern={offline.speichereOffline}
             aufgaben={felder} setAufgaben={setFelder}
+            session={auth.session}
           />}
         {tab === "aufgaben"      && <AufgabenView aufgaben={felder} setAufgaben={setFelder} kolonnen={kolonnen} sbConnected={sbConnected} darfBearbeiten={rolleConfig?.kannBearbeiten !== false} initialFilter={aufgabenFilter} />}
         {tab === "kosten"        && <KostenView projekt={projekt} aufgaben={felder} kolonnen={kolonnen} zeitbuchungen={zeitbuchungen} />}

@@ -27,22 +27,29 @@ Erstelle daraus einen vollständigen, professionellen Bautagesbericht. Antworte 
   "fazit": "Kurzes Fazit zum Tagesfortschritt"
 }`;
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-6",
-      max_tokens: 1000,
-      messages: [{ role: "user", content: prompt }],
-    }),
-  });
-  const data = await res.json();
+  const data = await rufeClaudeAuf(prompt, 1000);
   const text = data.content?.find(b => b.type === "text")?.text || "{}";
   try {
     return JSON.parse(text.replace(/```json|```/g, "").trim());
   } catch {
     return { taetigkeit: diktat, besonderheiten: "", material: "", fazit: "" };
   }
+}
+
+async function rufeClaudeAuf(prompt, maxTokens) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6",
+      max_tokens: maxTokens,
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
+  if (!res.ok) {
+    throw new Error(`KI-Anfrage fehlgeschlagen (${res.status})`);
+  }
+  return res.json();
 }
 
 export async function kiTagesabschluss(diktat, projekt, kolonnen, wetter) {
@@ -87,16 +94,7 @@ Antworte NUR mit diesem JSON (kein Markdown, keine Erklärungen):
   "wetter_warnung": "Warnung wenn morgen kritisches Wetter für geplante Arbeiten (oder leerer String)"
 }`;
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-6",
-      max_tokens: 1500,
-      messages: [{ role:"user", content:prompt }],
-    }),
-  });
-  const data = await res.json();
+  const data = await rufeClaudeAuf(prompt, 1500);
   const text = data.content?.find(b=>b.type==="text")?.text || "{}";
   try {
     return JSON.parse(text.trim());

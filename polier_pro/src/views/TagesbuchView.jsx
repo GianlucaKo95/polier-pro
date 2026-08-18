@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { supabase, sbFetch } from "../lib/supabase.js";
+import { supabase } from "../lib/supabase.js";
 import { KITagesabschlussButton } from "./KITagesabschlussButton.jsx";
 import { leereAufgabe } from "../lib/utils.js";
 import { PDFExportButton } from "../components/PDFExportButton.jsx";
@@ -7,7 +7,7 @@ import { RevisionssichererExport } from "./RevisionssichererExport.jsx";
 import { Label, inputStyle } from "../components/Label.jsx";
 import { DiktierFeld } from "../components/DiktierFeld.jsx";
 
-export function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eigeneFirma, kolonnen, offlineSpeichern, aufgaben, setAufgaben }) {
+export function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eigeneFirma, kolonnen, offlineSpeichern, aufgaben, setAufgaben, session }) {
   const [open,       setOpen]       = useState(false);
   const [detail,     setDetail]     = useState(null);
   const [form,       setForm]       = useState({ taetigkeit:"", besonderheiten:"", material:"", arbeiter:0, maengel:0 });
@@ -96,11 +96,17 @@ export function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eig
     };
     setBerichte(prev => [nb, ...prev]);
 
-    const berichtData = { ...form, datum: new Date().toISOString().slice(0,10), bilder: JSON.stringify(bildUrls), wetter: wetterStr };
-    if (sbConnected) {
-      await sbFetch("tagesberichte", { method:"POST", body: JSON.stringify(berichtData) });
-    } else if (offlineSpeichern) {
-      await offlineSpeichern("save-bericht", berichtData);
+    // Die eigentliche Persistierung übernimmt bereits setBerichte() (App.jsx),
+    // das sbBerichtSpeichern() mit korrekter projekt_id und Auth-Session
+    // aufruft — ein zweiter direkter sbFetch-Call hier war redundant und lief
+    // ohnehin immer ins Leere (fehlende projekt_id, kein Auth-Header).
+    if (!sbConnected && offlineSpeichern) {
+      const berichtData = {
+        ...form, projekt_id: projekt?.id,
+        datum: new Date().toISOString().slice(0,10),
+        bilder: JSON.stringify(bildUrls), wetter: wetterStr,
+      };
+      await offlineSpeichern("save-bericht", berichtData, session?.access_token);
     }
     setUploading(false);
     setOpen(false);

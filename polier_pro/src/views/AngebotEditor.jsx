@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { AUFGABEN_TYPEN } from "../config/konstanten.js";
 import { inputStyle, Label } from "../components/Label.jsx";
+import { escapeHtml } from "../lib/utils.js";
 
 export function AngebotEditor({ angebot, onSave, onClose, aufgaben, einheitspreise, lvVorlagen, projekt, eigeneFirma }) {
   const [a,         setA]         = useState(angebot);
@@ -87,25 +88,25 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
 
 <div class="header">
   <div>
-    <div class="logo"><span>★</span> ${eigeneFirma?.name||"Polaris"}</div>
+    <div class="logo"><span>★</span> ${escapeHtml(eigeneFirma?.name)||"Polaris"}</div>
     <div class="firma-info">
-      ${eigeneFirma?.strasse||""} · ${eigeneFirma?.plz||""} ${eigeneFirma?.ort||""}<br>
-      Tel: ${eigeneFirma?.telefon||""} · ${eigeneFirma?.email||""}<br>
-      ${eigeneFirma?.steuernummer ? "St-Nr: "+eigeneFirma.steuernummer : ""}
+      ${escapeHtml(eigeneFirma?.strasse)} · ${escapeHtml(eigeneFirma?.plz)} ${escapeHtml(eigeneFirma?.ort)}<br>
+      Tel: ${escapeHtml(eigeneFirma?.telefon)} · ${escapeHtml(eigeneFirma?.email)}<br>
+      ${eigeneFirma?.steuernummer ? "St-Nr: "+escapeHtml(eigeneFirma.steuernummer) : ""}
     </div>
   </div>
   <div class="angebot-title">
     <h1>Angebot</h1>
     <div class="meta">Datum: ${new Date(a.datum).toLocaleDateString("de-DE")}</div>
     <div class="meta">Gültig bis: ${new Date(a.gueltig_bis).toLocaleDateString("de-DE")}</div>
-    <div class="meta" style="font-weight:bold">Projekt: ${projekt?.name||""}</div>
-    <div class="meta">${projekt?.projektnummer||""}</div>
+    <div class="meta" style="font-weight:bold">Projekt: ${escapeHtml(projekt?.name)}</div>
+    <div class="meta">${escapeHtml(projekt?.projektnummer)}</div>
   </div>
 </div>
 
 <div class="empfaenger">
   <div class="empfaenger-label">ANGEBOT FÜR</div>
-  <strong>${a.empfaenger||"—"}</strong>
+  <strong>${escapeHtml(a.empfaenger)||"—"}</strong>
 </div>
 
 <table class="table">
@@ -123,9 +124,9 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
     ${a.positionen.map((p,i) => `
     <tr>
       <td>${i+1}</td>
-      <td>${p.bez}</td>
+      <td>${escapeHtml(p.bez)}</td>
       <td>${(p.menge||0).toLocaleString("de-DE")}</td>
-      <td>${p.einheit}</td>
+      <td>${escapeHtml(p.einheit)}</td>
       <td>${(p.ep||0).toLocaleString("de-DE",{minimumFractionDigits:2})}</td>
       <td><strong>${((p.menge||0)*(p.ep||0)).toLocaleString("de-DE",{minimumFractionDigits:2})}</strong></td>
     </tr>`).join("")}
@@ -148,7 +149,7 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
 
 <div class="footer">
   <span>Erstellt mit Polaris · ${new Date().toLocaleString("de-DE")}</span>
-  <span>${eigeneFirma?.name||""}</span>
+  <span>${escapeHtml(eigeneFirma?.name)}</span>
 </div>
 
 </div></body></html>`;

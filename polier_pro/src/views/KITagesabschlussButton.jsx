@@ -8,6 +8,7 @@ export function KITagesabschlussButton({ projekt, kolonnen, wetter, onErgebnis }
   const [laden,    setLaden]    = useState(false);
   const [ergebnis, setErgebnis] = useState(null);
   const [aufnahme, setAufnahme] = useState(false);
+  const [fehler,   setFehler]   = useState("");
   const srRef = useRef(null);
 
   function startDiktat() {
@@ -30,9 +31,16 @@ export function KITagesabschlussButton({ projekt, kolonnen, wetter, onErgebnis }
   async function analysieren() {
     if (!diktat.trim()) return;
     setLaden(true);
-    const result = await kiTagesabschluss(diktat, projekt, kolonnen, wetter);
-    setErgebnis(result);
-    setLaden(false);
+    setFehler("");
+    try {
+      const result = await kiTagesabschluss(diktat, projekt, kolonnen, wetter);
+      if (!result) { setFehler("KI-Antwort konnte nicht ausgewertet werden."); return; }
+      setErgebnis(result);
+    } catch (e) {
+      setFehler("KI ist gerade nicht verfügbar. Bitte später erneut versuchen.");
+    } finally {
+      setLaden(false);
+    }
   }
 
   function uebernehmen() {
@@ -75,6 +83,14 @@ export function KITagesabschlussButton({ projekt, kolonnen, wetter, onErgebnis }
                   Beschreibe kurz was heute auf der Baustelle passiert ist.
                   Die KI erstellt automatisch den Tagesbericht, neue Aufgaben und Mängel.
                 </div>
+
+                {fehler && (
+                  <div style={{ background:"var(--rbg)", color:"var(--red)",
+                    borderRadius:10, padding:"10px 14px", marginBottom:14,
+                    fontSize:13, border:"1px solid var(--red)" }}>
+                    ❌ {fehler}
+                  </div>
+                )}
 
                 <div style={{ position:"relative", marginBottom:14 }}>
                   <textarea rows={6} value={diktat}
