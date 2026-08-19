@@ -1,5 +1,6 @@
 // Polier Pro – PWA Registration
-// Der Service Worker wird von vite-plugin-pwa (Workbox) automatisch generiert.
+// sw.js ist handgeschrieben (kein Build-Tool generiert ihn) und liegt als
+// statische Datei in public/, wird also unverändert mit ausgeliefert.
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {

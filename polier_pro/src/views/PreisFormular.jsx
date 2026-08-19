@@ -1,8 +1,16 @@
 import { useState } from "react";
 import { Label, inputStyle } from "../components/Label.jsx";
 
+function parsePreis(wert) {
+  // Deutsche Eingabe mit Komma statt Punkt zulassen (z.B. "12,50").
+  const n = Number(String(wert).replace(",", "."));
+  return Number.isFinite(n) ? n : 0;
+}
+
 export function PreisFormular({ initial, onSave, onClose }) {
   const [p, setP] = useState(initial || { gewerk:"", einheit:"m²", preis:0, beschreibung:"" });
+  const gueltig = p.gewerk?.trim() && p.beschreibung?.trim()
+    && Number.isFinite(p.preis) && p.preis >= 0;
   return (
     <div>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
@@ -29,7 +37,8 @@ export function PreisFormular({ initial, onSave, onClose }) {
         </div>
         <div>
           <Label>Einheitspreis (€)</Label>
-          <input type="number" value={p.preis||""} onChange={e=>setP(x=>({...x,preis:Number(e.target.value)}))}
+          <input type="number" min="0" step="0.01" value={p.preis||""}
+            onChange={e=>setP(x=>({...x,preis:parsePreis(e.target.value)}))}
             placeholder="0" style={inputStyle()} />
         </div>
       </div>
@@ -37,10 +46,11 @@ export function PreisFormular({ initial, onSave, onClose }) {
         <button onClick={onClose} style={{ flex:1, background:"var(--surface2)",
           color:"var(--muted)", border:"1.5px solid var(--border)", borderRadius:12,
           padding:13, cursor:"pointer", fontFamily:"inherit" }}>Abbrechen</button>
-        <button onClick={() => p.gewerk && p.beschreibung && onSave(p)}
-          style={{ flex:2, background:"var(--yellow)", color:"#1a1200",
+        <button onClick={() => gueltig && onSave(p)} disabled={!gueltig}
+          style={{ flex:2, background: gueltig ? "var(--yellow)" : "var(--surface2)",
+            color: gueltig ? "#1a1200" : "var(--muted)",
             border:"none", borderRadius:12, padding:13, fontWeight:800,
-            cursor:"pointer", fontFamily:"inherit" }}>💾 Speichern</button>
+            cursor: gueltig ? "pointer" : "default", fontFamily:"inherit" }}>💾 Speichern</button>
       </div>
     </div>
   );

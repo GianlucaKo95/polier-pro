@@ -17,6 +17,11 @@ COPY . .
 # Werte danach fest in die statischen JS-Dateien.
 ARG VITE_SUPABASE_URL
 ARG VITE_SUPABASE_ANON_KEY
+# Optional — ohne diesen Key bleibt die App voll funktionsfähig, es gibt
+# dann nur lokale statt echter Server-Push-Erinnerungen (siehe
+# src/lib/push.js). Deshalb kein harter Build-Abbruch wie bei den beiden
+# Supabase-Pflichtwerten oben.
+ARG VITE_PUSH_VAPID_PUBLIC=""
 
 # Absicherung: bricht den Build sichtbar ab statt eine App mit leeren/
 # Platzhalter-Credentials zu erzeugen, die erst beim Login mit
@@ -29,7 +34,8 @@ RUN if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_ANON_KEY" ]; then \
     fi
 
 RUN echo "VITE_SUPABASE_URL=${VITE_SUPABASE_URL}" > .env && \
-    echo "VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}" >> .env
+    echo "VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}" >> .env && \
+    echo "VITE_PUSH_VAPID_PUBLIC=${VITE_PUSH_VAPID_PUBLIC}" >> .env
 
 RUN npm run build
 

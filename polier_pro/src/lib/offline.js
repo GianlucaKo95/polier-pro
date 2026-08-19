@@ -15,11 +15,11 @@ export function idbOpen() {
   });
 }
 
-export async function idbQueue(action, data) {
+export async function idbQueue(action, data, token) {
   const db    = await idbOpen();
   const tx    = db.transaction(IDB_STORE, "readwrite");
   const store = tx.objectStore(IDB_STORE);
-  store.add({ action, data, ts: Date.now() });
+  store.add({ action, data, token, ts: Date.now() });
   return new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = rej; });
 }
 
@@ -37,15 +37,25 @@ export async function idbDrainQueue() {
   let synced = 0;
   for (let i = 0; i < all.length; i++) {
     const item = all[i];
+    // Ohne Token wurde bisher unauthentifiziert gesendet — die RLS-Policies
+    // lehnen das immer ab, der Fehler wurde verschluckt und der Eintrag blieb
+    // für immer in der Queue hängen. Ein Item ohne Token kann grundsätzlich
+    // nicht mehr sicher nachgereicht werden, also verwerfen statt endlos zu
+    // wiederholen.
+    if (!item.token) { store.delete(keys[i]); continue; }
     try {
+      let result = null;
       if (item.action === "save-bericht") {
-        await sbFetch("tagesberichte", { method:"POST", body: JSON.stringify(item.data) });
-      } else if (item.action === "update-feld") {
-        await sbFetch(`betonfelder?id=eq.${item.data.id}`, { method:"PATCH", body: JSON.stringify(item.data) });
+        result = await sbFetch("tagesberichte", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${item.token}` },
+          body: JSON.stringify(item.data),
+        });
       }
+      if (result === null) continue; // Fehlgeschlagen: in der Queue belassen, später erneut versuchen
       store.delete(keys[i]);
       synced++;
-    } catch(e) {
+    } catch (e) {
     }
   }
   return synced;

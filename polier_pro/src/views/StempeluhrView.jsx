@@ -1,16 +1,25 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ROLLEN, TAETIGKEITEN } from "../config/konstanten.js";
 import { KolonnenSammelstempel } from "./KolonnenSammelstempel.jsx";
 import { sbFetch } from "../lib/supabase.js";
-import { getGPSPosition, reverseGeocode } from "../lib/geo.js";
+import { getGPSPosition, reverseGeocode, geocodeAdresse, haversineMeters } from "../lib/geo.js";
 import { Label, inputStyle } from "../components/Label.jsx";
+
+// Ab dieser Entfernung zur (geocodierten) Projektadresse gilt eine
+// Stempelung als geografisch unplausibel — reine Hinweis-Schwelle, kein
+// hartes Limit, da Adress-Geocoding selbst ungenau sein kann.
+const GEO_WARNUNG_METER = 2000;
 
 export function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
   const [status,      setStatus]      = useState("aus");   // aus | ein | pause
   const [aktiveBuchung, setAktiveBuchung] = useState(null);
   const [gps,         setGPS]         = useState(null);
   const [gpsLaden,    setGPSLaden]    = useState(false);
+  const [aktionLaeuft,setAktionLaeuft]= useState(false);
   const [gpsError,    setGPSError]    = useState("");
+  const [geoWarnung,  setGeoWarnung]  = useState("");
+  const [aktionsFehler, setAktionsFehler] = useState("");
+  const projektGeoCache = useRef({});
   const [jetzt,       setJetzt]       = useState(new Date());
   const [buchungen,   setBuchungen]   = useState([]);
   const [aktivProjekt,setAktivProjekt]= useState(projekte[0]?.id || null);
@@ -62,6 +71,24 @@ export function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
     }
   }
 
+  async function pruefeGeoPlausibilitaet(pos) {
+    const projekt = projekte.find(p => p.id === aktivProjekt);
+    const adresse = projekt && [projekt.adresse, projekt.plz, projekt.ort].filter(Boolean).join(", ");
+    if (!adresse) { setGeoWarnung(""); return; }
+
+    let ziel = projektGeoCache.current[projekt.id];
+    if (ziel === undefined) {
+      ziel = await geocodeAdresse(adresse);
+      projektGeoCache.current[projekt.id] = ziel;
+    }
+    if (!ziel) { setGeoWarnung(""); return; } // Adresse nicht geocodierbar — kein Fehlalarm
+
+    const distanz = haversineMeters(pos.lat, pos.lng, ziel.lat, ziel.lon);
+    setGeoWarnung(distanz > GEO_WARNUNG_METER
+      ? `⚠️ Standort ist ${(distanz/1000).toFixed(1)} km von der Baustellenadresse entfernt`
+      : "");
+  }
+
   async function holeGPS() {
     setGPSLaden(true); setGPSError("");
     try {
@@ -69,6 +96,7 @@ export function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
       const adresse = await reverseGeocode(pos.lat, pos.lng);
       const result = { ...pos, adresse };
       setGPS(result);
+      pruefeGeoPlausibilitaet(pos); // nicht blockierend, nur Hinweis
       return result;
     } catch(e) {
       setGPSError("GPS nicht verfügbar — bitte Standort aktivieren");
@@ -77,94 +105,145 @@ export function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
   }
 
   async function einstempeln() {
-    const pos = await holeGPS();
-    const buchung = {
-      profil_id:        profil.id,
-      projekt_id:       aktivProjekt,
-      kolonne_id:       profil.kolonne_id || null,
-      eingestempelt_at: new Date().toISOString(),
-      ein_lat:          pos?.lat,
-      ein_lng:          pos?.lng,
-      ein_adresse:      pos?.adresse || null,
-      status:           "aktiv",
-      notiz:            notiz || null,
-      taetigkeit:       taetigkeit,
-    };
+    // Schutz gegen Doppel-Tap: ohne diese Sperre konnte ein zweiter Klick
+    // während des GPS-Holens/POST-Requests eine zweite aktive Zeitbuchung
+    // für denselben Tag erzeugen (der Button war in diesem Zeitfenster
+    // wieder aktiv, da nur gpsLaden geprüft wurde).
+    if (aktionLaeuft) return;
+    setAktionLaeuft(true);
+    setAktionsFehler("");
+    try {
+      const pos = await holeGPS();
+      const buchung = {
+        profil_id:        profil.id,
+        projekt_id:       aktivProjekt,
+        kolonne_id:       profil.kolonne_id || null,
+        eingestempelt_at: new Date().toISOString(),
+        ein_lat:          pos?.lat,
+        ein_lng:          pos?.lng,
+        ein_adresse:      pos?.adresse || null,
+        status:           "aktiv",
+        notiz:            notiz || null,
+        taetigkeit:       taetigkeit,
+      };
 
-    if (session?.access_token) {
-      const data = await sbFetch("zeitbuchungen", {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${session.access_token}` },
-        body: JSON.stringify(buchung),
-      });
-      if (data?.[0]) { setAktiveBuchung(data[0]); }
-    } else {
-      // Demo-Modus: lokal
-      const demo = { ...buchung, id: Date.now() };
-      setAktiveBuchung(demo);
-      setBuchungen(prev => [demo, ...prev]);
+      if (session?.access_token) {
+        const data = await sbFetch("zeitbuchungen", {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${session.access_token}` },
+          body: JSON.stringify(buchung),
+        });
+        // Ohne erfolgreiche Server-Antwort NICHT auf "eingestempelt" wechseln
+        // — sonst zeigt die UI einen aktiven Status ohne aktiveBuchung, und
+        // "Ausstempeln" läuft später ins Leere, bis der Nutzer neu lädt.
+        if (!data?.[0]) {
+          setAktionsFehler("Einstempeln fehlgeschlagen — bitte Verbindung prüfen und erneut versuchen.");
+          return;
+        }
+        setAktiveBuchung(data[0]);
+      } else {
+        // Demo-Modus: lokal
+        const demo = { ...buchung, id: Date.now() };
+        setAktiveBuchung(demo);
+        setBuchungen(prev => [demo, ...prev]);
+      }
+      setStatus("ein");
+    } finally {
+      setAktionLaeuft(false);
     }
-    setStatus("ein");
   }
 
   async function pauseStart() {
-    if (!aktiveBuchung) return;
-    const update = { pause_start_at: new Date().toISOString(), status: "pause" };
-    if (session?.access_token) {
-      await sbFetch(`zeitbuchungen?id=eq.${aktiveBuchung.id}`, {
-        method: "PATCH",
-        headers: { "Authorization": `Bearer ${session.access_token}` },
-        body: JSON.stringify(update),
-      });
+    if (!aktiveBuchung || aktionLaeuft) return;
+    setAktionLaeuft(true);
+    setAktionsFehler("");
+    try {
+      const update = { pause_start_at: new Date().toISOString(), status: "pause" };
+      if (session?.access_token) {
+        const data = await sbFetch(`zeitbuchungen?id=eq.${aktiveBuchung.id}`, {
+          method: "PATCH",
+          headers: { "Authorization": `Bearer ${session.access_token}` },
+          body: JSON.stringify(update),
+        });
+        if (!data?.length) {
+          setAktionsFehler("Pause konnte nicht gestartet werden — bitte Verbindung prüfen.");
+          return;
+        }
+      }
+      setAktiveBuchung(prev => ({ ...prev, ...update }));
+      setStatus("pause");
+    } finally {
+      setAktionLaeuft(false);
     }
-    setAktiveBuchung(prev => ({ ...prev, ...update }));
-    setStatus("pause");
   }
 
   async function pauseEnde() {
-    if (!aktiveBuchung) return;
-    const update = { pause_ende_at: new Date().toISOString(), status: "aktiv" };
-    if (session?.access_token) {
-      await sbFetch(`zeitbuchungen?id=eq.${aktiveBuchung.id}`, {
-        method: "PATCH",
-        headers: { "Authorization": `Bearer ${session.access_token}` },
-        body: JSON.stringify(update),
-      });
+    if (!aktiveBuchung || aktionLaeuft) return;
+    setAktionLaeuft(true);
+    setAktionsFehler("");
+    try {
+      const update = { pause_ende_at: new Date().toISOString(), status: "aktiv" };
+      if (session?.access_token) {
+        const data = await sbFetch(`zeitbuchungen?id=eq.${aktiveBuchung.id}`, {
+          method: "PATCH",
+          headers: { "Authorization": `Bearer ${session.access_token}` },
+          body: JSON.stringify(update),
+        });
+        if (!data?.length) {
+          setAktionsFehler("Pause konnte nicht beendet werden — bitte Verbindung prüfen.");
+          return;
+        }
+      }
+      setAktiveBuchung(prev => ({ ...prev, ...update }));
+      setStatus("ein");
+    } finally {
+      setAktionLaeuft(false);
     }
-    setAktiveBuchung(prev => ({ ...prev, ...update }));
-    setStatus("ein");
   }
 
   async function ausstempeln() {
-    const pos = await holeGPS();
-    if (!aktiveBuchung) return;
+    if (aktionLaeuft || !aktiveBuchung) return;
+    setAktionLaeuft(true);
+    setAktionsFehler("");
+    try {
+      const pos = await holeGPS();
 
-    const ein  = new Date(aktiveBuchung.eingestempelt_at);
-    const aus  = new Date();
-    const pauseMin = aktiveBuchung.pause_start_at && aktiveBuchung.pause_ende_at
-      ? Math.round((new Date(aktiveBuchung.pause_ende_at) - new Date(aktiveBuchung.pause_start_at)) / 60000)
-      : 0;
-    const nettoMin = Math.round((aus - ein) / 60000) - pauseMin;
+      const ein  = new Date(aktiveBuchung.eingestempelt_at);
+      const aus  = new Date();
+      const pauseMin = aktiveBuchung.pause_start_at && aktiveBuchung.pause_ende_at
+        ? Math.round((new Date(aktiveBuchung.pause_ende_at) - new Date(aktiveBuchung.pause_start_at)) / 60000)
+        : 0;
+      const nettoMin = Math.round((aus - ein) / 60000) - pauseMin;
 
-    const update = {
-      ausgestempelt_at: aus.toISOString(),
-      aus_lat:          pos?.lat,
-      aus_lng:          pos?.lng,
-      aus_adresse:      pos?.adresse || null,
-      netto_minuten:    nettoMin,
-      status:           "abgeschlossen",
-    };
+      const update = {
+        ausgestempelt_at: aus.toISOString(),
+        aus_lat:          pos?.lat,
+        aus_lng:          pos?.lng,
+        aus_adresse:      pos?.adresse || null,
+        netto_minuten:    nettoMin,
+        status:           "abgeschlossen",
+      };
 
-    if (session?.access_token) {
-      await sbFetch(`zeitbuchungen?id=eq.${aktiveBuchung.id}`, {
-        method: "PATCH",
-        headers: { "Authorization": `Bearer ${session.access_token}` },
-        body: JSON.stringify(update),
-      });
+      if (session?.access_token) {
+        const data = await sbFetch(`zeitbuchungen?id=eq.${aktiveBuchung.id}`, {
+          method: "PATCH",
+          headers: { "Authorization": `Bearer ${session.access_token}` },
+          body: JSON.stringify(update),
+        });
+        // Ohne Bestätigung vom Server NICHT auf "ausgestempelt" wechseln —
+        // sonst bleibt die Buchung serverseitig aktiv, während die UI dem
+        // Nutzer zeigt, die Arbeitszeit sei bereits abgeschlossen erfasst.
+        if (!data?.length) {
+          setAktionsFehler("Ausstempeln fehlgeschlagen — bitte Verbindung prüfen und erneut versuchen.");
+          return;
+        }
+      }
+      setAktiveBuchung(null);
+      setStatus("aus");
+      await ladeBuchungen();
+    } finally {
+      setAktionLaeuft(false);
     }
-    setAktiveBuchung(null);
-    setStatus("aus");
-    await ladeBuchungen();
   }
 
   // Laufzeit berechnen
@@ -216,6 +295,12 @@ export function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
         )}
         {gpsError && (
           <div style={{ marginTop:8, fontSize:11, color:"var(--red)" }}>{gpsError}</div>
+        )}
+        {geoWarnung && (
+          <div style={{ marginTop:8, fontSize:11, color:"var(--orange)" }}>{geoWarnung}</div>
+        )}
+        {aktionsFehler && (
+          <div style={{ marginTop:8, fontSize:11, color:"var(--red)" }}>⚠️ {aktionsFehler}</div>
         )}
       </div>
 
@@ -305,32 +390,34 @@ export function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
       {/* Buttons */}
       <div style={{ display:"flex", gap:10, marginBottom:20 }}>
         {status === "aus" && (
-          <button onClick={einstempeln} disabled={gpsLaden || !aktivProjekt}
+          <button onClick={einstempeln} disabled={gpsLaden || aktionLaeuft || !aktivProjekt}
             style={{ flex:1, background:"var(--green)", color:"#fff",
               border:"none", borderRadius:14, padding:18, fontWeight:900,
               fontSize:18, cursor:"pointer", fontFamily:"inherit",
-              opacity: gpsLaden || !aktivProjekt ? 0.6 : 1 }}>
-            {gpsLaden ? "📍 GPS…" : "▶ Einstempeln"}
+              opacity: gpsLaden || aktionLaeuft || !aktivProjekt ? 0.6 : 1 }}>
+            {gpsLaden || aktionLaeuft ? "📍 GPS…" : "▶ Einstempeln"}
           </button>
         )}
         {status === "ein" && (
           <>
-            <button onClick={pauseStart}
+            <button onClick={pauseStart} disabled={aktionLaeuft}
               style={{ flex:1, background:"var(--ybg)", color:"var(--ydark)",
                 border:"2px solid var(--yellow)", borderRadius:14, padding:16,
-                fontWeight:700, fontSize:15, cursor:"pointer", fontFamily:"inherit" }}>
+                fontWeight:700, fontSize:15, cursor:"pointer", fontFamily:"inherit",
+                opacity: aktionLaeuft ? 0.6 : 1 }}>
               ⏸ Pause
             </button>
-            <button onClick={ausstempeln} disabled={gpsLaden}
+            <button onClick={ausstempeln} disabled={gpsLaden || aktionLaeuft}
               style={{ flex:1, background:"var(--red)", color:"#fff",
                 border:"none", borderRadius:14, padding:16, fontWeight:900,
-                fontSize:15, cursor:"pointer", fontFamily:"inherit" }}>
-              {gpsLaden ? "📍…" : "⏹ Ausstempeln"}
+                fontSize:15, cursor:"pointer", fontFamily:"inherit",
+                opacity: gpsLaden || aktionLaeuft ? 0.6 : 1 }}>
+              {gpsLaden || aktionLaeuft ? "📍…" : "⏹ Ausstempeln"}
             </button>
           </>
         )}
         {status === "pause" && (
-          <button onClick={pauseEnde}
+          <button onClick={pauseEnde} disabled={aktionLaeuft}
             style={{ flex:1, background:"var(--yellow)", color:"#1a1200",
               border:"none", borderRadius:14, padding:18, fontWeight:900,
               fontSize:18, cursor:"pointer", fontFamily:"inherit" }}>

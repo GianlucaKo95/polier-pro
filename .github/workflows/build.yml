@@ -87,6 +87,8 @@ jobs:
       # Code. Einmalig einrichten unter: Repo → Settings → Secrets and
       # variables → Actions → New repository secret:
       #   VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
+      #   VITE_PUSH_VAPID_PUBLIC (optional, für echte Server-Push-
+      #   Erinnerungen statt nur lokaler — siehe supabase-push-notifications.sql)
       - name: Build & Push (no cache)
         uses: docker/build-push-action@v6
         with:
@@ -100,3 +102,4 @@ jobs:
           build-args: |
             VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}
             VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}
+            VITE_PUSH_VAPID_PUBLIC=${{ secrets.VITE_PUSH_VAPID_PUBLIC }}
