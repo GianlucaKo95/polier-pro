@@ -188,6 +188,7 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
         background:"var(--bg)", zIndex:700, overflowY:"auto",
         WebkitOverflowScrolling:"touch" }}>
         <div style={{ background:"var(--surface)", padding:"14px 18px",
+          paddingTop:"calc(14px + env(safe-area-inset-top))",
           borderBottom:"3px solid var(--yellow)", position:"sticky", top:0,
           display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:16,
@@ -228,6 +229,7 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
         background:"var(--bg)", zIndex:700, overflowY:"auto",
         WebkitOverflowScrolling:"touch" }}>
         <div style={{ background:"var(--surface)", padding:"14px 18px",
+          paddingTop:"calc(14px + env(safe-area-inset-top))",
           borderBottom:"3px solid var(--green)", position:"sticky", top:0,
           display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div style={{ color:"var(--green)", fontWeight:700, fontSize:16,
@@ -269,6 +271,7 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
     <div>
       {/* Header */}
       <div style={{ background:"var(--surface)", padding:"14px 16px",
+        paddingTop:"calc(14px + env(safe-area-inset-top))",
         borderBottom:"1px solid var(--border)", position:"sticky", top:0,
         zIndex:10, display:"flex", justifyContent:"space-between",
         alignItems:"center" }}>

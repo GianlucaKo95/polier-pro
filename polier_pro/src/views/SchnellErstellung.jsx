@@ -65,6 +65,7 @@ export function SchnellErstellung({ onSave, onClose }) {
       WebkitOverflowScrolling:"touch" }}>
 
       <div style={{ background:"var(--ink)", color:"#fff", padding:"16px 18px",
+        paddingTop:"calc(16px + env(safe-area-inset-top))",
         position:"sticky", top:0,
         zIndex:10, display:"flex", justifyContent:"space-between",
         alignItems:"center" }}>

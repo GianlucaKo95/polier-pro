@@ -820,6 +820,7 @@ export default function PolierApp() {
 
       {/* ── TOP BAR — dunkler Anker ── */}
       <div style={{ background:"var(--ink)", padding:"13px 16px 0",
+        paddingTop:"calc(13px + env(safe-area-inset-top))",
         position:"sticky", top:0, zIndex:60 }}>
         <div style={{ display:"flex", justifyContent:"space-between",
           alignItems:"center", marginBottom:10 }}>

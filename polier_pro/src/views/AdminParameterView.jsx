@@ -135,7 +135,8 @@ export function AdminParameterView({ einheitspreise, setEinheitspreise, lvVorlag
       {(neuPreis || editPreis) && (
         <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"var(--bg)", zIndex:600, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
           <div style={{ background:"var(--surface)", borderRadius:"20px 20px 0 0",
-            padding:22, width:"100%", maxWidth:480 }}>
+            padding:22, paddingTop:"calc(22px + env(safe-area-inset-top))",
+            width:"100%", maxWidth:480 }}>
             <PreisFormular
               initial={editPreis || neuPreis}
               onSave={preisSpeichern}
@@ -149,7 +150,8 @@ export function AdminParameterView({ einheitspreise, setEinheitspreise, lvVorlag
       {neuVorlage && (
         <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"var(--bg)", zIndex:600, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
           <div style={{ background:"var(--surface)", borderRadius:"20px 20px 0 0",
-            padding:22, width:"100%", maxWidth:480, maxHeight:"80vh",
+            padding:22, paddingTop:"calc(22px + env(safe-area-inset-top))",
+            width:"100%", maxWidth:480, maxHeight:"80vh",
             overflowY:"auto" }}>
             <VorlageFormular
               initial={neuVorlage}

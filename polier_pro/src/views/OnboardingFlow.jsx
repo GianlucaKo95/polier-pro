@@ -58,6 +58,7 @@ export function OnboardingFlow({ onComplete }) {
 
       {/* Header */}
       <div style={{ background:"var(--surface)", padding:"16px 20px 14px",
+        paddingTop:"calc(16px + env(safe-area-inset-top))",
         borderBottom:"3px solid var(--yellow)",
         boxShadow:"0 2px 8px rgba(0,0,0,0.08)", flexShrink:0 }}>
         {/* Logo + Schritt */}

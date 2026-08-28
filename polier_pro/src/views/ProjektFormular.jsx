@@ -37,6 +37,7 @@ export function ProjektFormular({ initial, onSave, onClose, subs = [], speicherF
 
       {/* Header */}
       <div style={{ background:"var(--surface)", padding:"14px 18px",
+        paddingTop:"calc(14px + env(safe-area-inset-top))",
         borderBottom:"3px solid var(--yellow)", position:"sticky", top:0,
         zIndex:10, display:"flex", justifyContent:"space-between",
         alignItems:"center" }}>

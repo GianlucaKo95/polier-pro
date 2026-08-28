@@ -245,7 +245,8 @@ export function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eig
       {detail && (
         <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"var(--bg)", zIndex:300,
           overflowY:"auto" }}>
-          <div style={{ background: "var(--surface)", minHeight:"100dvh", maxWidth:520, margin:"0 auto", padding:20 }}>
+          <div style={{ background: "var(--surface)", minHeight:"100dvh", maxWidth:520, margin:"0 auto", padding:20,
+            paddingTop:"calc(20px + env(safe-area-inset-top))" }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
               <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:16 }}>📋 {detail.datum}</div>
               <div style={{ display:"flex", gap:8 }}>
@@ -316,6 +317,7 @@ export function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eig
       {open && (
         <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"var(--bg)", zIndex:200, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
           <div style={{ background: "var(--surface)", borderRadius:"16px 16px 0 0", padding:22,
+            paddingTop:"calc(22px + env(safe-area-inset-top))",
             width:"100%", maxWidth:520, maxHeight:"92vh", overflowY:"auto" }}>
 
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
