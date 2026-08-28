@@ -20,7 +20,9 @@ export function LoginScreen({ auth, onDemoLogin, onRegistrieren }) {
     return (
       <div style={{ background:"var(--bg)", minHeight:"100dvh", display:"flex",
         flexDirection:"column", alignItems:"center", justifyContent:"center",
-        padding:"17px 20px" }}>
+        padding:"17px 20px",
+        paddingTop:"calc(17px + env(safe-area-inset-top))",
+        paddingBottom:"calc(17px + env(safe-area-inset-bottom))" }}>
         <div style={{ textAlign:"center", marginBottom:23 }}>
           <div style={{ fontWeight:900, fontSize:24, letterSpacing:-1, color:"var(--text)" }}>
             <span style={{ color:"var(--yellow)" }}>★</span> POLARIS
@@ -86,6 +88,7 @@ export function LoginScreen({ auth, onDemoLogin, onRegistrieren }) {
   return (
     <div style={{ background:"var(--bg)", minHeight:"100dvh", display:"flex",
       flexDirection:"column", alignItems:"center", justifyContent:"center",
+      paddingTop:"env(safe-area-inset-top)", paddingBottom:"env(safe-area-inset-bottom)",
       padding:"17px 20px" }}>
 
       {/* Logo */}

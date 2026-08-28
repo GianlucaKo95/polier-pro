@@ -100,7 +100,8 @@ export function EinladungScreen({ token, onErfolg }) {
   if (laden && schritt === 0) return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"center",
       minHeight:"100dvh", background:"var(--bg)", color:"var(--muted)",
-      fontFamily:"inherit" }}>
+      fontFamily:"inherit",
+      paddingTop:"env(safe-area-inset-top)", paddingBottom:"env(safe-area-inset-bottom)" }}>
       Einladung wird geprüft…
     </div>
   );
@@ -108,7 +109,9 @@ export function EinladungScreen({ token, onErfolg }) {
   return (
     <div style={{ background:"var(--bg)", minHeight:"100dvh",
       display:"flex", flexDirection:"column", alignItems:"center",
-      justifyContent:"center", padding:"17px 20px" }}>
+      justifyContent:"center", padding:"17px 20px",
+      paddingTop:"calc(17px + env(safe-area-inset-top))",
+      paddingBottom:"calc(17px + env(safe-area-inset-bottom))" }}>
 
       <div style={{ fontWeight:900, fontSize:24, letterSpacing:-1,
         color:"var(--text)", marginBottom:17, textAlign:"center" }}>

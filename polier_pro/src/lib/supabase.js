@@ -236,9 +236,19 @@ export async function sbSignOut(token) {
   await supabase.auth.signOut();
 }
 
-export async function sbGetProfile(token) {
+export async function sbGetProfile(token, userId) {
   const client = sbClientMitToken({ access_token: token });
-  const { data, error } = await client.from("profile").select("*").limit(1);
+  // Explizit nach der eigenen id filtern statt sich allein auf RLS + limit(1)
+  // zu verlassen: die "profile_eigenes"-Policy lässt Administrator/Bauleiter/
+  // Polier-Rollen ALLE Profile sehen (nicht nur das eigene), damit sie in der
+  // Nutzerverwaltung das Team einsehen können. Ohne dieses eq() lieferte
+  // limit(1) ohne order() irgendeine für die Rolle sichtbare Zeile — in der
+  // Praxis meist das zuerst angelegte Profil (den ursprünglichen Admin) —
+  // wodurch neu eingeladene Bauleiter/Polier/Administrator-Nutzer nach dem
+  // Login fälschlich im Konto des ursprünglichen Admins landeten.
+  let query = client.from("profile").select("*");
+  query = userId ? query.eq("id", userId) : query.limit(1);
+  const { data, error } = await query;
   if (error) return null;
   return data?.[0] || null;
 }

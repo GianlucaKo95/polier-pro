@@ -82,7 +82,9 @@ export function RegistrierungScreen({ auth, onZurueck }) {
   return (
     <div style={{ background:"var(--bg)", minHeight:"100dvh",
       display:"flex", flexDirection:"column", alignItems:"center",
-      justifyContent:"center", padding:"17px 20px" }}>
+      justifyContent:"center", padding:"17px 20px",
+      paddingTop:"calc(17px + env(safe-area-inset-top))",
+      paddingBottom:"calc(17px + env(safe-area-inset-bottom))" }}>
 
       {/* Logo */}
       <div style={{ textAlign:"center", marginBottom:23 }}>

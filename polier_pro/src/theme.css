@@ -53,6 +53,9 @@
   --obg:     #2a1200;
 }
 * { box-sizing: border-box; }
+html, body {
+  height: 100%;
+}
 body {
   background: var(--bg) !important;
   color: var(--text) !important;

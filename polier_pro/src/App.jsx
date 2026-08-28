@@ -274,7 +274,14 @@ export default function PolierApp() {
   }
 
   // ── Einladungs-Screen ──
-  if (einladungsToken && !aktiveProfil) {
+  // Läuft IMMER wenn ein Einladungs-Token in der URL steht — auch wenn im
+  // selben Browser noch eine andere Sitzung (z.B. der Admin, der die
+  // Einladung erstellt hat) aktiv ist. Vorher wurde der Screen mit
+  // "&& !aktiveProfil" übersprungen, sobald jemand eingeloggt war: der
+  // Einladungslink öffnete dann einfach die normale App im Kontext des
+  // bereits eingeloggten Nutzers, statt das Registrierungsformular zu
+  // zeigen — der neue Nutzer wurde nie angelegt.
+  if (einladungsToken) {
     return <EinladungScreen
       token={einladungsToken}
       onErfolg={() => {
@@ -555,7 +562,8 @@ export default function PolierApp() {
         <div style={{ background:"var(--bg)", minHeight:"100dvh", color:"var(--text)" }}>
 
           {/* Header — dunkler Anker */}
-          <div style={{ background:"var(--ink)", color:"#fff", padding:"20px 18px 0" }}>
+          <div style={{ background:"var(--ink)", color:"#fff", padding:"20px 18px 0",
+            paddingTop:"calc(20px + env(safe-area-inset-top))" }}>
             <div style={{ display:"flex", justifyContent:"space-between",
               alignItems:"flex-start" }}>
               <div>
@@ -824,7 +832,13 @@ export default function PolierApp() {
     // WebKit nachweislich nicht zuverlässig am Rand kleben. Mit dieser Struktur
     // bleiben Top-Bar und Bottom-Nav als reguläre Flex-Geschwister strukturell
     // immer sichtbar, unabhängig vom Scroll-Verhalten.
-    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
+    // height:"100dvh" statt nur bottom:0: in iOS-Standalone-PWAs berechnet
+    // WebKit die Höhe von position:fixed-Elementen mit bottom:0 teils gegen
+    // die "große" (statische) statt die aktuelle dynamische Viewport-Höhe —
+    // das lässt unten eine leere graue Lücke zum echten Bildschirmrand.
+    // 100dvh referenziert explizit die dynamische Viewport-Höhe.
+    <div style={{ position:"fixed", top:0, left:0, right:0,
+      height:"100dvh",
       display:"flex", flexDirection:"column", overflow:"hidden",
       background:"var(--bg)", color:"var(--text)" }}>
 

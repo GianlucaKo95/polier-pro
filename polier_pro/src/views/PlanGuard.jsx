@@ -13,7 +13,9 @@ export function PlanGuard({ firma, children, ressource }) {
   return (
     <div style={{ background:"var(--bg)", minHeight:"100dvh",
       display:"flex", flexDirection:"column", alignItems:"center",
-      justifyContent:"center", padding:17 }}>
+      justifyContent:"center", padding:17,
+      paddingTop:"calc(17px + env(safe-area-inset-top))",
+      paddingBottom:"calc(17px + env(safe-area-inset-bottom))" }}>
       <div style={{ display:"flex", justifyContent:"center", marginBottom:12, color:"var(--muted)" }}><Lock size={40} /></div>
       <div style={{ fontWeight:800, fontSize:22, color:"var(--text)",
         marginBottom:6, textAlign:"center" }}>
