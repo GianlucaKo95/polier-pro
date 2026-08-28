@@ -33,16 +33,11 @@ export function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
   const kannSammelStempeln = ROLLEN[profil?.rolle]?.label === "Vorarbeiter" ||
     profil?.rolle === "vorarbeiter" || profil?.rolle === "polier" || profil?.rolle === "administrator";
 
-  if (zeigeSammel && eigeneKolonne) {
-    return (
-      <KolonnenSammelstempel
-        kolonne={eigeneKolonne}
-        projekte={projekte}
-        session={session}
-        onClose={() => setZeigeSammel(false)}
-      />
-    );
-  }
+  // Alle Hooks müssen vor jedem bedingten return stehen (Rules of Hooks) —
+  // vorher standen diese beiden useEffect() nach dem Sammelstempel-
+  // Frühausstieg, sodass beim Öffnen des Sammelstempelns zwischen zwei
+  // Renderdurchläufen eine unterschiedliche Anzahl Hooks aufgerufen wurde
+  // und React abstürzte.
 
   // Uhr aktualisieren
   useEffect(() => {
@@ -54,6 +49,17 @@ export function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
   useEffect(() => {
     ladeBuchungen();
   }, []);
+
+  if (zeigeSammel && eigeneKolonne) {
+    return (
+      <KolonnenSammelstempel
+        kolonne={eigeneKolonne}
+        projekte={projekte}
+        session={session}
+        onClose={() => setZeigeSammel(false)}
+      />
+    );
+  }
 
   async function ladeBuchungen() {
     if (!session?.access_token) return;

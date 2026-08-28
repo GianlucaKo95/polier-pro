@@ -7,9 +7,12 @@ import { Label, inputStyle } from "../components/Label.jsx";
 export function SchnellErstellung({ onSave, onClose }) {
   const [modus, setModus] = useState("vorlage"); // vorlage | einzeln | liste | plan
 
-  if (modus === "plan") {
-    return <PlanErkennung onSave={onSave} onClose={onClose} onZurueck={() => setModus("vorlage")} />;
-  }
+  // Alle Hooks müssen VOR jedem bedingten return stehen (Rules of Hooks) —
+  // vorher standen sie nach dem "plan"-Frühausstieg, sodass beim Wechsel in
+  // den DXF-Modus zwischen zwei Renderdurchläufen eine unterschiedliche
+  // Anzahl Hooks aufgerufen wurde. React wirft das als Fehler, der von der
+  // Error-Boundary aufgefangen wird — sichtbar als derselbe
+  // "Etwas ist schiefgelaufen"-Absturz wie beim Zeitplan-Bug.
 
   // ── Einzeln: minimales Formular ──
   const [titel,     setTitel]     = useState("");
@@ -19,6 +22,10 @@ export function SchnellErstellung({ onSave, onClose }) {
 
   // ── Liste: mehrzeiliger Text ──
   const [listeText, setListeText] = useState("");
+
+  if (modus === "plan") {
+    return <PlanErkennung onSave={onSave} onClose={onClose} onZurueck={() => setModus("vorlage")} />;
+  }
 
   function ausVorlage(v) {
     onSave([{
