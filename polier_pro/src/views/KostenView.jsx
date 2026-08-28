@@ -28,12 +28,12 @@ export function KostenView({ projekt, aufgaben, kolonnen, zeitbuchungen }) {
   return (
     <div>
       {/* Übersicht */}
-      <div style={{ background:"var(--surface)", borderRadius:16, padding:18,
-        marginBottom:16, border:"1.5px solid var(--border)" }}>
+      <div style={{ background:"var(--surface)", borderRadius:16, padding:13,
+        marginBottom:12, border:"1.5px solid var(--border)" }}>
         <div style={{ color:"var(--text)", fontWeight:700, fontSize:15,
-          marginBottom:14, display:"flex", alignItems:"center", gap:7 }}><Euro size={16} /> Kostenübersicht</div>
+          marginBottom:10, display:"flex", alignItems:"center", gap:7 }}><Euro size={16} /> Kostenübersicht</div>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10,
-          marginBottom:14 }}>
+          marginBottom:10 }}>
           {[
             ["Budget gesamt",  `${budgetGesamt.toLocaleString("de-DE")} €`, "var(--text)"],
             ["Ist bisher",     `${istGesamt.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,".").replace(".",",")} €`, auslastung>80?"var(--red)":"var(--green)"],
@@ -41,7 +41,7 @@ export function KostenView({ projekt, aufgaben, kolonnen, zeitbuchungen }) {
             ["Stunden",        `${stundenGesamt.toFixed(1)} h`, "var(--blue)"],
           ].map(([l,v,c]) => (
             <div key={l} style={{ background:"var(--surface2)", borderRadius:12,
-              padding:"12px 14px", border:"1px solid var(--border)" }}>
+              padding:"9px 14px", border:"1px solid var(--border)" }}>
               <div style={{ color:"var(--muted)", fontSize:10, fontWeight:700,
                 textTransform:"uppercase", marginBottom:4 }}>{l}</div>
               <div style={{ color:c, fontWeight:900, fontSize:18 }}>{v}</div>
@@ -71,8 +71,8 @@ export function KostenView({ projekt, aufgaben, kolonnen, zeitbuchungen }) {
       </div>
 
       {/* Stundensatz */}
-      <div style={{ background:"var(--surface)", borderRadius:12, padding:14,
-        marginBottom:14, border:"1.5px solid var(--border)" }}>
+      <div style={{ background:"var(--surface)", borderRadius:12, padding:10,
+        marginBottom:10, border:"1.5px solid var(--border)" }}>
         <Label>Stundensatz (€/h)</Label>
         <input type="number" value={stundensatz}
           onChange={e=>setStundensatz(Number(e.target.value))}
@@ -84,10 +84,10 @@ export function KostenView({ projekt, aufgaben, kolonnen, zeitbuchungen }) {
 
       {/* Budget-Positionen */}
       <div style={{ color:"var(--text)", fontWeight:700, fontSize:14,
-        marginBottom:10 }}>Budget-Positionen</div>
+        marginBottom:7 }}>Budget-Positionen</div>
       {budgetPos.map((pos,i) => (
         <div key={pos.id} style={{ background:"var(--surface)", borderRadius:12,
-          padding:"14px 16px", marginBottom:8,
+          padding:"10px 16px", marginBottom:6,
           border:"1.5px solid var(--border)" }}>
           <div style={{ display:"flex", justifyContent:"space-between",
             alignItems:"center", marginBottom:6 }}>

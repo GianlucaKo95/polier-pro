@@ -72,12 +72,12 @@ export function StundenExportView({ profil, session, projekte, darfAlleSehen = f
 
   return (
     <div>
-      <div style={{ color:"var(--text)", fontWeight:800, fontSize:16, marginBottom:14,
+      <div style={{ color:"var(--text)", fontWeight:800, fontSize:16, marginBottom:10,
         display:"flex", alignItems:"center", gap:8 }}>
         <ChartColumn size={17} /> Stunden-Export
       </div>
 
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:10 }}>
         <div>
           <Label>Von</Label>
           <input type="date" value={vonDatum} onChange={e=>setVonDatum(e.target.value)}
@@ -100,8 +100,8 @@ export function StundenExportView({ profil, session, projekte, darfAlleSehen = f
 
       {geladen && (
         <>
-          <div style={{ background:"var(--surface)", borderRadius:14, padding:16,
-            marginBottom:14, border:"1.5px solid var(--border)" }}>
+          <div style={{ background:"var(--surface)", borderRadius:14, padding:12,
+            marginBottom:10, border:"1.5px solid var(--border)" }}>
             <div style={{ display:"flex", justifyContent:"space-between",
               alignItems:"center" }}>
               <div>
@@ -128,7 +128,7 @@ export function StundenExportView({ profil, session, projekte, darfAlleSehen = f
           )}
 
           {buchungen.length === 0 && (
-            <div style={{ textAlign:"center", padding:"32px 20px", color:"var(--muted)" }}>
+            <div style={{ textAlign:"center", padding:"23px 20px", color:"var(--muted)" }}>
               Keine Buchungen im gewählten Zeitraum.
             </div>
           )}
@@ -138,7 +138,7 @@ export function StundenExportView({ profil, session, projekte, darfAlleSehen = f
             const name = b.profile ? `${b.profile.vorname||""} ${b.profile.nachname||""}`.trim() : "";
             return (
               <div key={b.id} style={{ background:"var(--surface)", borderRadius:10,
-                padding:"10px 12px", marginBottom:6, border:"1px solid var(--border)" }}>
+                padding:"7px 12px", marginBottom:6, border:"1px solid var(--border)" }}>
                 <div style={{ display:"flex", justifyContent:"space-between" }}>
                   <div>
                     <div style={{ color:"var(--text)", fontSize:12, fontWeight:600 }}>

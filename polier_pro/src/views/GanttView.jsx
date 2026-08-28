@@ -31,11 +31,11 @@ export function GanttView({ felder }) {
 
   return (
     <div>
-      <div style={{ color: "var(--text)", fontWeight:700, marginBottom:12,
+      <div style={{ color: "var(--text)", fontWeight:700, marginBottom:9,
         display:"flex", alignItems:"center", gap:7 }}><Calendar size={16} /> Betonfeld-Terminplan</div>
 
       {/* Legend */}
-      <div style={{ display:"flex", gap:12, marginBottom:12, flexWrap:"wrap" }}>
+      <div style={{ display:"flex", gap:12, marginBottom:9, flexWrap:"wrap" }}>
         {Object.entries(STATUS_LABEL).map(([k,v]) => (
           <div key={k} style={{ display:"flex", alignItems:"center", gap:5, fontSize:11 }}>
             <div style={{ width:10, height:10, borderRadius:2, background: STATUS_COLOR[k] }} />
@@ -51,7 +51,7 @@ export function GanttView({ felder }) {
 
             {/* Header row */}
             <div style={{ display:"flex", borderBottom:`2px solid ${'var(--border)'}`, background: "var(--surface2)" }}>
-              <div style={{ width:130, minWidth:130, padding:"8px 10px", color: "var(--muted)", fontSize:11, borderRight:`1px solid ${'var(--border)'}` }}>Feld</div>
+              <div style={{ width:130, minWidth:130, padding:"6px 10px", color: "var(--muted)", fontSize:11, borderRight:`1px solid ${'var(--border)'}` }}>Feld</div>
               {days.map((d,i) => {
                 const isToday = d.toDateString() === heute.toDateString();
                 const isMon = d.getDay() === 1;
@@ -130,8 +130,8 @@ export function GanttView({ felder }) {
 
       {/* Verzögerungen */}
       {felder.filter(f => f.status !== "done" && new Date(f.geplant) < heute).length > 0 && (
-        <div style={{ background:"#2E1A1A", borderRadius:10, padding:14, marginTop:12 }}>
-          <div style={{ color: "var(--red)", fontWeight:700, marginBottom:8,
+        <div style={{ background:"#2E1A1A", borderRadius:10, padding:10, marginTop:12 }}>
+          <div style={{ color: "var(--red)", fontWeight:700, marginBottom:6,
             display:"flex", alignItems:"center", gap:6 }}><TriangleAlert size={14} /> Verzögerungen</div>
           {felder.filter(f => f.status !== "done" && new Date(f.geplant) < heute).map(f => (
             <div key={f.id} style={{ color:"#FF9999", fontSize:13, marginBottom:4 }}>

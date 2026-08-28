@@ -8,7 +8,7 @@ export function PWABanner({ pwa }) {
 
       {/* Offline-Banner */}
       {pwa.offline && (
-        <div style={{ background:"#2E1A1A", borderRadius:12, padding:"10px 14px",
+        <div style={{ background:"#2E1A1A", borderRadius:12, padding:"7px 14px",
           display:"flex", alignItems:"center", gap:10,
           border:`1px solid ${'var(--red)'}`, boxShadow:"0 4px 20px rgba(0,0,0,0.5)" }}>
           <span style={{ color:"var(--red)", display:"flex", flexShrink:0 }}><WifiOff size={18} /></span>
@@ -21,7 +21,7 @@ export function PWABanner({ pwa }) {
 
       {/* Update-Banner */}
       {pwa.updateVerfügbar && (
-        <div style={{ background:"#1A2A1A", borderRadius:12, padding:"10px 14px",
+        <div style={{ background:"#1A2A1A", borderRadius:12, padding:"7px 14px",
           display:"flex", alignItems:"center", gap:10,
           border:`1px solid ${'var(--green)'}`, boxShadow:"0 4px 20px rgba(0,0,0,0.5)" }}>
           <span style={{ color:"var(--green)", display:"flex", flexShrink:0 }}><RefreshCw size={18} /></span>
@@ -39,7 +39,7 @@ export function PWABanner({ pwa }) {
 
       {/* Install-Banner */}
       {pwa.installierbar && !pwa.installiert && (
-        <div style={{ background: "var(--surface)", borderRadius:12, padding:"12px 14px",
+        <div style={{ background: "var(--surface)", borderRadius:12, padding:"9px 14px",
           display:"flex", alignItems:"center", gap:10,
           border:`1px solid ${'var(--yellow)'}`, boxShadow:"0 4px 20px rgba(0,0,0,0.5)" }}>
           <span style={{ color:"var(--yellow)", display:"flex", flexShrink:0 }}><Download size={20} /></span>

@@ -63,7 +63,7 @@ export function OnboardingFlow({ onComplete }) {
         boxShadow:"0 2px 8px rgba(0,0,0,0.08)", flexShrink:0 }}>
         {/* Logo + Schritt */}
         <div style={{ display:"flex", justifyContent:"space-between",
-          alignItems:"center", marginBottom:14 }}>
+          alignItems:"center", marginBottom:10 }}>
           <div>
             <div style={{ fontWeight:900, fontSize:20, letterSpacing:-1,
               color:"var(--text)", lineHeight:1 }}>
@@ -81,7 +81,7 @@ export function OnboardingFlow({ onComplete }) {
 
         {/* Fortschrittsbalken */}
         <div style={{ background:"var(--surface2)", borderRadius:6, height:6,
-          overflow:"hidden", marginBottom:10,
+          overflow:"hidden", marginBottom:7,
           border:"1px solid var(--border)" }}>
           <div style={{ height:"100%", background:"var(--yellow)", borderRadius:6,
             width:`${pct}%`, transition:"width 0.4s ease" }} />
@@ -118,13 +118,13 @@ export function OnboardingFlow({ onComplete }) {
         {/* ── Schritt 0: Willkommen ── */}
         {schritt === 0 && (
           <div style={{ textAlign:"center", paddingTop:24 }}>
-            <div style={{ fontSize:80, marginBottom:8, lineHeight:1 }}>★</div>
+            <div style={{ fontSize:80, marginBottom:6, lineHeight:1 }}>★</div>
             <div style={{ fontWeight:900, fontSize:32, letterSpacing:-2,
               color:"var(--text)", marginBottom:4 }}>
               <span style={{ color:"var(--yellow)" }}>★</span> POLARIS
             </div>
             <div style={{ fontSize:11, color:"var(--muted)", fontWeight:600,
-              letterSpacing:3, textTransform:"uppercase", marginBottom:24 }}>
+              letterSpacing:3, textTransform:"uppercase", marginBottom:17 }}>
               Baustellenmanagement
             </div>
             <div style={{ color:"var(--text2)", fontSize:15, lineHeight:1.7,
@@ -143,7 +143,7 @@ export function OnboardingFlow({ onComplete }) {
               ].map(([Icon, text]) => (
                 <div key={text} style={{ display:"flex", alignItems:"center",
                   gap:14, background:"var(--surface)", borderRadius:14,
-                  padding:"14px 18px", border:"1.5px solid var(--border)",
+                  padding:"10px 18px", border:"1.5px solid var(--border)",
                   textAlign:"left" }}>
                   <span style={{ flexShrink:0, color:"var(--yellow)", display:"flex" }}><Icon size={22} /></span>
                   <span style={{ color:"var(--text2)", fontSize:14,
@@ -159,13 +159,13 @@ export function OnboardingFlow({ onComplete }) {
           <div>
             <div style={{ fontWeight:800, fontSize:22, color:"var(--text)",
               marginBottom:4, display:"flex", alignItems:"center", gap:9 }}><Building2 size={20} /> Dein Unternehmen</div>
-            <div style={{ color:"var(--muted)", fontSize:13, marginBottom:24,
+            <div style={{ color:"var(--muted)", fontSize:13, marginBottom:17,
               lineHeight:1.5 }}>
               Diese Daten erscheinen auf PDFs und im Bautagebuch.
             </div>
 
             {/* Logo */}
-            <div style={{ marginBottom:24, textAlign:"center" }}>
+            <div style={{ marginBottom:17, textAlign:"center" }}>
               <input ref={logoRef} type="file" accept="image/*"
                 style={{ display:"none" }} onChange={handleLogoWahl} />
               <div onClick={() => logoRef.current.click()}
@@ -195,7 +195,7 @@ export function OnboardingFlow({ onComplete }) {
               ["E-Mail",         "email",              "info@firma.de"],
               ["Steuernummer",   "steuernummer",       "123/456/78900"],
             ].map(([label, key, ph]) => (
-              <div key={key} style={{ marginBottom:14 }}>
+              <div key={key} style={{ marginBottom:10 }}>
                 <Label>{label}</Label>
                 <input value={firma[key]||""}
                   onChange={e => setFirma(p=>({...p,[key]:e.target.value}))}
@@ -210,7 +210,7 @@ export function OnboardingFlow({ onComplete }) {
           <div>
             <div style={{ fontWeight:800, fontSize:22, color:"var(--text)",
               marginBottom:4, display:"flex", alignItems:"center", gap:9 }}><Wrench size={20} /> Eure Gewerke</div>
-            <div style={{ color:"var(--muted)", fontSize:13, marginBottom:20,
+            <div style={{ color:"var(--muted)", fontSize:13, marginBottom:14,
               lineHeight:1.5 }}>
               Welche Gewerke führt dein Unternehmen aus?
               Das bestimmt die verfügbaren Felder und Checklisten.
@@ -222,7 +222,7 @@ export function OnboardingFlow({ onComplete }) {
                   <div key={g.key} onClick={() => toggleGewerk(g.key)}
                     style={{ background: aktiv ? "var(--ybg)" : "var(--surface)",
                       border:`2px solid ${aktiv ? "var(--yellow)" : "var(--border)"}`,
-                      borderRadius:14, padding:"13px 12px", cursor:"pointer",
+                      borderRadius:14, padding:"9px 12px", cursor:"pointer",
                       display:"flex", alignItems:"center", gap:10,
                       transition:"all 0.15s" }}>
                     <span style={{ fontSize:20 }}>{g.icon}</span>
@@ -254,20 +254,20 @@ export function OnboardingFlow({ onComplete }) {
           <div>
             <div style={{ fontWeight:800, fontSize:22, color:"var(--text)",
               marginBottom:4, display:"flex", alignItems:"center", gap:9 }}><HardHat size={20} /> Erster Polier</div>
-            <div style={{ color:"var(--muted)", fontSize:13, marginBottom:24,
+            <div style={{ color:"var(--muted)", fontSize:13, marginBottom:17,
               lineHeight:1.5 }}>
               Wer nutzt die App als erstes? Weitere Nutzer kannst du
               später im Unternehmen-Bereich hinzufügen.
             </div>
             <div style={{ background:"var(--surface)", borderRadius:16,
-              padding:20, marginBottom:16,
+              padding:14, marginBottom:12,
               border:"1.5px solid var(--border)" }}>
               {[
                 ["Name *",  "name",    "Thomas Huber"],
                 ["Telefon", "telefon", "+49 89 123456"],
                 ["E-Mail",  "email",   "huber@firma.de"],
               ].map(([label, key, ph]) => (
-                <div key={key} style={{ marginBottom:14 }}>
+                <div key={key} style={{ marginBottom:10 }}>
                   <Label>{label}</Label>
                   <input value={ersterPolier[key]||""}
                     onChange={e => setErsterPolier(p=>({...p,[key]:e.target.value}))}
@@ -276,7 +276,7 @@ export function OnboardingFlow({ onComplete }) {
               ))}
             </div>
             <div style={{ background:"var(--bbg)", borderRadius:12,
-              padding:"12px 16px", display:"flex", gap:12, alignItems:"flex-start",
+              padding:"9px 16px", display:"flex", gap:12, alignItems:"flex-start",
               border:"1px solid var(--blue)" }}>
               <span style={{ flexShrink:0, color:"var(--blue)", display:"flex" }}><Info size={17} /></span>
               <span style={{ color:"var(--blue)", fontSize:12, lineHeight:1.5 }}>
@@ -290,9 +290,9 @@ export function OnboardingFlow({ onComplete }) {
         {/* ── Schritt 4: Fertig ── */}
         {schritt === 4 && (
           <div style={{ textAlign:"center", paddingTop:24 }}>
-            <div style={{ display:"flex", justifyContent:"center", marginBottom:16, color:"var(--yellow)" }}><PartyPopper size={60} /></div>
+            <div style={{ display:"flex", justifyContent:"center", marginBottom:12, color:"var(--yellow)" }}><PartyPopper size={60} /></div>
             <div style={{ fontWeight:900, fontSize:28, color:"var(--green)",
-              marginBottom:8 }}>Alles bereit!</div>
+              marginBottom:6 }}>Alles bereit!</div>
             <div style={{ color:"var(--text2)", fontSize:14, lineHeight:1.7,
               maxWidth:300, margin:"0 auto 28px" }}>
               Polaris ist eingerichtet. Du kannst jetzt deine
@@ -301,14 +301,14 @@ export function OnboardingFlow({ onComplete }) {
 
             {/* Zusammenfassung */}
             <div style={{ background:"var(--surface)", borderRadius:16,
-              padding:20, textAlign:"left", marginBottom:20,
+              padding:14, textAlign:"left", marginBottom:14,
               border:"1.5px solid var(--border)" }}>
               <div style={{ color:"var(--muted)", fontSize:11, fontWeight:700,
-                textTransform:"uppercase", letterSpacing:1, marginBottom:12 }}>
+                textTransform:"uppercase", letterSpacing:1, marginBottom:9 }}>
                 Deine Einstellungen
               </div>
               <div style={{ display:"flex", gap:14, alignItems:"center",
-                marginBottom:14 }}>
+                marginBottom:10 }}>
                 {firma.logo
                   ? <img src={firma.logo} style={{ width:48, height:48,
                       borderRadius:24, objectFit:"cover",
@@ -341,7 +341,7 @@ export function OnboardingFlow({ onComplete }) {
                 </div>
               )}
               {ersterPolier.name && (
-                <div style={{ marginTop:12, padding:"10px 14px",
+                <div style={{ marginTop:12, padding:"7px 14px",
                   background:"var(--surface2)", borderRadius:10,
                   color:"var(--text2)", fontSize:12,
                   display:"flex", alignItems:"center", gap:5 }}>
@@ -356,7 +356,7 @@ export function OnboardingFlow({ onComplete }) {
 
       {/* Footer Navigation */}
       <div style={{ position:"fixed", bottom:0, left:0, right:0,
-        background:"var(--surface)", padding:"14px 20px",
+        background:"var(--surface)", padding:"10px 20px",
         borderTop:"1px solid var(--border)",
         boxShadow:"0 -4px 16px rgba(0,0,0,0.08)",
         display:"flex", gap:10,

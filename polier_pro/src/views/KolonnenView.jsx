@@ -55,16 +55,16 @@ export function KolonnenView({ kolonnen, projekt, setKolonnen, darfBearbeiten = 
   return (
     <div>
       {/* KPI Leiste */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, marginBottom:14 }}>
-        <div style={{ background: "var(--surface)", borderRadius:10, padding:"11px 12px", borderBottom:`3px solid ${'var(--yellow)'}` }}>
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, marginBottom:10 }}>
+        <div style={{ background: "var(--surface)", borderRadius:10, padding:"8px 12px", borderBottom:`3px solid ${'var(--yellow)'}` }}>
           <div style={{ color: "var(--muted)", fontSize:10 }}>Kolonnen</div>
           <div style={{ color: "var(--text)", fontWeight:800, fontSize:22 }}>{kolonnen.length}</div>
         </div>
-        <div style={{ background: "var(--surface)", borderRadius:10, padding:"11px 12px", borderBottom:`3px solid ${'var(--blue)'}` }}>
+        <div style={{ background: "var(--surface)", borderRadius:10, padding:"8px 12px", borderBottom:`3px solid ${'var(--blue)'}` }}>
           <div style={{ color: "var(--muted)", fontSize:10 }}>Mitarbeiter</div>
           <div style={{ color: "var(--text)", fontWeight:800, fontSize:22 }}>{totalMann}</div>
         </div>
-        <div style={{ background: "var(--surface)", borderRadius:10, padding:"11px 12px", borderBottom:`3px solid ${'var(--green)'}` }}>
+        <div style={{ background: "var(--surface)", borderRadius:10, padding:"8px 12px", borderBottom:`3px solid ${'var(--green)'}` }}>
           <div style={{ color: "var(--muted)", fontSize:10 }}>Stunden Σ</div>
           <div style={{ color: "var(--text)", fontWeight:800, fontSize:22 }}>
             {ladeStatus === "ok" ? totalStd.toFixed(1)+"h" : "—"}
@@ -74,7 +74,7 @@ export function KolonnenView({ kolonnen, projekt, setKolonnen, darfBearbeiten = 
 
       {/* Datumsfilter (nur wenn 123erfasst verbunden) */}
       {konfiguriert && (
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr auto", gap:8, marginBottom:14, alignItems:"end" }}>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr auto", gap:8, marginBottom:10, alignItems:"end" }}>
           <div>
             <Label>Von</Label>
             <input type="date" value={vonDatum} onChange={e => setVonDatum(e.target.value)} style={inputStyle()} />
@@ -94,7 +94,7 @@ export function KolonnenView({ kolonnen, projekt, setKolonnen, darfBearbeiten = 
 
       {/* Status-Banner */}
       {!konfiguriert && (
-        <div style={{ background: "var(--border)", borderRadius:8, padding:"8px 12px", marginBottom:12,
+        <div style={{ background: "var(--border)", borderRadius:8, padding:"6px 12px", marginBottom:9,
           display:"flex", gap:8, alignItems:"center" }}>
           <Info size={14} style={{ color:"var(--muted)", flexShrink:0 }} />
           <span style={{ color: "var(--muted)", fontSize:12 }}>
@@ -103,7 +103,7 @@ export function KolonnenView({ kolonnen, projekt, setKolonnen, darfBearbeiten = 
         </div>
       )}
       {konfiguriert && !erfasstLinked && (
-        <div style={{ background:"#2A2010", borderRadius:8, padding:"8px 12px", marginBottom:12,
+        <div style={{ background:"#2A2010", borderRadius:8, padding:"6px 12px", marginBottom:9,
           display:"flex", gap:8, alignItems:"center" }}>
           <TriangleAlert size={14} style={{ color:"var(--yellow)", flexShrink:0 }} />
           <span style={{ color: "var(--yellow)", fontSize:12 }}>
@@ -112,7 +112,7 @@ export function KolonnenView({ kolonnen, projekt, setKolonnen, darfBearbeiten = 
         </div>
       )}
       {ladeStatus === "error" && (
-        <div style={{ background:"#2E1A1A", borderRadius:8, padding:"8px 12px", marginBottom:12, color: "var(--red)", fontSize:12,
+        <div style={{ background:"#2E1A1A", borderRadius:8, padding:"6px 12px", marginBottom:9, color: "var(--red)", fontSize:12,
           display:"flex", alignItems:"center", gap:6 }}>
           <CircleX size={13} /> Zeitdaten konnten nicht geladen werden.
         </div>
@@ -141,16 +141,16 @@ export function KolonnenView({ kolonnen, projekt, setKolonnen, darfBearbeiten = 
           <Plus size={15} /> Kolonne einteilen
         </button>
       ) : (
-        <div style={{ background:"var(--surface)", borderRadius:12, padding:16,
+        <div style={{ background:"var(--surface)", borderRadius:12, padding:12,
           border:"1.5px solid var(--yellow)" }}>
           <div style={{ color:"var(--text)", fontWeight:700, fontSize:14,
-            marginBottom:12 }}>Neue Kolonne</div>
-          <div style={{ marginBottom:10 }}>
+            marginBottom:9 }}>Neue Kolonne</div>
+          <div style={{ marginBottom:7 }}>
             <Label>Name</Label>
             <input value={kName} onChange={e => setKName(e.target.value)}
               placeholder="z.B. Kolonne Huber" style={inputStyle()} />
           </div>
-          <div style={{ marginBottom:14 }}>
+          <div style={{ marginBottom:10 }}>
             <Label>Vorarbeiter</Label>
             <input value={kVorarbeiter} onChange={e => setKVorarbeiter(e.target.value)}
               placeholder="z.B. Thomas Huber" style={inputStyle()} />

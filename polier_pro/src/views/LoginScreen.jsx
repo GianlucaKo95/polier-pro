@@ -20,31 +20,31 @@ export function LoginScreen({ auth, onDemoLogin, onRegistrieren }) {
     return (
       <div style={{ background:"var(--bg)", minHeight:"100dvh", display:"flex",
         flexDirection:"column", alignItems:"center", justifyContent:"center",
-        padding:"24px 20px" }}>
-        <div style={{ textAlign:"center", marginBottom:32 }}>
+        padding:"17px 20px" }}>
+        <div style={{ textAlign:"center", marginBottom:23 }}>
           <div style={{ fontWeight:900, fontSize:24, letterSpacing:-1, color:"var(--text)" }}>
             <span style={{ color:"var(--yellow)" }}>★</span> POLARIS
           </div>
         </div>
-        <div style={{ background:"var(--surface)", borderRadius:20, padding:28,
+        <div style={{ background:"var(--surface)", borderRadius:20, padding:20,
           width:"100%", maxWidth:380, border:"1.5px solid var(--border)" }}>
           {!resetGesendet ? (
             <>
               <div style={{ color:"var(--text)", fontWeight:800, fontSize:18,
                 marginBottom:6 }}>Passwort zurücksetzen</div>
-              <div style={{ color:"var(--muted)", fontSize:13, marginBottom:20 }}>
+              <div style={{ color:"var(--muted)", fontSize:13, marginBottom:14 }}>
                 Gib deine E-Mail-Adresse ein — wir schicken dir einen Link zum
                 Zurücksetzen deines Passworts.
               </div>
               {auth.fehler && (
                 <div style={{ background:"var(--rbg)", color:"var(--red)",
-                  borderRadius:10, padding:"10px 14px", marginBottom:16,
+                  borderRadius:10, padding:"7px 14px", marginBottom:12,
                   fontSize:13, border:"1px solid var(--red)",
                   display:"flex", alignItems:"center", gap:6 }}>
                   <CircleX size={14} /> {auth.fehler}
                 </div>
               )}
-              <div style={{ marginBottom:20 }}>
+              <div style={{ marginBottom:14 }}>
                 <Label>E-Mail</Label>
                 <input type="email" value={email} onChange={e => setEmail(e.target.value)}
                   placeholder="name@firma.de" style={inputStyle()}
@@ -61,9 +61,9 @@ export function LoginScreen({ auth, onDemoLogin, onRegistrieren }) {
             </>
           ) : (
             <div style={{ textAlign:"center" }}>
-              <div style={{ display:"flex", justifyContent:"center", marginBottom:12, color:"var(--muted)" }}><Mail size={40} /></div>
+              <div style={{ display:"flex", justifyContent:"center", marginBottom:9, color:"var(--muted)" }}><Mail size={40} /></div>
               <div style={{ color:"var(--text)", fontWeight:800, fontSize:16,
-                marginBottom:8 }}>E-Mail gesendet!</div>
+                marginBottom:6 }}>E-Mail gesendet!</div>
               <div style={{ color:"var(--muted)", fontSize:13, lineHeight:1.6 }}>
                 Falls ein Konto mit dieser E-Mail existiert, erhältst du in
                 Kürze einen Link zum Zurücksetzen deines Passworts.
@@ -86,11 +86,11 @@ export function LoginScreen({ auth, onDemoLogin, onRegistrieren }) {
   return (
     <div style={{ background:"var(--bg)", minHeight:"100dvh", display:"flex",
       flexDirection:"column", alignItems:"center", justifyContent:"center",
-      padding:"24px 20px" }}>
+      padding:"17px 20px" }}>
 
       {/* Logo */}
-      <div style={{ textAlign:"center", marginBottom:40 }}>
-        <div style={{ fontSize:56, marginBottom:12 }}>★</div>
+      <div style={{ textAlign:"center", marginBottom:29 }}>
+        <div style={{ fontSize:56, marginBottom:9 }}>★</div>
         <div style={{ fontWeight:900, fontSize:32, letterSpacing:-2, color:"var(--text)" }}>
           <span style={{ color:"var(--yellow)" }}>★</span> POLARIS
         </div>
@@ -101,29 +101,29 @@ export function LoginScreen({ auth, onDemoLogin, onRegistrieren }) {
       </div>
 
       {/* Login Card */}
-      <div style={{ background:"var(--surface)", borderRadius:20, padding:28,
+      <div style={{ background:"var(--surface)", borderRadius:20, padding:20,
         width:"100%", maxWidth:380, border:"1.5px solid var(--border)",
         boxShadow:"0 8px 32px rgba(0,0,0,0.12)" }}>
         <div style={{ color:"var(--text)", fontWeight:800, fontSize:18,
-          marginBottom:20 }}>Anmelden</div>
+          marginBottom:14 }}>Anmelden</div>
 
         {auth.fehler && (
           <div style={{ background:"var(--rbg)", color:"var(--red)",
-            borderRadius:10, padding:"10px 14px", marginBottom:16,
+            borderRadius:10, padding:"7px 14px", marginBottom:12,
             fontSize:13, border:"1px solid var(--red)",
             display:"flex", alignItems:"center", gap:6 }}>
             <CircleX size={14} /> {auth.fehler}
           </div>
         )}
 
-        <div style={{ marginBottom:14 }}>
+        <div style={{ marginBottom:10 }}>
           <Label>E-Mail</Label>
           <input type="email" value={email} onChange={e => setEmail(e.target.value)}
             placeholder="name@firma.de" style={inputStyle()}
             onKeyDown={e => e.key==="Enter" && auth.anmelden(email, password)} />
         </div>
 
-        <div style={{ marginBottom:10 }}>
+        <div style={{ marginBottom:7 }}>
           <Label>Passwort</Label>
           <div style={{ position:"relative" }}>
             <input type={showPw ? "text" : "password"} value={password}
@@ -139,7 +139,7 @@ export function LoginScreen({ auth, onDemoLogin, onRegistrieren }) {
           </div>
         </div>
 
-        <div style={{ textAlign:"right", marginBottom:20 }}>
+        <div style={{ textAlign:"right", marginBottom:14 }}>
           <button onClick={() => setZeigeReset(true)}
             style={{ background:"none", border:"none", color:"var(--muted)",
               cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>
@@ -161,7 +161,7 @@ export function LoginScreen({ auth, onDemoLogin, onRegistrieren }) {
         {/* Demo-Modus wenn Supabase nicht konfiguriert */}
         {!auth.supabaseKonfiguriert && (
           <div style={{ marginTop:20, borderTop:"1px solid var(--border)", paddingTop:16 }}>
-            <div style={{ color:"var(--muted)", fontSize:12, marginBottom:10, textAlign:"center" }}>
+            <div style={{ color:"var(--muted)", fontSize:12, marginBottom:7, textAlign:"center" }}>
               Supabase nicht konfiguriert — Demo-Modus:
             </div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>

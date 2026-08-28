@@ -28,7 +28,7 @@ export function DashboardView({ aufgaben, kolonnen, sbConnected, onNavigate, pro
       <WeatherView compact ort={projekt?.ort} plz={projekt?.plz} projektId={projekt?.id} />
 
       {/* Kennzahlen — jede Kachel ist ein Sprungziel */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:16 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12 }}>
         <KpiKachel label="Offene Aufgaben" wert={offeneAufgaben.length}
           farbe="var(--yellow)" onClick={() => springeZu("aufgaben","offen")} />
         <KpiKachel label="Kritisch" wert={kritisch}
@@ -49,8 +49,8 @@ export function DashboardView({ aufgaben, kolonnen, sbConnected, onNavigate, pro
               <div key={a.id} onClick={() => springeZu("aufgaben")}
                 style={{ background:"var(--surface)", border:"1px solid var(--border)",
                   borderLeft:`4px solid ${istUeberfaellig ? "var(--red)" : "var(--yellow)"}`,
-                  marginBottom:8, display:"flex", cursor:"pointer" }}>
-                <div style={{ flex:1, padding:"12px 14px" }}>
+                  marginBottom:6, display:"flex", cursor:"pointer" }}>
+                <div style={{ flex:1, padding:"9px 14px" }}>
                   <div style={{ display:"flex", justifyContent:"space-between", gap:10 }}>
                     <div style={{ fontSize:14, fontWeight:700, color:"var(--text)" }}>{a.titel}</div>
                     <div style={{ background: istUeberfaellig ? "var(--rbg)" : "var(--ybg)",
@@ -81,8 +81,8 @@ export function DashboardView({ aufgaben, kolonnen, sbConnected, onNavigate, pro
         <>
           <SektionsTitel label="Fortschritt" />
           <div onClick={() => springeZu("aufgaben","beton")}
-            style={{ background:"var(--surface)", padding:16,
-              marginBottom:16, cursor:"pointer", border:"1px solid var(--border)" }}>
+            style={{ background:"var(--surface)", padding:12,
+              marginBottom:12, cursor:"pointer", border:"1px solid var(--border)" }}>
             <div style={{ display:"flex", justifyContent:"space-between",
               alignItems:"baseline", marginBottom:6 }}>
               <div style={{ color:"var(--text)", fontWeight:700, fontSize:13 }}>Betonage</div>
@@ -101,7 +101,7 @@ export function DashboardView({ aufgaben, kolonnen, sbConnected, onNavigate, pro
 
       {/* Schnellzugriff */}
       <SektionsTitel label="Schnellzugriff" />
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:16 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12 }}>
         {[
           ["tagebuch","Tagebuch"],
           ["kolonnen",`Kolonnen (${totalMann} Mann)`],
@@ -121,7 +121,7 @@ export function DashboardView({ aufgaben, kolonnen, sbConnected, onNavigate, pro
 
       {/* Kolonnen vor Ort */}
       <div style={{ display:"flex", justifyContent:"space-between",
-        alignItems:"center", marginBottom:10 }}>
+        alignItems:"center", marginBottom:7 }}>
         <SektionsLabel label="Kolonnen vor Ort" />
         {kolonnen.length > 0 && (
           <button onClick={() => springeZu("kolonnen")}
@@ -132,7 +132,7 @@ export function DashboardView({ aufgaben, kolonnen, sbConnected, onNavigate, pro
         )}
       </div>
       {kolonnen.length === 0 && (
-        <div style={{ background:"var(--surface)", padding:"20px 16px",
+        <div style={{ background:"var(--surface)", padding:"14px 16px",
           textAlign:"center", color:"var(--muted)", fontSize:13,
           border:"1px solid var(--border)" }}>
           Noch keine Kolonnen eingeteilt
@@ -140,8 +140,8 @@ export function DashboardView({ aufgaben, kolonnen, sbConnected, onNavigate, pro
       )}
       {kolonnen.slice(0,3).map(k => (
         <div key={k.id} onClick={() => springeZu("kolonnen")}
-          style={{ background:"var(--surface)", padding:"13px 16px",
-            marginBottom:8, cursor:"pointer", border:"1px solid var(--border)",
+          style={{ background:"var(--surface)", padding:"9px 16px",
+            marginBottom:6, cursor:"pointer", border:"1px solid var(--border)",
             display:"flex", alignItems:"center", gap:12 }}>
           <div style={{ width:34, height:34, background:"var(--ink)", color:"var(--yellow)",
             display:"flex", alignItems:"center", justifyContent:"center",
@@ -171,7 +171,7 @@ function initialen(name = "") {
 function KpiKachel({ label, wert, farbe, onClick }) {
   return (
     <div onClick={onClick}
-      style={{ background:"var(--surface)", padding:"14px 16px",
+      style={{ background:"var(--surface)", padding:"10px 16px",
         borderLeft:`4px solid ${farbe}`, border:"1px solid var(--border)",
         borderLeftWidth:4, borderLeftColor:farbe, cursor:"pointer" }}>
       <div style={{ color:"var(--muted)", fontSize:10.5, fontWeight:700, textTransform:"uppercase",
@@ -185,7 +185,7 @@ function KpiKachel({ label, wert, farbe, onClick }) {
 
 function SektionsTitel({ label }) {
   return (
-    <div style={{ color:"var(--text)", fontWeight:800, marginBottom:10, fontSize:13,
+    <div style={{ color:"var(--text)", fontWeight:800, marginBottom:7, fontSize:13,
       letterSpacing:0.3 }}>
       {label}
     </div>

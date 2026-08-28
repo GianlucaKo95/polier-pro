@@ -56,13 +56,13 @@ export class ErrorBoundary extends React.Component {
     return (
       <div style={{ background:"var(--bg, #0B1120)", minHeight:"100dvh",
         display:"flex", flexDirection:"column", alignItems:"center",
-        justifyContent:"center", padding:24, textAlign:"center" }}>
-        <div style={{ display:"flex", justifyContent:"center", marginBottom:16, color:"#F5C400" }}><TriangleAlert size={40} /></div>
+        justifyContent:"center", padding:17, textAlign:"center" }}>
+        <div style={{ display:"flex", justifyContent:"center", marginBottom:12, color:"#F5C400" }}><TriangleAlert size={40} /></div>
         <div style={{ color:"#fff", fontWeight:800, fontSize:18,
-          marginBottom:8 }}>
+          marginBottom:6 }}>
           Etwas ist schiefgelaufen
         </div>
-        <div style={{ color:"#8B9EC8", fontSize:13, marginBottom:24,
+        <div style={{ color:"#8B9EC8", fontSize:13, marginBottom:17,
           maxWidth:340, lineHeight:1.5 }}>
           Ein unerwarteter Fehler ist aufgetreten. Deine Daten sind sicher
           gespeichert — ein Neuladen behebt das Problem meistens.
@@ -319,7 +319,7 @@ export default function PolierApp() {
   if (aktiveRolle === "facharbeiter") {
     return (
       <div style={{ background:"var(--bg)", minHeight:"100dvh", color:"var(--text)" }}>
-        <div style={{ background:"var(--surface)", padding:"14px 18px",
+        <div style={{ background:"var(--surface)", padding:"10px 18px",
           borderBottom:"3px solid var(--yellow)", display:"flex",
           justifyContent:"space-between", alignItems:"center",
           boxShadow:"0 2px 8px rgba(0,0,0,0.08)" }}>
@@ -339,7 +339,7 @@ export default function PolierApp() {
             </button>
           </div>
         </div>
-        <div style={{ padding:"20px 16px" }}>
+        <div style={{ padding:"14px 16px" }}>
           <StempeluhrView profil={aktiveProfil}
             projekte={aktiveProfil?.kolonne_id
               ? projekte.filter(p => (p.kolonnen||[]).some(k => k.id === aktiveProfil.kolonne_id)).length > 0
@@ -593,14 +593,14 @@ export default function PolierApp() {
 
             {/* Stat-Streifen */}
             <div style={{ display:"flex", gap:10, marginTop:16 }}>
-              <div style={{ flex:1, background:"rgba(255,255,255,.07)", padding:"12px 14px",
+              <div style={{ flex:1, background:"rgba(255,255,255,.07)", padding:"9px 14px",
                 borderLeft:"3px solid var(--yellow)" }}>
                 <div className="num" style={{ fontSize:24, fontWeight:800, lineHeight:1 }}>{projekte.length}</div>
                 <div style={{ fontSize:10.5, color:"var(--ink-text2)", fontWeight:700, marginTop:3 }}>
                   {projekte.length === 1 ? "Baustelle" : "Baustellen"}
                 </div>
               </div>
-              <div style={{ flex:1, background:"rgba(255,255,255,.07)", padding:"12px 14px",
+              <div style={{ flex:1, background:"rgba(255,255,255,.07)", padding:"9px 14px",
                 borderLeft:`3px solid ${verzugGesamt > 0 ? "#EF4444" : "#22C55E"}` }}>
                 <div className="num" style={{ fontSize:24, fontWeight:800, lineHeight:1 }}>{verzugGesamt}</div>
                 <div style={{ fontSize:10.5, color:"var(--ink-text2)", fontWeight:700, marginTop:3 }}>Verzug</div>
@@ -624,7 +624,7 @@ export default function PolierApp() {
           <div style={{ padding:"18px 14px 100px" }}>
             {firmaLadeFehler && (
               <div style={{ background:"var(--rbg)", color:"var(--red)",
-                padding:"12px 16px", marginBottom:14, fontSize:12,
+                padding:"9px 16px", marginBottom:10, fontSize:12,
                 border:"1px solid var(--red)" }}>
                 {firmaLadeFehler}
               </div>
@@ -632,7 +632,7 @@ export default function PolierApp() {
 
             {projekteLadeFehler && (
               <div style={{ background:"var(--rbg)", color:"var(--red)",
-                padding:"12px 16px", marginBottom:14, fontSize:12,
+                padding:"9px 16px", marginBottom:10, fontSize:12,
                 border:"1px solid var(--red)" }}>
                 {projekteLadeFehler}
               </div>
@@ -641,7 +641,7 @@ export default function PolierApp() {
             {homeTab === "projekte" && (
               <>
                 <div style={{ display:"flex", justifyContent:"space-between",
-                  alignItems:"center", marginBottom:12 }}>
+                  alignItems:"center", marginBottom:9 }}>
                   <div style={{ color:"var(--text)", fontWeight:800, fontSize:13 }}>
                     Meine Baustellen
                   </div>
@@ -652,13 +652,13 @@ export default function PolierApp() {
                 </div>
 
                 {projekte.length === 0 && (
-                  <div style={{ textAlign:"center", padding:"40px 20px",
+                  <div style={{ textAlign:"center", padding:"29px 20px",
                     color:"var(--muted)", fontSize:14 }}>
                     <Building2 size={44} style={{ marginBottom:12, opacity:0.5 }} />
-                    <div style={{ fontWeight:700, color:"var(--text)", marginBottom:8 }}>
+                    <div style={{ fontWeight:700, color:"var(--text)", marginBottom:6 }}>
                       Noch keine Baustellen
                     </div>
-                    <div style={{ marginBottom:20 }}>Leg deine erste Baustelle an um loszulegen.</div>
+                    <div style={{ marginBottom:14 }}>Leg deine erste Baustelle an um loszulegen.</div>
                     {auth.session?.access_token && !firma?.id ? (
                       <div style={{ color:"var(--muted)", fontSize:13 }}>
                         Firmendaten werden geladen…
@@ -684,9 +684,9 @@ export default function PolierApp() {
                   return (
                     <div key={p.id} onClick={() => { setAktivId(p.id); setTab("dashboard"); }}
                       style={{ background:"var(--surface)",
-                        border:"1px solid var(--border)", marginBottom:12, cursor:"pointer" }}>
+                        border:"1px solid var(--border)", marginBottom:9, cursor:"pointer" }}>
                       <div style={{ height:4, background:p.farbe }} />
-                      <div style={{ padding:"16px 18px" }}>
+                      <div style={{ padding:"12px 18px" }}>
                         <div style={{ display:"flex", justifyContent:"space-between",
                           alignItems:"flex-start", gap:10 }}>
                           <div style={{ flex:1 }}>
@@ -736,7 +736,7 @@ export default function PolierApp() {
                 <div onClick={() => setNeuProjekt(true)}
                   style={{ border:"2px dashed var(--yellow)",
                     display:"flex", alignItems:"center", justifyContent:"center", gap:8,
-                    padding:"16px", textAlign:"center", cursor:"pointer",
+                    padding:"12px", textAlign:"center", cursor:"pointer",
                     background:"var(--ybg)", color:"var(--ydark)",
                     fontWeight:700, fontSize:14 }}>
                   <Plus size={18} />Neue Baustelle
@@ -833,7 +833,7 @@ export default function PolierApp() {
         paddingTop:"calc(13px + env(safe-area-inset-top))",
         flexShrink:0, zIndex:60 }}>
         <div style={{ display:"flex", justifyContent:"space-between",
-          alignItems:"center", marginBottom:10 }}>
+          alignItems:"center", marginBottom:7 }}>
           <div style={{ minWidth:0, flexShrink:1, overflow:"hidden" }}>
             <div style={{ fontWeight:800, fontSize:18, letterSpacing:-0.6,
               color:"#fff", lineHeight:1, whiteSpace:"nowrap" }}>
@@ -877,7 +877,7 @@ export default function PolierApp() {
         )}
         {speicherFehler && (
           <div style={{ background:"var(--rbg)", color:"var(--red)",
-            padding:"12px 16px", marginBottom:14, fontSize:12,
+            padding:"9px 16px", marginBottom:10, fontSize:12,
             border:"1px solid var(--red)", display:"flex",
             justifyContent:"space-between", alignItems:"center", gap:10 }}>
             <span>{speicherFehler}</span>
@@ -921,7 +921,7 @@ export default function PolierApp() {
       {/* ── BOTTOM NAV — Flex-Geschwister statt position:fixed, siehe Kommentar oben ── */}
       <div style={{ flexShrink:0,
         background:"var(--surface)", borderTop:"1px solid var(--border)",
-        display:"flex", padding:"8px 6px",
+        display:"flex", padding:"6px 6px",
         paddingBottom:"calc(8px + env(safe-area-inset-bottom))" }}>
         {hauptTabs.map(t => {
           const Icon = TAB_ICONS[t.id];
@@ -961,10 +961,10 @@ export default function PolierApp() {
           <div onClick={e => e.stopPropagation()}
             style={{ position:"absolute", bottom:0, left:0, right:0,
               background:"var(--surface)",
-              padding:"20px 16px", paddingBottom:"calc(20px + env(safe-area-inset-bottom))" }}>
+              padding:"14px 16px", paddingBottom:"calc(20px + env(safe-area-inset-bottom))" }}>
             <div style={{ width:40, height:4, background:"rgba(0,0,0,.15)",
               margin:"0 auto 18px" }} />
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
               <div style={{ color:"var(--text)", fontWeight:800, fontSize:15 }}>Weitere Funktionen</div>
               <button onClick={() => setZeigeMehr(false)}
                 style={{ width:30, height:30, background:"var(--surface2)", border:"none",

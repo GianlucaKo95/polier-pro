@@ -173,12 +173,12 @@ ${offeneMaengel.length > 0 ? `<div class="section">
       {offen && (
         <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"var(--bg)", zIndex:600, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
           <div style={{ background:"var(--surface)", borderRadius:"20px 20px 0 0",
-            padding:22, paddingTop:"calc(22px + env(safe-area-inset-top))",
+            padding:16, paddingTop:"calc(22px + env(safe-area-inset-top))",
             width:"100%", maxWidth:520, maxHeight:"92vh",
             overflowY:"auto", boxShadow:"0 -4px 30px rgba(0,0,0,0.2)" }}>
 
             <div style={{ display:"flex", justifyContent:"space-between",
-              alignItems:"center", marginBottom:16 }}>
+              alignItems:"center", marginBottom:12 }}>
               <div style={{ fontWeight:800, fontSize:17, color:"var(--text)",
                 display:"flex", alignItems:"center", gap:8 }}>
                 <PenLine size={16} /> Digitale Unterschrift
@@ -189,8 +189,8 @@ ${offeneMaengel.length > 0 ? `<div class="section">
             </div>
 
             {/* Revisions-Hash */}
-            <div style={{ background:"#1a1a1a", borderRadius:10, padding:"10px 14px",
-              marginBottom:16, display:"flex", justifyContent:"space-between",
+            <div style={{ background:"#1a1a1a", borderRadius:10, padding:"7px 14px",
+              marginBottom:12, display:"flex", justifyContent:"space-between",
               alignItems:"center" }}>
               <div>
                 <div style={{ color:"#F5C400", fontWeight:700, fontSize:12 }}>
@@ -206,7 +206,7 @@ ${offeneMaengel.length > 0 ? `<div class="section">
 
             <UnterschriftPad label="Unterschrift Polier" onSave={setSigPolier} />
             {sigPolier && (
-              <div style={{ marginBottom:12 }}>
+              <div style={{ marginBottom:9 }}>
                 <div style={{ color:"var(--green)", fontSize:12, fontWeight:600,
                   marginBottom:4, display:"flex", alignItems:"center", gap:4 }}><Check size={12} /> Polier unterschrieben</div>
                 <img src={sigPolier} alt="Unterschrift Polier"
@@ -217,7 +217,7 @@ ${offeneMaengel.length > 0 ? `<div class="section">
 
             <UnterschriftPad label="Unterschrift Bauleiter" onSave={setSigBauleiter} />
             {sigBauleiter && (
-              <div style={{ marginBottom:16 }}>
+              <div style={{ marginBottom:12 }}>
                 <div style={{ color:"var(--green)", fontSize:12, fontWeight:600,
                   marginBottom:4, display:"flex", alignItems:"center", gap:4 }}><Check size={12} /> Bauleiter unterschrieben</div>
                 <img src={sigBauleiter} alt="Unterschrift Bauleiter"
@@ -236,7 +236,7 @@ ${offeneMaengel.length > 0 ? `<div class="section">
             </button>
 
             {exportiert && (
-              <div style={{ background:"var(--gbg)", borderRadius:10, padding:10,
+              <div style={{ background:"var(--gbg)", borderRadius:10, padding:7,
                 marginTop:10, color:"var(--green)", fontSize:12, fontWeight:600,
                 textAlign:"center", display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
                 <CircleCheckBig size={13} /> PDF erstellt · DOC-{hash} · {new Date().toLocaleString("de-DE")}

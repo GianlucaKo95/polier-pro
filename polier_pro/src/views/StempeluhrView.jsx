@@ -258,8 +258,8 @@ export function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
   return (
     <div>
       {/* Uhr — dunkler Anker-Header, ein Daumen, ein Tap */}
-      <div style={{ background:"var(--ink)", color:"#fff", padding:"28px 20px",
-        marginBottom:16, textAlign:"center", marginLeft:-14, marginRight:-14,
+      <div style={{ background:"var(--ink)", color:"#fff", padding:"20px 20px",
+        marginBottom:12, textAlign:"center", marginLeft:-14, marginRight:-14,
         width:"calc(100% + 28px)" }}>
         <div style={{ fontSize:11, fontWeight:600, color:"var(--ink-text2)",
           textTransform:"uppercase", letterSpacing:2.4, marginBottom:6 }}>
@@ -316,7 +316,7 @@ export function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
       {/* Projekt Auswahl */}
       {status === "aus" && (
         <>
-          <div style={{ marginBottom:12 }}>
+          <div style={{ marginBottom:9 }}>
             <Label>Projekt</Label>
             <div style={{ display:"flex", flexDirection:"column", gap:8, marginTop:6 }}>
               {projekte.map(p => (
@@ -339,7 +339,7 @@ export function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
               ))}
             </div>
           </div>
-          <div style={{ marginBottom:16 }}>
+          <div style={{ marginBottom:12 }}>
             <Label>Tätigkeit</Label>
             <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginTop:6 }}>
               {Object.entries(TAETIGKEITEN).map(([key, t]) => (
@@ -355,7 +355,7 @@ export function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
               ))}
             </div>
           </div>
-          <div style={{ marginBottom:16 }}>
+          <div style={{ marginBottom:12 }}>
             <Label>Notiz (optional)</Label>
             <input value={notiz} onChange={e => setNotiz(e.target.value)}
               placeholder="z.B. Bewehrungsarbeiten B1" style={inputStyle()} />
@@ -365,8 +365,8 @@ export function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
 
       {/* Aktive Buchung Info */}
       {aktiveBuchung && status !== "aus" && (
-        <div style={{ background:"var(--surface)", padding:16,
-          marginBottom:16, border:"1px solid var(--border)" }}>
+        <div style={{ background:"var(--surface)", padding:12,
+          marginBottom:12, border:"1px solid var(--border)" }}>
           <div style={{ color:"var(--muted)", fontSize:11, marginBottom:4, fontWeight:700,
             textTransform:"uppercase", letterSpacing:0.6 }}>Aktuelle Buchung</div>
           <div style={{ color:"var(--text)", fontSize:14, fontWeight:700 }}>
@@ -392,7 +392,7 @@ export function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
       )}
 
       {/* Buttons — ein Daumen, ein Tap: mindestens 56px hoch */}
-      <div style={{ display:"flex", gap:10, marginBottom:16 }}>
+      <div style={{ display:"flex", gap:10, marginBottom:12 }}>
         {status === "aus" && (
           <button onClick={einstempeln} disabled={gpsLaden || aktionLaeuft || !aktivProjekt}
             style={{ flex:1, background:"#15803D", color:"#fff",
@@ -437,7 +437,7 @@ export function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
       </div>
       {status === "aus" && (
         <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:6,
-          marginBottom:20, color:"var(--muted)", fontSize:11.5, fontWeight:600 }}>
+          marginBottom:14, color:"var(--muted)", fontSize:11.5, fontWeight:600 }}>
           <SatelliteDish size={13} />GPS wird beim Stempeln erfasst
         </div>
       )}
@@ -445,12 +445,12 @@ export function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
       {/* Heutige Buchungen */}
       {buchungen.filter(b=>b.status==="abgeschlossen").length > 0 && (
         <div style={{ marginTop: status==="aus" ? 4 : 20 }}>
-          <div style={{ color:"var(--text)", fontWeight:800, fontSize:13, marginBottom:10 }}>
+          <div style={{ color:"var(--text)", fontWeight:800, fontSize:13, marginBottom:7 }}>
             Heute erfasst
           </div>
           {buchungen.filter(b=>b.status==="abgeschlossen").map(b => (
             <div key={b.id} style={{ background:"var(--surface)",
-              padding:"13px 16px", marginBottom:8, border:"1px solid var(--border)",
+              padding:"9px 16px", marginBottom:6, border:"1px solid var(--border)",
               display:"flex", alignItems:"center", gap:12 }}>
               <Clock3 size={18} color="var(--muted)" />
               <div style={{ flex:1 }}>

@@ -16,23 +16,23 @@ export function VorlageFormular({ initial, einheitspreise, onSave, onClose }) {
 
   return (
     <div>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
         <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:16,
           display:"flex", alignItems:"center", gap:7 }}><ClipboardList size={15} /> Neue LV-Vorlage</div>
         <button onClick={onClose} style={{ background:"none", border:"none",
           color:"var(--muted)", fontSize:24, cursor:"pointer" }}>✕</button>
       </div>
-      <div style={{ marginBottom:12 }}>
+      <div style={{ marginBottom:9 }}>
         <Label>Vorlagenname</Label>
         <input value={v.name} onChange={e=>setV(x=>({...x,name:e.target.value}))}
           placeholder="z.B. Bodenplatte Standard" style={inputStyle()} />
       </div>
-      <div style={{ marginBottom:16 }}>
+      <div style={{ marginBottom:12 }}>
         <Label>Gewerk</Label>
         <input value={v.gewerk} onChange={e=>setV(x=>({...x,gewerk:e.target.value}))}
           placeholder="z.B. Betonage" style={inputStyle()} />
       </div>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
         <Label>Positionen</Label>
         <button onClick={addPosition}
           style={{ background:"var(--surface2)", color:"var(--text)",
@@ -42,7 +42,7 @@ export function VorlageFormular({ initial, einheitspreise, onSave, onClose }) {
       </div>
       {v.positionen.map((pos,i) => (
         <div key={i} style={{ background:"var(--surface2)", borderRadius:10,
-          padding:10, marginBottom:8, border:"1px solid var(--border)" }}>
+          padding:7, marginBottom:6, border:"1px solid var(--border)" }}>
           <input value={pos.bez} onChange={e=>updatePos(i,"bez",e.target.value)}
             placeholder="Bezeichnung" style={{ ...inputStyle(), marginBottom:6 }} />
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>

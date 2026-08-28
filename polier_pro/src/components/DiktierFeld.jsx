@@ -66,7 +66,7 @@ export function DiktierFeld({ label, value, rows = 3, onChange }) {
   }
 
   return (
-    <div style={{ marginBottom:14 }}>
+    <div style={{ marginBottom:10 }}>
       {/* Label + Diktat-Button */}
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
         <Label>{label}</Label>
@@ -93,7 +93,7 @@ export function DiktierFeld({ label, value, rows = 3, onChange }) {
 
       {/* Pulsierende Aufnahme-Anzeige */}
       {aktiv && (
-        <div style={{ background:"#2E1A1A", borderRadius:8, padding:"8px 12px",
+        <div style={{ background:"#2E1A1A", borderRadius:8, padding:"6px 12px",
           marginBottom:6, display:"flex", alignItems:"center", gap:8,
           border:`1px solid ${'var(--red)'}44` }}>
           <div style={{ width:8, height:8, borderRadius:4, background: "var(--red)",

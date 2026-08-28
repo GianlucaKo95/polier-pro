@@ -83,7 +83,7 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
   return (
     <div style={{ position:"relative", paddingBottom:64 }}>
       {/* Segment-Reiter über den Gesamtbestand (unabhängig vom Chip-Filter darunter) */}
-      <div style={{ display:"flex", gap:1, background:"var(--border)", marginBottom:14,
+      <div style={{ display:"flex", gap:1, background:"var(--border)", marginBottom:10,
         marginLeft:-14, marginRight:-14, width:"calc(100% + 28px)" }}>
         {[["alle","Alle",stats.gesamt],["offen","Offen",stats.offen],["maengel","Mängel",stats.maengel],["abgeschlossen","Fertig",stats.abgeschlossen]].map(([k,l,v]) => (
           <button key={k} onClick={() => setFilter(k === "abgeschlossen" ? "alle" : k)}
@@ -97,7 +97,7 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
       </div>
 
       {/* Toolbar */}
-      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12, overflowX:"auto" }}>
+      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:9, overflowX:"auto" }}>
         {[
           ["alle","Alle"],
           ["kritisch","Kritisch"],
@@ -114,7 +114,7 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
       </div>
 
       {/* Kanban / Liste Toggle */}
-      <div style={{ display:"flex", gap:6, marginBottom:14 }}>
+      <div style={{ display:"flex", gap:6, marginBottom:10 }}>
         {[["liste","Liste"],["kanban","Kanban"]].map(([v,l]) => (
           <button key={v} onClick={() => setAnsicht(v)}
             style={{ background: ansicht===v ? "var(--ink)" : "transparent",
@@ -130,7 +130,7 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
       {ansicht === "liste" && (
         <div>
           {gefiltert.length === 0 && (
-            <div style={{ textAlign:"center", padding:"40px 20px", color:"var(--muted)" }}>
+            <div style={{ textAlign:"center", padding:"29px 20px", color:"var(--muted)" }}>
               <CircleCheck size={40} style={{ marginBottom:8, opacity:0.5 }} />
               <div>{filter === "maengel" ? "Keine Mängel erfasst" : "Keine Aufgaben gefunden"}</div>
             </div>
@@ -175,9 +175,9 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
             const spalte = gefiltert.filter(a => a.status === statusKey);
             return (
               <div key={statusKey} style={{ background:"var(--surface2)",
-                padding:10, border:"1px solid var(--border)" }}>
+                padding:7, border:"1px solid var(--border)" }}>
                 <div style={{ display:"flex", justifyContent:"space-between",
-                  alignItems:"center", marginBottom:8 }}>
+                  alignItems:"center", marginBottom:6 }}>
                   <div style={{ color:statusCfg.farbe, fontWeight:700, fontSize:12 }}>
                     {statusCfg.label}
                   </div>
@@ -188,7 +188,7 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
                 {spalte.map(a => (
                   <div key={a.id} onClick={() => darfBearbeiten && setEditAufgabe(a)}
                     style={{ background:"var(--surface)",
-                      padding:"10px 12px", marginBottom:6, cursor:"pointer",
+                      padding:"7px 12px", marginBottom:6, cursor:"pointer",
                       borderLeft:`3px solid ${AUFGABEN_TYPEN[a.typ]?.farbe || "var(--muted)"}` }}>
                     <div style={{ color:"var(--text)", fontWeight:600, fontSize:12 }}>
                       {a.titel}

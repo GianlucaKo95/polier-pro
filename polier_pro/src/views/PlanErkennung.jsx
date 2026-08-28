@@ -79,7 +79,7 @@ export function PlanErkennung({ onSave, onClose, onZurueck }) {
       background:"var(--bg)", zIndex:500, overflowY:"auto",
       WebkitOverflowScrolling:"touch" }}>
 
-      <div style={{ background:"var(--surface)", padding:"14px 18px",
+      <div style={{ background:"var(--surface)", padding:"10px 18px",
         paddingTop:"calc(14px + env(safe-area-inset-top))",
         borderBottom:"3px solid var(--yellow)", position:"sticky", top:0,
         zIndex:10, display:"flex", justifyContent:"space-between",
@@ -101,7 +101,7 @@ export function PlanErkennung({ onSave, onClose, onZurueck }) {
         {/* IDLE: Datei wählen */}
         {phase === "idle" && (
           <div>
-            <div style={{ color:"var(--muted)", fontSize:13, marginBottom:18,
+            <div style={{ color:"var(--muted)", fontSize:13, marginBottom:13,
               lineHeight:1.6 }}>
               Lade eine DXF-Datei aus deinem CAD-Programm hoch — die App
               erkennt automatisch geschlossene Flächen (Polylinien, Blöcke,
@@ -112,9 +112,9 @@ export function PlanErkennung({ onSave, onClose, onZurueck }) {
               style={{ display:"none" }} onChange={e => handleFile(e.target.files[0])} />
             <div onClick={() => fileRef.current.click()}
               style={{ border:"2px dashed var(--yellow)", borderRadius:20,
-                padding:"48px 20px", textAlign:"center", cursor:"pointer",
+                padding:"35px 20px", textAlign:"center", cursor:"pointer",
                 background:"var(--ybg)" }}>
-              <div style={{ display:"flex", justifyContent:"center", marginBottom:12, color:"var(--ydark)" }}><Ruler size={40} /></div>
+              <div style={{ display:"flex", justifyContent:"center", marginBottom:9, color:"var(--ydark)" }}><Ruler size={40} /></div>
               <div style={{ color:"var(--ydark)", fontWeight:700, fontSize:16 }}>
                 DXF-Datei hochladen
               </div>
@@ -123,7 +123,7 @@ export function PlanErkennung({ onSave, onClose, onZurueck }) {
               </div>
             </div>
             <div style={{ background:"var(--surface)", borderRadius:10,
-              padding:"10px 12px", marginTop:14, fontSize:11, color:"var(--muted)",
+              padding:"7px 12px", marginTop:14, fontSize:11, color:"var(--muted)",
               border:"1px solid var(--border)", lineHeight:1.5 }}>
               Unterstützt: LWPOLYLINE, POLYLINE (inkl. Bögen), HATCH, CIRCLE,
               ARC, verkettete LINE-Segmente sowie INSERT-Blockreferenzen
@@ -136,8 +136,8 @@ export function PlanErkennung({ onSave, onClose, onZurueck }) {
         {/* ERROR */}
         {phase === "error" && (
           <div>
-            <div style={{ background:"var(--rbg)", borderRadius:12, padding:16,
-              marginBottom:16, border:"1px solid var(--red)" }}>
+            <div style={{ background:"var(--rbg)", borderRadius:12, padding:12,
+              marginBottom:12, border:"1px solid var(--red)" }}>
               <div style={{ color:"var(--red)", fontWeight:700, fontSize:14,
                 marginBottom:4, display:"flex", alignItems:"center", gap:6 }}><TriangleAlert size={14} /> Datei konnte nicht verarbeitet werden</div>
               <div style={{ color:"var(--text)", fontSize:13 }}>{fehler}</div>
@@ -155,7 +155,7 @@ export function PlanErkennung({ onSave, onClose, onZurueck }) {
         {phase === "result" && ergebnis && (
           <div>
             <div style={{ display:"flex", justifyContent:"space-between",
-              alignItems:"center", marginBottom:14 }}>
+              alignItems:"center", marginBottom:10 }}>
               <div style={{ color:"var(--text)", fontWeight:700, fontSize:14 }}>
                 {ergebnis.felder.length} Fläche{ergebnis.felder.length!==1?"n":""} erkannt
               </div>
@@ -166,7 +166,7 @@ export function PlanErkennung({ onSave, onClose, onZurueck }) {
 
             {ergebnis.felder.map((f, i) => (
               <div key={i} style={{ background:"var(--surface)", borderRadius:12,
-                padding:"12px 14px", marginBottom:8,
+                padding:"9px 14px", marginBottom:6,
                 border:`1.5px solid ${ausgewaehlt[i] ? "var(--yellow)" : "var(--border)"}`,
                 opacity: ausgewaehlt[i] ? 1 : 0.5 }}>
                 <div style={{ display:"flex", alignItems:"flex-start", gap:10 }}>

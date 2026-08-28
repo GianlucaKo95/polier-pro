@@ -12,8 +12,8 @@ export function AufgabenKarte({ aufgabe, onClick, kolonnen }) {
 
   return (
     <div onClick={onClick}
-      style={{ background:"var(--surface)", padding:"14px 16px",
-        marginBottom:8, cursor:"pointer", display:"flex", gap:12,
+      style={{ background:"var(--surface)", padding:"10px 16px",
+        marginBottom:6, cursor:"pointer", display:"flex", gap:12,
         border:"1px solid var(--border)",
         borderLeft:`4px solid ${ueberfaellig ? "var(--red)" : typ.farbe}`,
         opacity: erledigt ? 0.62 : 1 }}>

@@ -5,7 +5,7 @@ export function OfflineSyncBanner({ pending, syncing, online }) {
   const farbe = syncing ? "var(--green)" : pending > 0 ? "var(--yellow)" : "var(--text)";
   return (
     <div style={{ background: syncing ? "var(--gbg)" : pending > 0 ? "#FFF3CC" : "var(--surface2)",
-      borderRadius:10, padding:"8px 14px", marginBottom:10,
+      borderRadius:10, padding:"6px 14px", marginBottom:7,
       border:`1px solid ${syncing ? "var(--green)" : pending > 0 ? "var(--yellow)" : "var(--surface2)"}`,
       display:"flex", alignItems:"center", gap:10 }}>
       <span style={{ color:farbe, display:"flex", flexShrink:0 }}>
