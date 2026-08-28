@@ -825,7 +825,13 @@ export default function PolierApp() {
     // WebKit nachweislich nicht zuverlässig am Rand kleben. Mit dieser Struktur
     // bleiben Top-Bar und Bottom-Nav als reguläre Flex-Geschwister strukturell
     // immer sichtbar, unabhängig vom Scroll-Verhalten.
-    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
+    // height:"100dvh" statt nur bottom:0: in iOS-Standalone-PWAs berechnet
+    // WebKit die Höhe von position:fixed-Elementen mit bottom:0 teils gegen
+    // die "große" (statische) statt die aktuelle dynamische Viewport-Höhe —
+    // das lässt unten eine leere graue Lücke zum echten Bildschirmrand.
+    // 100dvh referenziert explizit die dynamische Viewport-Höhe.
+    <div style={{ position:"fixed", top:0, left:0, right:0,
+      height:"100dvh",
       display:"flex", flexDirection:"column", overflow:"hidden",
       background:"var(--bg)", color:"var(--text)" }}>
 
