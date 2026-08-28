@@ -3,7 +3,10 @@
 // Strategie: Cache-First für Assets, Network-First für API-Calls
 // ═══════════════════════════════════════════════════════════════════════════
 
-const APP_VERSION   = "polier-pro-v1.0.0";
+// Bei jedem Release mit anheben (siehe config.yaml/package.json) — der
+// Name bestimmt den Cache-Namen, und nur ein geänderter Name lässt den
+// activate-Handler unten die alten, jetzt verwaisten Caches abräumen.
+const APP_VERSION   = "polier-pro-v1.0.60";
 const STATIC_CACHE  = `${APP_VERSION}-static`;
 const DYNAMIC_CACHE = `${APP_VERSION}-dynamic`;
 const IMG_CACHE     = `${APP_VERSION}-images`;
