@@ -11,14 +11,26 @@ export function RegistrierungScreen({ auth, onZurueck }) {
   const [firmaName,   setFirmaName]   = useState("");
   const [laden,       setLaden]       = useState(false);
   const [fehler,      setFehler]      = useState("");
+  // Session aus kontoAnlegen(), falls signUp() sie direkt liefert (kein
+  // "Confirm email" im Supabase-Projekt aktiv) — dann muss firmaAnlegen()
+  // sich nicht separat einloggen, siehe dortiger Kommentar.
+  const [kontoSession, setKontoSession] = useState(null);
 
   async function kontoAnlegen() {
     if (!email || !password || password.length < 8) {
       setFehler("Passwort muss mindestens 8 Zeichen haben."); return;
     }
     setLaden(true); setFehler("");
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) { setFehler(error.message); setLaden(false); return; }
+    if (data.session) {
+      setKontoSession({
+        access_token:  data.session.access_token,
+        refresh_token: data.session.refresh_token,
+        expires_in:    data.session.expires_in,
+        user:          data.session.user,
+      });
+    }
     setSchritt(1);
     setLaden(false);
   }
@@ -27,17 +39,28 @@ export function RegistrierungScreen({ auth, onZurueck }) {
     if (!firmaName.trim()) { setFehler("Firmenname ist Pflicht."); return; }
     setLaden(true); setFehler("");
 
-    // Erst einloggen
-    const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
-    if (loginError || !loginData.session?.access_token) {
-      setFehler("Login fehlgeschlagen."); setLaden(false); return;
+    let session = kontoSession;
+    if (!session) {
+      // signUp() hat keine Session geliefert — das Projekt verlangt eine
+      // E-Mail-Bestätigung. Vorher wurde hier ungeprüft signInWithPassword()
+      // versucht, was in diesem Fall immer mit "Email not confirmed"
+      // fehlschlägt und fälschlich als generischer Login-Fehler erschien.
+      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+      if (loginError) {
+        if (loginError.message?.toLowerCase().includes("email not confirmed")) {
+          setFehler("Bitte bestätige zuerst deine E-Mail-Adresse (Link in deinem Postfach), bevor du fortfährst.");
+        } else {
+          setFehler("Login fehlgeschlagen.");
+        }
+        setLaden(false); return;
+      }
+      session = {
+        access_token:  loginData.session.access_token,
+        refresh_token: loginData.session.refresh_token,
+        expires_in:    loginData.session.expires_in,
+        user:          loginData.user,
+      };
     }
-    const session = {
-      access_token:  loginData.session.access_token,
-      refresh_token: loginData.session.refresh_token,
-      expires_in:    loginData.session.expires_in,
-      user:          loginData.user,
-    };
 
     // Firma registrieren via RPC
     const client = sbClientMitToken(session);

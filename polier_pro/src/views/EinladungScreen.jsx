@@ -41,21 +41,44 @@ export function EinladungScreen({ token, onErfolg }) {
     }
     setLaden(true); setFehler("");
 
-    // Registrieren (Fehler hier ignorieren wir bewusst — falls der Account
-    // schon existiert, greift direkt danach der Login-Versuch)
-    await supabase.auth.signUp({ email, password });
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password });
 
-    // Falls schon registriert: einloggen
-    const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
-    if (loginError || !loginData.session?.access_token) {
-      setFehler("Anmeldung fehlgeschlagen. Passwort korrekt?");
+    // Wenn das Supabase-Projekt "Confirm email" verlangt (Standardeinstellung),
+    // liefert signUp() keinen sofort nutzbaren Session zurück — der Account
+    // existiert, kann sich aber erst nach Bestätigung einloggen. Vorher
+    // versuchte der Code hier direkt signInWithPassword(), was in diesem Fall
+    // mit "Email not confirmed" fehlschlägt und fälschlich als falsches
+    // Passwort angezeigt wurde. Deshalb: signUp()-Session direkt verwenden,
+    // wenn vorhanden — sonst erst dann signInWithPassword versuchen (deckt
+    // den Fall ab, dass der Account schon vorher bestand) und bei einem
+    // "email not confirmed"-Fehler die tatsächliche Ursache benennen.
+    let loginSession = signUpData?.session || null;
+
+    if (!loginSession) {
+      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+      if (loginError) {
+        if (loginError.message?.toLowerCase().includes("email not confirmed")) {
+          setFehler("Bitte bestätige zuerst deine E-Mail-Adresse (Link in deinem Postfach) und öffne diesen Einladungslink danach erneut.");
+        } else if (signUpError) {
+          setFehler(signUpError.message || "Registrierung fehlgeschlagen.");
+        } else {
+          setFehler("Anmeldung fehlgeschlagen. Passwort korrekt?");
+        }
+        setLaden(false); return;
+      }
+      loginSession = loginData.session;
+    }
+
+    if (!loginSession?.access_token) {
+      setFehler("Anmeldung fehlgeschlagen.");
       setLaden(false); return;
     }
+
     const session = {
-      access_token:  loginData.session.access_token,
-      refresh_token: loginData.session.refresh_token,
-      expires_in:    loginData.session.expires_in,
-      user:          loginData.user,
+      access_token:  loginSession.access_token,
+      refresh_token: loginSession.refresh_token,
+      expires_in:    loginSession.expires_in,
+      user:          loginSession.user,
     };
 
     // Einladung einlösen

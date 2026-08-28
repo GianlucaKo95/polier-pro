@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { sbGetProfile, supabase, sbSignIn, sbClientMitToken, sbSignOut, SUPABASE_URL } from "../lib/supabase.js";
+import { sbGetProfile, supabase, sbSignIn, sbSignOut, SUPABASE_URL } from "../lib/supabase.js";
 import { ROLLEN } from "../config/konstanten.js";
 
 export function useAuth() {
@@ -9,18 +9,21 @@ export function useAuth() {
   const [profil,      setProfil]      = useState(null);
   const [loading,     setLoading]     = useState(false);
   const [fehler,      setFehler]      = useState("");
-  const [inviteToken, setInviteToken] = useState(null);
-  const [inviteType,  setInviteType]  = useState(null);
+  const [inviteToken,        setInviteToken]        = useState(null);
+  const [inviteRefreshToken, setInviteRefreshToken] = useState(null);
+  const [inviteType,         setInviteType]         = useState(null);
 
   // Supabase Invite/Recovery Token aus URL Hash lesen
   useEffect(() => {
     const hash = window.location.hash;
     if (!hash) return;
     const params = new URLSearchParams(hash.replace("#", "?"));
-    const token = params.get("access_token");
-    const type  = params.get("type"); // invite | recovery | signup
+    const token   = params.get("access_token");
+    const refresh = params.get("refresh_token");
+    const type    = params.get("type"); // invite | recovery | signup
     if (token && (type === "invite" || type === "recovery" || type === "signup")) {
       setInviteToken(token);
+      setInviteRefreshToken(refresh || null);
       setInviteType(type);
       // Hash aus URL entfernen
       window.history.replaceState({}, "", window.location.pathname);
@@ -141,14 +144,31 @@ export function useAuth() {
   async function passwortSetzen(password) {
     if (!inviteToken) return;
     setLoading(true); setFehler("");
-    const client = sbClientMitToken({ access_token: inviteToken });
-    const { data, error } = await client.auth.updateUser({ password });
+    // auth.updateUser() braucht eine echte GoTrue-Session, nicht nur einen
+    // REST-Authorization-Header wie ihn sbClientMitToken setzt — ohne
+    // vorheriges setSession() kennt der Auth-Client keine Session und wirft
+    // AuthSessionMissingError, das Passwort wird nie gesetzt.
+    const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+      access_token: inviteToken,
+      refresh_token: inviteRefreshToken || "",
+    });
+    if (sessionError || !sessionData.session) {
+      setFehler("Der Link ist abgelaufen oder ungültig. Bitte fordere einen neuen an.");
+      setLoading(false);
+      return;
+    }
+    const { data, error } = await supabase.auth.updateUser({ password });
     if (!error && data.user?.id) {
-      // Einloggen mit dem Invite-Token als Session
-      const session = { access_token: inviteToken, user: data.user };
+      const session = {
+        access_token:  sessionData.session.access_token,
+        refresh_token: sessionData.session.refresh_token,
+        expires_in:    sessionData.session.expires_in,
+        user:          data.user,
+      };
       localStorage.setItem("polaris-session", JSON.stringify(session));
       setSession(session);
       setInviteToken(null);
+      setInviteRefreshToken(null);
     } else {
       setFehler("Passwort konnte nicht gesetzt werden.");
     }
