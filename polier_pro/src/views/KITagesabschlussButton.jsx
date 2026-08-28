@@ -64,12 +64,14 @@ export function KITagesabschlussButton({ projekt, kolonnen, wetter, onErgebnis }
       {offen && (
         <div style={{ position:"fixed", top:0, left:0, right:0, height:"100dvh", background:"var(--bg)", zIndex:600, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
           <div style={{ background:"var(--surface)", borderRadius:"20px 20px 0 0",
-            padding:16, paddingTop:"calc(22px + env(safe-area-inset-top))",
-            width:"100%", maxWidth:520, maxHeight:"92vh",
-            overflowY:"auto", boxShadow:"0 -4px 30px rgba(0,0,0,0.2)" }}>
+            padding:16,
+            width:"100%", maxWidth:520,
+            boxShadow:"0 -4px 30px rgba(0,0,0,0.2)" }}>
 
             <div style={{ display:"flex", justifyContent:"space-between",
-              alignItems:"center", marginBottom:12 }}>
+              alignItems:"center", marginBottom:12,
+              paddingTop:"calc(6px + env(safe-area-inset-top))",
+              position:"sticky", top:0, background:"var(--surface)", zIndex:5 }}>
               <div style={{ fontWeight:800, fontSize:17, color:"var(--text)",
                 display:"flex", alignItems:"center", gap:8 }}>
                 <Bot size={16} /> KI-Tagesabschluss
