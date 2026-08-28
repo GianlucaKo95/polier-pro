@@ -32,7 +32,7 @@ export function useAuth() {
 
   useEffect(() => {
     if (session?.access_token) {
-      sbGetProfile(session.access_token).then(p => {
+      sbGetProfile(session.access_token, session.user?.id).then(p => {
         if (p) setProfil(p);
         else { localStorage.removeItem("polaris-session"); setSession(null); }
       });
@@ -80,7 +80,7 @@ export function useAuth() {
   useEffect(() => {
     function handleVisibility() {
       if (document.visibilityState === "visible" && session?.access_token) {
-        sbGetProfile(session.access_token).then(p => {
+        sbGetProfile(session.access_token, session.user?.id).then(p => {
           if (!p) {
             // Token ist ungültig geworden (z.B. abgelaufen während App im Hintergrund war)
             localStorage.removeItem("polaris-session");
@@ -101,7 +101,7 @@ export function useAuth() {
   useEffect(() => {
     async function handleAuthInvalid() {
       if (!session?.access_token) return;
-      const p = await sbGetProfile(session.access_token);
+      const p = await sbGetProfile(session.access_token, session.user?.id);
       if (!p) {
         // Session wirklich ungültig — jetzt abmelden
         localStorage.removeItem("polaris-session");
