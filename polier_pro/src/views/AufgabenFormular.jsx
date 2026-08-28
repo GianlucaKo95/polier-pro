@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { leereAufgabe } from "../lib/utils.js";
 import { Label, inputStyle } from "../components/Label.jsx";
 import { AUFGABEN_TYPEN, AUFGABEN_STATUS, AUFGABEN_PRIO } from "../config/konstanten.js";
@@ -9,6 +9,22 @@ export function AufgabenFormular({ initial, kolonnen, onSave, onClose }) {
   const [planMode,setPlanMode]= useState(false);
   const fileRef               = useRef(null);
   const planRef               = useRef(null);
+  const scrollRef              = useRef(null);
+
+  // Auf installierten iOS-PWAs öffnet sich dieses (das mit Abstand längste)
+  // Formular teils bereits nach unten verschoben, ganz ohne Tipp-/Tastatur-
+  // Interaktion — der Header bleibt erreichbar, man muss nur manuell
+  // hochscrollen. Die genaue WebKit-Ursache dafür lässt sich ohne
+  // Gerätezugriff nicht zuverlässig eingrenzen; deshalb hier unabhängig
+  // davon aktiv auf Position 0 zurücksetzen, sobald das Formular öffnet.
+  useEffect(() => {
+    scrollRef.current?.scrollTo(0, 0);
+    // Falls der Verschub erst nach dem ersten Layout-Pass passiert (z.B.
+    // durch verzögert nachladende Web-Fonts), sicherheitshalber im
+    // nächsten Frame nochmal zurücksetzen.
+    const id = requestAnimationFrame(() => scrollRef.current?.scrollTo(0, 0));
+    return () => cancelAnimationFrame(id);
+  }, []);
 
   function handleBild(e) {
     Array.from(e.target.files).forEach(file => {
@@ -37,7 +53,7 @@ export function AufgabenFormular({ initial, kolonnen, onSave, onClose }) {
     // simple, bereits an anderer Stelle (ProjektFormular, PlanErkennung,
     // SchnellErstellung, …) bewährte Aufbau: EIN einziger, vollflächiger
     // Scroll-Container mit sticky Header statt geschachtelter Container.
-    <div style={{ position:"fixed", top:0, left:0, right:0, height:"100dvh",
+    <div ref={scrollRef} style={{ position:"fixed", top:0, left:0, right:0, height:"100dvh",
       background:"var(--bg)", zIndex:500, overflowY:"auto",
       WebkitOverflowScrolling:"touch" }}>
 
