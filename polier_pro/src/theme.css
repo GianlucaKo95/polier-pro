@@ -27,9 +27,14 @@
   --bbg:     #DBEAFE;
   --orange:  #C2410C;
   --obg:     #FFEDD5;
-  --radius:  14px;
-  --radius-sm: 10px;
-  --radius-lg: 20px;
+  --radius:  0px;
+  --radius-sm: 0px;
+  --radius-lg: 0px;
+  /* Redesign 2026-08: fester dunkler Anker-Header, unabhängig vom Hell/Dunkel-Toggle
+     der restlichen Fläche — siehe Polaris Redesign (Runde 1), "Ink-Header als Anker". */
+  --ink:     #0B1120;
+  --ink-text2: #8B9EC8;
+  --font-ui: 'Archivo', system-ui, -apple-system, sans-serif;
 }
 [data-theme="dark"] {
   --bg:      #0B1120;
@@ -51,5 +56,10 @@
 body {
   background: var(--bg) !important;
   color: var(--text) !important;
+  font-family: var(--font-ui);
   transition: background 0.25s, color 0.25s;
 }
+input, textarea, select, button {
+  font-family: var(--font-ui);
+}
+.num { font-variant-numeric: tabular-nums; }
