@@ -274,7 +274,14 @@ export default function PolierApp() {
   }
 
   // ── Einladungs-Screen ──
-  if (einladungsToken && !aktiveProfil) {
+  // Läuft IMMER wenn ein Einladungs-Token in der URL steht — auch wenn im
+  // selben Browser noch eine andere Sitzung (z.B. der Admin, der die
+  // Einladung erstellt hat) aktiv ist. Vorher wurde der Screen mit
+  // "&& !aktiveProfil" übersprungen, sobald jemand eingeloggt war: der
+  // Einladungslink öffnete dann einfach die normale App im Kontext des
+  // bereits eingeloggten Nutzers, statt das Registrierungsformular zu
+  // zeigen — der neue Nutzer wurde nie angelegt.
+  if (einladungsToken) {
     return <EinladungScreen
       token={einladungsToken}
       onErfolg={() => {
