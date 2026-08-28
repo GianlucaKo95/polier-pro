@@ -6,7 +6,7 @@
 // Bei jedem Release mit anheben (siehe config.yaml/package.json) — der
 // Name bestimmt den Cache-Namen, und nur ein geänderter Name lässt den
 // activate-Handler unten die alten, jetzt verwaisten Caches abräumen.
-const APP_VERSION   = "polier-pro-v1.0.60";
+const APP_VERSION   = "polier-pro-v1.0.61";
 const STATIC_CACHE  = `${APP_VERSION}-static`;
 const DYNAMIC_CACHE = `${APP_VERSION}-dynamic`;
 const IMG_CACHE     = `${APP_VERSION}-images`;
@@ -96,9 +96,13 @@ self.addEventListener("fetch", (e) => {
   }
 
   // 3. Navigation (HTML): Network-First mit Offline-Fallback
+  // cache:"no-store" erzwingt einen echten Netzwerk-Request statt einer
+  // Antwort aus dem browsereigenen HTTP-Cache — sonst kann "Network-First"
+  // trotzdem eine veraltete index.html liefern, wenn der HTTP-Cache sie
+  // (v.a. im iOS-Standalone-PWA-Modus) noch als frisch genug einstuft.
   if (request.mode === "navigate") {
     e.respondWith(
-      fetch(request)
+      fetch(request, { cache: "no-store" })
         .then(res => {
           const clone = res.clone();
           caches.open(DYNAMIC_CACHE).then(c => c.put(request, clone));
