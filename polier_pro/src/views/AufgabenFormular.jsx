@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { leereAufgabe } from "../lib/utils.js";
 import { Label, inputStyle } from "../components/Label.jsx";
 import { AUFGABEN_TYPEN, AUFGABEN_STATUS, AUFGABEN_PRIO } from "../config/konstanten.js";
@@ -45,14 +46,17 @@ export function AufgabenFormular({ initial, kolonnen, onSave, onClose }) {
 
   const valid = a.titel.trim().length > 0;
 
-  return (
-    // Bottom-sheet-Aufbau (Backdrop mit alignItems:"flex-end" + Panel mit
-    // eigenem maxHeight/overflowY-Cap) blieb auf installierten iOS-PWAs
-    // trotz mehrerer vh/dvh-Anläufe fehlerhaft — Header und Typ-Auswahl
-    // starteten oberhalb des sichtbaren Bereichs. Daher jetzt derselbe
-    // simple, bereits an anderer Stelle (ProjektFormular, PlanErkennung,
-    // SchnellErstellung, …) bewährte Aufbau: EIN einziger, vollflächiger
-    // Scroll-Container mit sticky Header statt geschachtelter Container.
+  // Über ein Portal direkt an document.body gerendert statt in der
+  // normalen Baumtiefe (App-Root → CONTENT → AufgabenView → …): der
+  // App-Root selbst ist position:fixed und damit sein eigener Stacking-
+  // Context. In installierten iOS-PWAs deckte dieses tief verschachtelte
+  // position:fixed-Overlay die TOP BAR/Baustellen-Navigation des App-Roots
+  // (ebenfalls position:fixed, aber mit niedrigerem z-index) trotzdem
+  // nicht zuverlässig ab — sie blieb sichtbar, wo eigentlich der Header
+  // dieses Formulars hingehört. Ein Portal umgeht jede Unsicherheit beim
+  // verschachtelten Stacking, indem es das Overlay als direktes Kind von
+  // <body> rendert, exakt auf einer Ebene mit dem App-Root selbst.
+  return createPortal(
     <div ref={scrollRef} style={{ position:"fixed", top:0, left:0, right:0, height:"100dvh",
       background:"var(--bg)", zIndex:500, overflowY:"auto",
       WebkitOverflowScrolling:"touch" }}>
@@ -287,6 +291,7 @@ export function AufgabenFormular({ initial, kolonnen, onSave, onClose }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
