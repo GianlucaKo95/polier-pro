@@ -184,7 +184,7 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
   // ── LV-Vorlage Auswahl als eigener Screen ──
   if (vonVorlage) {
     return (
-      <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
+      <div style={{ position:"fixed", top:0, left:0, right:0, height:"100dvh",
         background:"var(--bg)", zIndex:700, overflowY:"auto",
         WebkitOverflowScrolling:"touch" }}>
         <div style={{ background:"var(--surface)", padding:"10px 18px",
@@ -225,7 +225,7 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
   // ── Aufgaben-Import als eigener Screen ──
   if (vonAufgabe) {
     return (
-      <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
+      <div style={{ position:"fixed", top:0, left:0, right:0, height:"100dvh",
         background:"var(--bg)", zIndex:700, overflowY:"auto",
         WebkitOverflowScrolling:"touch" }}>
         <div style={{ background:"var(--surface)", padding:"10px 18px",

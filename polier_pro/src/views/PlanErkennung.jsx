@@ -75,7 +75,7 @@ export function PlanErkennung({ onSave, onClose, onZurueck }) {
   const anzahlAusgewaehlt = Object.values(ausgewaehlt).filter(Boolean).length;
 
   return (
-    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
+    <div style={{ position:"fixed", top:0, left:0, right:0, height:"100dvh",
       background:"var(--bg)", zIndex:500, overflowY:"auto",
       WebkitOverflowScrolling:"touch" }}>
 
