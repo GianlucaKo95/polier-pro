@@ -1,12 +1,11 @@
 export function FilterBtn({ active, onClick, children }) {
   return (
     <button onClick={onClick}
-      style={{ background: active ? "var(--yellow)" : "#FFFFFF",
-        color: active ? "#1C2027" : "var(--muted)",
-        border:`1.5px solid ${active ? "var(--yellow)" : "var(--border)"}`,
-        borderRadius:20, padding:"8px 16px", cursor:"pointer",
-        fontSize:13, fontWeight: active ? 700 : 500, whiteSpace:"nowrap",
-        boxShadow: active ? "0 2px 8px rgba(245,196,0,0.3)" : "0 1px 3px rgba(0,0,0,0.06)" }}>
+      style={{ background: active ? "var(--ink)" : "var(--surface)",
+        color: active ? "#fff" : "var(--muted)",
+        border:`1px solid ${active ? "var(--ink)" : "var(--border2)"}`,
+        padding:"7px 13px", cursor:"pointer",
+        fontSize:12, fontWeight: active ? 800 : 600, whiteSpace:"nowrap" }}>
       {children}
     </button>
   );

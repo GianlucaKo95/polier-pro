@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ClipboardList, Plus } from "lucide-react";
 import { Label, inputStyle } from "../components/Label.jsx";
 
 export function VorlageFormular({ initial, einheitspreise, onSave, onClose }) {
@@ -16,7 +17,8 @@ export function VorlageFormular({ initial, einheitspreise, onSave, onClose }) {
   return (
     <div>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
-        <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:16 }}>📋 Neue LV-Vorlage</div>
+        <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:16,
+          display:"flex", alignItems:"center", gap:7 }}><ClipboardList size={15} /> Neue LV-Vorlage</div>
         <button onClick={onClose} style={{ background:"none", border:"none",
           color:"var(--muted)", fontSize:24, cursor:"pointer" }}>✕</button>
       </div>
@@ -35,7 +37,8 @@ export function VorlageFormular({ initial, einheitspreise, onSave, onClose }) {
         <button onClick={addPosition}
           style={{ background:"var(--surface2)", color:"var(--text)",
             border:"1px solid var(--border)", borderRadius:8, padding:"4px 10px",
-            cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>+ Position</button>
+            cursor:"pointer", fontSize:12, fontFamily:"inherit",
+            display:"flex", alignItems:"center", gap:4 }}><Plus size={12} /> Position</button>
       </div>
       {v.positionen.map((pos,i) => (
         <div key={i} style={{ background:"var(--surface2)", borderRadius:10,
@@ -64,7 +67,7 @@ export function VorlageFormular({ initial, einheitspreise, onSave, onClose }) {
         <button onClick={() => v.name && onSave(v)}
           style={{ flex:2, background:"var(--yellow)", color:"#1a1200",
             border:"none", borderRadius:12, padding:13, fontWeight:800,
-            cursor:"pointer", fontFamily:"inherit" }}>💾 Vorlage speichern</button>
+            cursor:"pointer", fontFamily:"inherit" }}>Vorlage speichern</button>
       </div>
     </div>
   );

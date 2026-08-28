@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { PenLine, X, Check, FileText, CircleCheckBig } from "lucide-react";
 import { UnterschriftPad } from "../components/UnterschriftPad.jsx";
 import { escapeHtml, sha256Hex } from "../lib/utils.js";
 
@@ -166,7 +167,7 @@ ${offeneMaengel.length > 0 ? `<div class="section">
           padding:"8px 14px", fontWeight:700, cursor:"pointer",
           fontSize:13, fontFamily:"inherit",
           display:"flex", alignItems:"center", gap:6 }}>
-        ✍️ Unterschreiben & Export
+        <PenLine size={14} /> Unterschreiben & Export
       </button>
 
       {offen && (
@@ -177,12 +178,13 @@ ${offeneMaengel.length > 0 ? `<div class="section">
 
             <div style={{ display:"flex", justifyContent:"space-between",
               alignItems:"center", marginBottom:16 }}>
-              <div style={{ fontWeight:800, fontSize:17, color:"var(--text)" }}>
-                ✍️ Digitale Unterschrift
+              <div style={{ fontWeight:800, fontSize:17, color:"var(--text)",
+                display:"flex", alignItems:"center", gap:8 }}>
+                <PenLine size={16} /> Digitale Unterschrift
               </div>
               <button onClick={() => setOffen(false)}
                 style={{ background:"none", border:"none", color:"var(--muted)",
-                  fontSize:24, cursor:"pointer" }}>✕</button>
+                  cursor:"pointer", display:"flex" }}><X size={22} /></button>
             </div>
 
             {/* Revisions-Hash */}
@@ -205,7 +207,7 @@ ${offeneMaengel.length > 0 ? `<div class="section">
             {sigPolier && (
               <div style={{ marginBottom:12 }}>
                 <div style={{ color:"var(--green)", fontSize:12, fontWeight:600,
-                  marginBottom:4 }}>✓ Polier unterschrieben</div>
+                  marginBottom:4, display:"flex", alignItems:"center", gap:4 }}><Check size={12} /> Polier unterschrieben</div>
                 <img src={sigPolier} alt="Unterschrift Polier"
                   style={{ height:50, border:"1px solid var(--border)",
                     borderRadius:8, background:"#fff" }} />
@@ -216,7 +218,7 @@ ${offeneMaengel.length > 0 ? `<div class="section">
             {sigBauleiter && (
               <div style={{ marginBottom:16 }}>
                 <div style={{ color:"var(--green)", fontSize:12, fontWeight:600,
-                  marginBottom:4 }}>✓ Bauleiter unterschrieben</div>
+                  marginBottom:4, display:"flex", alignItems:"center", gap:4 }}><Check size={12} /> Bauleiter unterschrieben</div>
                 <img src={sigBauleiter} alt="Unterschrift Bauleiter"
                   style={{ height:50, border:"1px solid var(--border)",
                     borderRadius:8, background:"#fff" }} />
@@ -227,15 +229,16 @@ ${offeneMaengel.length > 0 ? `<div class="section">
               style={{ width:"100%", background: hash ? "var(--yellow)" : "var(--surface2)",
                 color: hash ? "#1a1200" : "var(--muted)",
                 border:"none", borderRadius:12, padding:15, fontWeight:800,
-                fontSize:15, cursor: hash ? "pointer" : "default", fontFamily:"inherit" }}>
-              📄 Revisionssicheres PDF exportieren
+                fontSize:15, cursor: hash ? "pointer" : "default", fontFamily:"inherit",
+                display:"flex", alignItems:"center", justifyContent:"center", gap:7 }}>
+              <FileText size={15} /> Revisionssicheres PDF exportieren
             </button>
 
             {exportiert && (
               <div style={{ background:"var(--gbg)", borderRadius:10, padding:10,
                 marginTop:10, color:"var(--green)", fontSize:12, fontWeight:600,
-                textAlign:"center" }}>
-                ✅ PDF erstellt · DOC-{hash} · {new Date().toLocaleString("de-DE")}
+                textAlign:"center", display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+                <CircleCheckBig size={13} /> PDF erstellt · DOC-{hash} · {new Date().toLocaleString("de-DE")}
               </div>
             )}
           </div>

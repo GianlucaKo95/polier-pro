@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { RefreshCw, Info, TriangleAlert, CircleX, Plus } from "lucide-react";
 import { ERFASST_PROXY, erfasstQuery } from "../lib/erfasst.js";
 import { Label, inputStyle } from "../components/Label.jsx";
 import { KolonneKarte } from "../components/KolonneKarte.jsx";
@@ -84,9 +85,9 @@ export function KolonnenView({ kolonnen, projekt, setKolonnen, darfBearbeiten = 
           </div>
           <button onClick={ladeZeiten}
             style={{ background: "var(--border)", border:"none", color: "var(--text)",
-              borderRadius:8, padding:"10px 12px", cursor:"pointer", fontSize:16,
+              borderRadius:8, padding:"10px 12px", cursor:"pointer",
               height:40, display:"flex", alignItems:"center" }}>
-            {ladeStatus === "loading" ? "⏳" : "🔄"}
+            <RefreshCw size={16} />
           </button>
         </div>
       )}
@@ -95,7 +96,7 @@ export function KolonnenView({ kolonnen, projekt, setKolonnen, darfBearbeiten = 
       {!konfiguriert && (
         <div style={{ background: "var(--border)", borderRadius:8, padding:"8px 12px", marginBottom:12,
           display:"flex", gap:8, alignItems:"center" }}>
-          <span style={{ fontSize:14 }}>ℹ️</span>
+          <Info size={14} style={{ color:"var(--muted)", flexShrink:0 }} />
           <span style={{ color: "var(--muted)", fontSize:12 }}>
             123erfasst nicht konfiguriert — Stunden werden aus Mock-Daten angezeigt.
           </span>
@@ -104,15 +105,16 @@ export function KolonnenView({ kolonnen, projekt, setKolonnen, darfBearbeiten = 
       {konfiguriert && !erfasstLinked && (
         <div style={{ background:"#2A2010", borderRadius:8, padding:"8px 12px", marginBottom:12,
           display:"flex", gap:8, alignItems:"center" }}>
-          <span style={{ fontSize:14 }}>⚠️</span>
+          <TriangleAlert size={14} style={{ color:"var(--yellow)", flexShrink:0 }} />
           <span style={{ color: "var(--yellow)", fontSize:12 }}>
-            Kein 123erfasst-Projekt verknüpft. Im ⏱️ Zeiten-Tab verknüpfen.
+            Kein 123erfasst-Projekt verknüpft. Im Zeiten-Tab verknüpfen.
           </span>
         </div>
       )}
       {ladeStatus === "error" && (
-        <div style={{ background:"#2E1A1A", borderRadius:8, padding:"8px 12px", marginBottom:12, color: "var(--red)", fontSize:12 }}>
-          ❌ Zeitdaten konnten nicht geladen werden.
+        <div style={{ background:"#2E1A1A", borderRadius:8, padding:"8px 12px", marginBottom:12, color: "var(--red)", fontSize:12,
+          display:"flex", alignItems:"center", gap:6 }}>
+          <CircleX size={13} /> Zeitdaten konnten nicht geladen werden.
         </div>
       )}
 
@@ -134,8 +136,9 @@ export function KolonnenView({ kolonnen, projekt, setKolonnen, darfBearbeiten = 
         <button onClick={() => setNeueKolonne(true)}
           style={{ width:"100%", background:"var(--ybg)", color:"var(--ydark)",
             border:"2px dashed var(--yellow)", borderRadius:10, padding:12,
-            cursor:"pointer", fontSize:14, fontWeight:700, fontFamily:"inherit" }}>
-          + Kolonne einteilen
+            cursor:"pointer", fontSize:14, fontWeight:700, fontFamily:"inherit",
+            display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+          <Plus size={15} /> Kolonne einteilen
         </button>
       ) : (
         <div style={{ background:"var(--surface)", borderRadius:12, padding:16,
@@ -162,7 +165,7 @@ export function KolonnenView({ kolonnen, projekt, setKolonnen, darfBearbeiten = 
                 color: kName.trim() ? "#1a1200" : "var(--muted)",
                 border:"none", borderRadius:10, padding:10, fontWeight:700,
                 cursor: kName.trim() ? "pointer" : "default", fontFamily:"inherit" }}>
-              💾 Anlegen
+              Anlegen
             </button>
           </div>
         </div>

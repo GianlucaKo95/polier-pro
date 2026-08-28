@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { CircleX, Wind, Droplet, CloudRain, CircleCheckBig, Ban, MapPin, Blocks, Calendar } from "lucide-react";
 import { geocodePLZ, geocodeAdresse, wmoIcon, betonCheck } from "../lib/geo.js";
 
 export function WeatherView({ compact = false, ort = null, plz = null, projektId = null }) {
@@ -76,13 +77,14 @@ export function WeatherView({ compact = false, ort = null, plz = null, projektId
 
   if (loading) return (
     <div style={{ background: "var(--surface)", borderRadius: 12, padding: 20, textAlign:"center", color: "var(--muted)" }}>
-      ⏳ Wetterdaten werden geladen…
+      Wetterdaten werden geladen…
     </div>
   );
 
   if (!weather) return (
-    <div style={{ background: "var(--surface)", borderRadius: 12, padding: 20, textAlign:"center", color: "var(--red)" }}>
-      ❌ Wetterdaten nicht verfügbar
+    <div style={{ background: "var(--surface)", borderRadius: 12, padding: 20, textAlign:"center", color: "var(--red)",
+      display:"flex", alignItems:"center", justifyContent:"center", gap:7 }}>
+      <CircleX size={15} /> Wetterdaten nicht verfügbar
     </div>
   );
 
@@ -92,10 +94,13 @@ export function WeatherView({ compact = false, ort = null, plz = null, projektId
         <div>
           <div style={{ color: "var(--muted)", fontSize: 11, textTransform:"uppercase", letterSpacing:1 }}>{loc.name}</div>
           <div style={{ color: "var(--text)", fontSize: 26, fontWeight: 700 }}>{weather.icon} {weather.temp}°C</div>
-          <div style={{ color: "var(--muted)", fontSize: 12 }}>💨 {weather.wind} km/h · 💧 {weather.humidity}% · 🌧️ {weather.rain}mm</div>
+          <div style={{ color: "var(--muted)", fontSize: 12, display:"flex", alignItems:"center", gap:4, flexWrap:"wrap" }}>
+            <Wind size={11} /> {weather.wind} km/h · <Droplet size={11} /> {weather.humidity}% · <CloudRain size={11} /> {weather.rain}mm
+          </div>
         </div>
-        <div style={{ background: ok ? "var(--green)" : "var(--orange)", color:"#fff", borderRadius:8, padding:"8px 14px", fontWeight:700, fontSize:13, textAlign:"center" }}>
-          {ok ? "✅ Betonage\nmöglich" : "⚠️ Prüfen"}
+        <div style={{ background: ok ? "var(--green)" : "var(--orange)", color:"#fff", borderRadius:8, padding:"8px 14px", fontWeight:700, fontSize:13, textAlign:"center",
+          display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
+          {ok ? <><CircleCheckBig size={16} /> Betonage möglich</> : <><Ban size={16} /> Prüfen</>}
         </div>
       </div>
       {warn.length > 0 && (
@@ -122,18 +127,21 @@ export function WeatherView({ compact = false, ort = null, plz = null, projektId
   return (
     <div>
       <div style={{ background: "var(--surface)", borderRadius:12, padding:18, border:`1px solid ${ok ? "var(--green)" : "var(--orange)"}`, marginBottom:14 }}>
-        <div style={{ color: "var(--muted)", fontSize:11, textTransform:"uppercase", letterSpacing:1, marginBottom:4 }}>📍 {loc.name} · Live-Wetter</div>
+        <div style={{ color: "var(--muted)", fontSize:11, textTransform:"uppercase", letterSpacing:1, marginBottom:4,
+          display:"flex", alignItems:"center", gap:4 }}><MapPin size={10} /> {loc.name} · Live-Wetter</div>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div>
             <div style={{ color: "var(--text)", fontSize:42, fontWeight:800 }}>{weather.icon} {weather.temp}°C</div>
-            <div style={{ color: "var(--muted)", fontSize:13, marginTop:4 }}>
-              💨 {weather.wind} km/h Wind &nbsp;|&nbsp; 💧 {weather.humidity}% Feuchte &nbsp;|&nbsp; 🌧️ {weather.rain} mm
+            <div style={{ color: "var(--muted)", fontSize:13, marginTop:4,
+              display:"flex", alignItems:"center", gap:4, flexWrap:"wrap" }}>
+              <Wind size={12} /> {weather.wind} km/h Wind &nbsp;|&nbsp; <Droplet size={12} /> {weather.humidity}% Feuchte &nbsp;|&nbsp; <CloudRain size={12} /> {weather.rain} mm
             </div>
           </div>
         </div>
         <div style={{ background: ok ? "#1A3A28" : "#3A1A1A", borderRadius:10, padding:14, marginTop:14 }}>
-          <div style={{ color: ok ? "var(--green)" : "var(--red)", fontWeight:700, fontSize:15, marginBottom: warn.length ? 8 : 0 }}>
-            {ok ? "✅ Betonage heute möglich" : "🚫 Betonage eingeschränkt"}
+          <div style={{ color: ok ? "var(--green)" : "var(--red)", fontWeight:700, fontSize:15, marginBottom: warn.length ? 8 : 0,
+            display:"flex", alignItems:"center", gap:7 }}>
+            {ok ? <><CircleCheckBig size={15} /> Betonage heute möglich</> : <><Ban size={15} /> Betonage eingeschränkt</>}
           </div>
           {warn.map((w,i) => <div key={i} style={{ color:"#FF9999", fontSize:13, marginTop:4 }}>{w}</div>)}
         </div>
@@ -141,7 +149,8 @@ export function WeatherView({ compact = false, ort = null, plz = null, projektId
 
       {/* Checkliste */}
       <div style={{ background: "var(--surface)", borderRadius:12, padding:16, marginBottom:14 }}>
-        <div style={{ color: "var(--yellow)", fontWeight:700, marginBottom:12 }}>🧱 Betonier-Checkliste</div>
+        <div style={{ color: "var(--yellow)", fontWeight:700, marginBottom:12,
+          display:"flex", alignItems:"center", gap:7 }}><Blocks size={15} /> Betonier-Checkliste</div>
         {[
           ["Temperatur",    `${weather.temp}°C`,        weather.temp >= 5 && weather.temp <= 30, "5°C – 30°C"],
           ["Wind",          `${weather.wind} km/h`,     weather.wind <= 40,                      "max. 40 km/h"],
@@ -155,7 +164,7 @@ export function WeatherView({ compact = false, ort = null, plz = null, projektId
             </div>
             <div style={{ display:"flex", alignItems:"center", gap:10 }}>
               <span style={{ color: "var(--text)", fontWeight:700 }}>{v}</span>
-              <span style={{ fontSize:18 }}>{ok ? "✅" : "🚫"}</span>
+              <span style={{ display:"flex", color: ok ? "var(--green)" : "var(--red)" }}>{ok ? <CircleCheckBig size={17} /> : <Ban size={17} />}</span>
             </div>
           </div>
         ))}
@@ -163,7 +172,8 @@ export function WeatherView({ compact = false, ort = null, plz = null, projektId
 
       {/* 7-Tage */}
       <div style={{ background: "var(--surface)", borderRadius:12, padding:16 }}>
-        <div style={{ color: "var(--yellow)", fontWeight:700, marginBottom:12 }}>📅 7-Tage Betonierplan</div>
+        <div style={{ color: "var(--yellow)", fontWeight:700, marginBottom:12,
+          display:"flex", alignItems:"center", gap:7 }}><Calendar size={15} /> 7-Tage Betonierplan</div>
         {weather.forecast.map((f,i) => {
           const dayWarn = betonCheck({ temp:f.max, wind:30, rain:f.rain, humidity:70 });
           const dayOk = dayWarn.length === 0;
@@ -176,11 +186,12 @@ export function WeatherView({ compact = false, ort = null, plz = null, projektId
                 <span style={{ fontSize:20 }}>{f.icon}</span>
                 <div>
                   <div style={{ color: "var(--text)", fontWeight:600, fontSize:13 }}>{f.day} · {new Date(f.date).getDate()}.{(new Date(f.date).getMonth()+1).toString().padStart(2,"0")}.</div>
-                  <div style={{ color: "var(--muted)", fontSize:11 }}>{f.min}° – {f.max}° · {f.rain > 0 ? `🌧️ ${f.rain}mm` : "kein Regen"}</div>
+                  <div style={{ color: "var(--muted)", fontSize:11, display:"flex", alignItems:"center", gap:4 }}>{f.min}° – {f.max}° · {f.rain > 0 ? <><CloudRain size={10} /> {f.rain}mm</> : "kein Regen"}</div>
                 </div>
               </div>
-              <div style={{ color: dayOk ? "var(--green)" : "var(--red)", fontWeight:700, fontSize:12 }}>
-                {dayOk ? "✅ OK" : "🚫 Nein"}
+              <div style={{ color: dayOk ? "var(--green)" : "var(--red)", fontWeight:700, fontSize:12,
+                display:"flex", alignItems:"center", gap:4 }}>
+                {dayOk ? <><CircleCheckBig size={13} /> OK</> : <><Ban size={13} /> Nein</>}
               </div>
             </div>
           );

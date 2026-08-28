@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ClipboardList, X, CircleCheckBig, ChevronLeft, ChartColumn, FileText, Settings, Plus } from "lucide-react";
 import { AUFGABEN_TYPEN } from "../config/konstanten.js";
 import { inputStyle, Label } from "../components/Label.jsx";
 import { escapeHtml } from "../lib/utils.js";
@@ -185,18 +186,18 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
     return (
       <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
         background:"var(--bg)", zIndex:700, overflowY:"auto",
-        WebkitOverflowScrolling:"touch",
-        fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
+        WebkitOverflowScrolling:"touch" }}>
         <div style={{ background:"var(--surface)", padding:"14px 18px",
           borderBottom:"3px solid var(--yellow)", position:"sticky", top:0,
           display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-          <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:16 }}>
-            📋 LV-Vorlage laden
+          <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:16,
+            display:"flex", alignItems:"center", gap:8 }}>
+            <ClipboardList size={15} /> LV-Vorlage laden
           </div>
           <button onClick={() => setVonVorlage(false)}
             style={{ background:"var(--surface2)", border:"1px solid var(--border)",
               color:"var(--text)", borderRadius:8, padding:"6px 14px",
-              cursor:"pointer", fontFamily:"inherit" }}>✕</button>
+              cursor:"pointer", fontFamily:"inherit", display:"flex" }}><X size={15} /></button>
         </div>
         <div style={{ padding:"20px 16px" }}>
           {lvVorlagen.length === 0 && (
@@ -225,18 +226,18 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
     return (
       <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
         background:"var(--bg)", zIndex:700, overflowY:"auto",
-        WebkitOverflowScrolling:"touch",
-        fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
+        WebkitOverflowScrolling:"touch" }}>
         <div style={{ background:"var(--surface)", padding:"14px 18px",
           borderBottom:"3px solid var(--green)", position:"sticky", top:0,
           display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-          <div style={{ color:"var(--green)", fontWeight:700, fontSize:16 }}>
-            ✅ Aus Aufgaben importieren
+          <div style={{ color:"var(--green)", fontWeight:700, fontSize:16,
+            display:"flex", alignItems:"center", gap:8 }}>
+            <CircleCheckBig size={15} /> Aus Aufgaben importieren
           </div>
           <button onClick={() => setVonAufgabe(false)}
             style={{ background:"var(--surface2)", border:"1px solid var(--border)",
               color:"var(--text)", borderRadius:8, padding:"6px 14px",
-              cursor:"pointer", fontFamily:"inherit" }}>✕</button>
+              cursor:"pointer", fontFamily:"inherit", display:"flex" }}><X size={15} /></button>
         </div>
         <div style={{ padding:"20px 16px" }}>
           {aufgaben.length === 0 && (
@@ -274,7 +275,7 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
         <button onClick={onClose}
           style={{ background:"var(--surface2)", border:"1.5px solid var(--border)",
             color:"var(--text)", borderRadius:10, padding:"7px 14px",
-            cursor:"pointer", fontSize:16, fontFamily:"inherit" }}>‹</button>
+            cursor:"pointer", fontFamily:"inherit", display:"flex" }}><ChevronLeft size={16} /></button>
         <div style={{ color:"var(--text)", fontWeight:700, fontSize:14,
           flex:1, textAlign:"center", margin:"0 10px" }}>{a.titel}</div>
         <div style={{ display:"flex", gap:6 }}>
@@ -282,11 +283,12 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
             style={{ background:"var(--surface2)", color:"var(--text)",
               border:"1.5px solid var(--border)", borderRadius:8,
               padding:"6px 10px", cursor:"pointer", fontSize:12,
-              fontFamily:"inherit" }}>📊 CSV</button>
+              fontFamily:"inherit", display:"flex", alignItems:"center", gap:5 }}><ChartColumn size={12} /> CSV</button>
           <button onClick={exportPDF}
             style={{ background:"var(--yellow)", color:"#1a1200", border:"none",
               borderRadius:8, padding:"6px 12px", fontWeight:700,
-              cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>📄 PDF</button>
+              cursor:"pointer", fontSize:12, fontFamily:"inherit",
+              display:"flex", alignItems:"center", gap:5 }}><FileText size={12} /> PDF</button>
         </div>
       </div>
 
@@ -314,13 +316,14 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
 
         {/* Tab-Toggle */}
         <div style={{ display:"flex", gap:6, marginBottom:14 }}>
-          {[["positionen","📋 Positionen"],["einstellungen","⚙️ Einstellungen"]].map(([k,l]) => (
+          {[["positionen",ClipboardList,"Positionen"],["einstellungen",Settings,"Einstellungen"]].map(([k,Icon,l]) => (
             <button key={k} onClick={() => setAnsicht(k)}
               style={{ flex:1, background: ansicht===k ? "var(--yellow)" : "var(--surface2)",
                 color: ansicht===k ? "#1a1200" : "var(--muted)",
                 border:`1.5px solid ${ansicht===k ? "var(--yellow)" : "var(--border)"}`,
                 borderRadius:10, padding:9, fontWeight: ansicht===k ? 700 : 400,
-                cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>{l}</button>
+                cursor:"pointer", fontSize:12, fontFamily:"inherit",
+                display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}><Icon size={13} /> {l}</button>
           ))}
         </div>
 
@@ -333,16 +336,19 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
                 style={{ flex:1, background:"var(--bbg)", color:"var(--blue)",
                   border:"1.5px solid var(--blue)", borderRadius:10, padding:"9px 0",
                   cursor:"pointer", fontSize:12, fontWeight:700,
-                  fontFamily:"inherit" }}>📋 Aus Vorlage</button>
+                  fontFamily:"inherit",
+                  display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}><ClipboardList size={12} /> Aus Vorlage</button>
               <button onClick={() => setVonAufgabe(true)}
                 style={{ flex:1, background:"var(--gbg)", color:"var(--green)",
                   border:"1.5px solid var(--green)", borderRadius:10, padding:"9px 0",
                   cursor:"pointer", fontSize:12, fontWeight:700,
-                  fontFamily:"inherit" }}>✅ Aus Aufgaben</button>
+                  fontFamily:"inherit",
+                  display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}><CircleCheckBig size={12} /> Aus Aufgaben</button>
               <button onClick={() => addPosition({ bez:"", einheit:"m²", menge:0, ep:0 })}
                 style={{ flex:1, background:"var(--surface2)", color:"var(--text)",
                   border:"1.5px solid var(--border)", borderRadius:10, padding:"9px 0",
-                  cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>+ Manuell</button>
+                  cursor:"pointer", fontSize:12, fontFamily:"inherit",
+                  display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}><Plus size={12} /> Manuell</button>
             </div>
 
             {/* Positionen */}
@@ -363,7 +369,7 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
                   <button onClick={() => removePos(pos.id)}
                     style={{ background:"var(--rbg)", color:"var(--red)",
                       border:"none", borderRadius:6, padding:"2px 8px",
-                      cursor:"pointer", fontSize:11, fontFamily:"inherit" }}>✕</button>
+                      cursor:"pointer", fontSize:11, fontFamily:"inherit", display:"flex" }}><X size={12} /></button>
                 </div>
                 <input value={pos.bez}
                   onChange={e=>updatePos(pos.id,"bez",e.target.value)}
@@ -463,7 +469,7 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
               style={{ width:"100%", background:"var(--yellow)", color:"#1a1200",
                 border:"none", borderRadius:12, padding:14, fontWeight:800,
                 cursor:"pointer", fontSize:14, fontFamily:"inherit" }}>
-              💾 Angebot speichern
+              Angebot speichern
             </button>
           </div>
         )}

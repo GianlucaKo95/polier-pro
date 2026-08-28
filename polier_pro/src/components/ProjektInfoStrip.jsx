@@ -1,3 +1,4 @@
+import { User } from "lucide-react";
 import { PROJEKTTYPEN } from "../config/konstanten.js";
 
 export function ProjektInfoStrip({ projekt, aufgaben = [] }) {
@@ -14,8 +15,9 @@ export function ProjektInfoStrip({ projekt, aufgaben = [] }) {
         <div style={{ fontSize:11, fontWeight:700, color:"var(--muted)" }}>
           {projekt.projektnummer} · {PROJEKTTYPEN[projekt.typ]?.label || projekt.typ}
         </div>
-        <div style={{ fontSize:11, color:"var(--text2)", marginTop:1 }}>
-          👤 {projekt.bauleiter}
+        <div style={{ fontSize:11, color:"var(--text2)", marginTop:1,
+          display:"flex", alignItems:"center", gap:4 }}>
+          <User size={11} /> {projekt.bauleiter}
         </div>
       </div>
       <div style={{ display:"flex", alignItems:"center", gap:7 }}>

@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { Ruler, ArrowLeft, X, TriangleAlert, Check, Save } from "lucide-react";
 import { parseDXFFlaechen } from "../lib/dxf.js";
 import { leereAufgabe } from "../lib/utils.js";
 import { inputStyle } from "../components/Label.jsx";
@@ -76,21 +77,21 @@ export function PlanErkennung({ onSave, onClose, onZurueck }) {
   return (
     <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
       background:"var(--bg)", zIndex:500, overflowY:"auto",
-      WebkitOverflowScrolling:"touch",
-      fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
+      WebkitOverflowScrolling:"touch" }}>
 
       <div style={{ background:"var(--surface)", padding:"14px 18px",
         borderBottom:"3px solid var(--yellow)", position:"sticky", top:0,
         zIndex:10, display:"flex", justifyContent:"space-between",
         alignItems:"center" }}>
-        <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:17 }}>
-          📐 DXF-Plan hochladen
+        <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:17,
+          display:"flex", alignItems:"center", gap:8 }}>
+          <Ruler size={16} /> DXF-Plan hochladen
         </div>
         <button onClick={onZurueck || onClose}
           style={{ background:"var(--surface2)", border:"1px solid var(--border)",
             color:"var(--text)", borderRadius:8, padding:"6px 14px",
-            cursor:"pointer", fontSize:14, fontFamily:"inherit" }}>
-          {onZurueck ? "←" : "✕"}
+            cursor:"pointer", fontSize:14, fontFamily:"inherit", display:"flex" }}>
+          {onZurueck ? <ArrowLeft size={15} /> : <X size={15} />}
         </button>
       </div>
 
@@ -112,7 +113,7 @@ export function PlanErkennung({ onSave, onClose, onZurueck }) {
               style={{ border:"2px dashed var(--yellow)", borderRadius:20,
                 padding:"48px 20px", textAlign:"center", cursor:"pointer",
                 background:"var(--ybg)" }}>
-              <div style={{ fontSize:48, marginBottom:12 }}>📐</div>
+              <div style={{ display:"flex", justifyContent:"center", marginBottom:12, color:"var(--ydark)" }}><Ruler size={40} /></div>
               <div style={{ color:"var(--ydark)", fontWeight:700, fontSize:16 }}>
                 DXF-Datei hochladen
               </div>
@@ -137,7 +138,7 @@ export function PlanErkennung({ onSave, onClose, onZurueck }) {
             <div style={{ background:"var(--rbg)", borderRadius:12, padding:16,
               marginBottom:16, border:"1px solid var(--red)" }}>
               <div style={{ color:"var(--red)", fontWeight:700, fontSize:14,
-                marginBottom:4 }}>⚠️ Datei konnte nicht verarbeitet werden</div>
+                marginBottom:4, display:"flex", alignItems:"center", gap:6 }}><TriangleAlert size={14} /> Datei konnte nicht verarbeitet werden</div>
               <div style={{ color:"var(--text)", fontSize:13 }}>{fehler}</div>
             </div>
             <button onClick={reset}
@@ -174,7 +175,7 @@ export function PlanErkennung({ onSave, onClose, onZurueck }) {
                       border:`1.5px solid ${ausgewaehlt[i] ? "var(--yellow)" : "var(--border)"}`,
                       display:"flex", alignItems:"center", justifyContent:"center",
                       cursor:"pointer", fontSize:14, color:"#1a1200", marginTop:2 }}>
-                    {ausgewaehlt[i] && "✓"}
+                    {ausgewaehlt[i] && <Check size={14} />}
                   </div>
                   <div style={{ flex:1 }}>
                     <input
@@ -210,8 +211,9 @@ export function PlanErkennung({ onSave, onClose, onZurueck }) {
                   color: anzahlAusgewaehlt>0 ? "#1a1200" : "var(--muted)",
                   border:"none", borderRadius:12, padding:14, fontWeight:800,
                   cursor: anzahlAusgewaehlt>0 ? "pointer" : "default", fontSize:15,
-                  fontFamily:"inherit" }}>
-                💾 {anzahlAusgewaehlt} Feld{anzahlAusgewaehlt!==1?"er":""} übernehmen
+                  fontFamily:"inherit",
+                  display:"flex", alignItems:"center", justifyContent:"center", gap:7 }}>
+                <Save size={15} /> {anzahlAusgewaehlt} Feld{anzahlAusgewaehlt!==1?"er":""} übernehmen
               </button>
             </div>
           </div>

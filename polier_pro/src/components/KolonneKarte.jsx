@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { MapPin, HardHat, X } from "lucide-react";
 import { MitarbeiterZeilen } from "./MitarbeiterZeilen.jsx";
 
 export function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, erfasstVerbunden, setKolonnen, darfBearbeiten = true }) {
@@ -50,16 +51,19 @@ export function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, erfasstVerbunde
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
           <div style={{ flex:1 }}>
             <div style={{ color: "var(--text)", fontWeight:700, fontSize:15 }}>{k.name}</div>
-            <div style={{ color: "var(--muted)", fontSize:12, marginTop:2 }}>📍 {k.einsatz}</div>
+            <div style={{ color: "var(--muted)", fontSize:12, marginTop:2,
+              display:"flex", alignItems:"center", gap:4 }}><MapPin size={11} /> {k.einsatz}</div>
             {k.vorarbeiter && (
-              <div style={{ color: "var(--muted)", fontSize:11, marginTop:2 }}>👷 VA: {k.vorarbeiter}</div>
+              <div style={{ color: "var(--muted)", fontSize:11, marginTop:2,
+                display:"flex", alignItems:"center", gap:4 }}><HardHat size={11} /> VA: {k.vorarbeiter}</div>
             )}
           </div>
           <div style={{ textAlign:"right" }}>
             {erfasstVerbunden && kolonneH > 0 ? (
               <div style={{ color: "var(--yellow)", fontWeight:800, fontSize:18 }}>{kolonneH.toFixed(1)}h</div>
             ) : (
-              <div style={{ color: "var(--yellow)", fontSize:13 }}>👷 {totalMann} Mann</div>
+              <div style={{ color: "var(--yellow)", fontSize:13,
+                display:"flex", alignItems:"center", gap:4, justifyContent:"flex-end" }}><HardHat size={13} /> {totalMann} Mann</div>
             )}
             {erfasstVerbunden && (
               <div style={{ color: "var(--muted)", fontSize:10 }}>
@@ -125,8 +129,8 @@ export function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, erfasstVerbunde
                   style={{ background:"var(--rbg)", color:"var(--red)",
                     border:"1px solid var(--red)", borderRadius:8,
                     padding:"4px 8px", cursor:"pointer", fontSize:11,
-                    fontFamily:"inherit", flexShrink:0 }}>
-                  ✕
+                    fontFamily:"inherit", flexShrink:0, display:"flex" }}>
+                  <X size={12} />
                 </button>
               )}
             </div>

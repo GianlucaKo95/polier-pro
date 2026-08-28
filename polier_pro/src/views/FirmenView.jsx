@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Building2, MapPin, User, Phone, Euro, RefreshCw, Pencil, Plus, CircleX, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { sbClientMitToken } from "../lib/supabase.js";
 import { ALLE_GEWERKE, ONBOARDING_KEY } from "../config/konstanten.js";
 import { Chip } from "../components/Chip.jsx";
@@ -57,9 +58,11 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
               border:`2px solid ${'var(--yellow)'}`, cursor:"pointer" }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
               <div>
-                <div style={{ color: "var(--muted)", fontSize:11, marginBottom:2 }}>🏢 Eigenes Unternehmen</div>
+                <div style={{ color: "var(--muted)", fontSize:11, marginBottom:2,
+                  display:"flex", alignItems:"center", gap:4 }}><Building2 size={11} /> Eigenes Unternehmen</div>
                 <div style={{ color: "var(--text)", fontWeight:700, fontSize:16 }}>{owneFirma.name || "Firma hinterlegen"}</div>
-                {owneFirma.ort && <div style={{ color: "var(--muted)", fontSize:12, marginTop:2 }}>📍 {owneFirma.plz} {owneFirma.ort}</div>}
+                {owneFirma.ort && <div style={{ color: "var(--muted)", fontSize:12, marginTop:2,
+                  display:"flex", alignItems:"center", gap:4 }}><MapPin size={11} /> {owneFirma.plz} {owneFirma.ort}</div>}
                 {owneFirma.gewerke?.length > 0 && (
                   <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginTop:8 }}>
                     {owneFirma.gewerke.map(k => {
@@ -69,7 +72,7 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
                   </div>
                 )}
               </div>
-              <div style={{ color: "var(--muted)", fontSize:22 }}>›</div>
+              <div style={{ color: "var(--muted)", display:"flex" }}><ChevronRight size={20} /></div>
             </div>
           </div>
 
@@ -78,14 +81,15 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
             <div style={{ color: "var(--text)", fontWeight:700 }}>Subunternehmer ({subs.length})</div>
             <button onClick={() => { setEditSub({ id:null, name:"", gewerke:[], kontakt:"", telefon:"", email:"", status:"aktiv", stundensatz:0 }); setScreen("subEdit"); }}
               style={{ background: "var(--yellow)", color:"#1C2027", border:"none", borderRadius:9,
-                padding:"7px 14px", fontWeight:700, cursor:"pointer", fontSize:13 }}>
-              + Sub
+                padding:"7px 14px", fontWeight:700, cursor:"pointer", fontSize:13,
+                display:"flex", alignItems:"center", gap:5 }}>
+              <Plus size={13} /> Sub
             </button>
           </div>
 
           {subs.length === 0 ? (
             <div style={{ background: "var(--surface)", borderRadius:12, padding:24, textAlign:"center" }}>
-              <div style={{ fontSize:32 }}>🏢</div>
+              <div style={{ display:"flex", justifyContent:"center", color:"var(--muted)" }}><Building2 size={28} /></div>
               <div style={{ color: "var(--muted)", marginTop:8 }}>Noch keine Subunternehmer angelegt.</div>
             </div>
           ) : subs.map(s => (
@@ -101,7 +105,8 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
                       {s.status}
                     </div>
                   </div>
-                  <div style={{ color: "var(--muted)", fontSize:12, marginTop:3 }}>👤 {s.kontakt} · 📞 {s.telefon}</div>
+                  <div style={{ color: "var(--muted)", fontSize:12, marginTop:3,
+                    display:"flex", alignItems:"center", gap:4 }}><User size={11} /> {s.kontakt} · <Phone size={11} /> {s.telefon}</div>
                   <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginTop:7 }}>
                     {s.gewerke.map(k => {
                       const g = ALLE_GEWERKE.find(x=>x.key===k);
@@ -109,10 +114,11 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
                     })}
                   </div>
                   {s.stundensatz > 0 && (
-                    <div style={{ color: "var(--muted)", fontSize:11, marginTop:5 }}>💶 {s.stundensatz} €/Std.</div>
+                    <div style={{ color: "var(--muted)", fontSize:11, marginTop:5,
+                      display:"flex", alignItems:"center", gap:4 }}><Euro size={10} /> {s.stundensatz} €/Std.</div>
                   )}
                 </div>
-                <div style={{ color: "var(--muted)", fontSize:18 }}>›</div>
+                <div style={{ color: "var(--muted)", display:"flex" }}><ChevronRight size={17} /></div>
               </div>
             </div>
           ))}
@@ -128,8 +134,9 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
                 }}
                 style={{ width:"100%", background: "var(--border)", color: "var(--muted)",
                   border:`1px solid ${'var(--border)'}`, borderRadius:10, padding:12,
-                  cursor:"pointer", fontSize:13 }}>
-                🔄 Einrichtungsassistent erneut starten
+                  cursor:"pointer", fontSize:13,
+                  display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+                <RefreshCw size={13} /> Einrichtungsassistent erneut starten
               </button>
             </div>
           )}
@@ -142,8 +149,9 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
           <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
             <button onClick={() => setScreen("home")}
               style={{ background: "var(--border)", border:"none", color: "var(--text)", borderRadius:8,
-                padding:"6px 10px", cursor:"pointer", fontSize:16 }}>‹</button>
-            <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:16 }}>🏢 Eigenes Unternehmen</div>
+                padding:"6px 10px", cursor:"pointer", display:"flex" }}><ChevronLeft size={16} /></button>
+            <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:16,
+              display:"flex", alignItems:"center", gap:7 }}><Building2 size={15} /> Eigenes Unternehmen</div>
           </div>
 
           {[
@@ -190,15 +198,16 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
           {speicherFehler && (
             <div style={{ background:"var(--rbg)", color:"var(--red)", borderRadius:10,
               padding:"10px 14px", marginBottom:12, fontSize:12,
-              border:"1px solid var(--red)" }}>
-              ❌ {speicherFehler}
+              border:"1px solid var(--red)",
+              display:"flex", alignItems:"center", gap:6 }}>
+              <CircleX size={13} /> {speicherFehler}
             </div>
           )}
 
           <button onClick={firmaSpeichern} disabled={speichern}
             style={{ width:"100%", background: "var(--yellow)", color:"#1C2027", border:"none",
               borderRadius:10, padding:14, fontWeight:700, cursor:"pointer", fontSize:15 }}>
-            {speichern ? "⏳ Speichert…" : "💾 Speichern"}
+            {speichern ? "Speichert…" : "Speichern"}
           </button>
         </div>
       )}
@@ -209,9 +218,10 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
           <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
             <button onClick={() => setScreen("home")}
               style={{ background: "var(--border)", border:"none", color: "var(--text)", borderRadius:8,
-                padding:"6px 10px", cursor:"pointer", fontSize:16 }}>‹</button>
-            <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:16 }}>
-              {editSub.id ? "✏️ Subunternehmer" : "➕ Neuer Subunternehmer"}
+                padding:"6px 10px", cursor:"pointer", display:"flex" }}><ChevronLeft size={16} /></button>
+            <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:16,
+              display:"flex", alignItems:"center", gap:7 }}>
+              {editSub.id ? <><Pencil size={14} /> Subunternehmer</> : <><Plus size={14} /> Neuer Subunternehmer</>}
             </div>
           </div>
 
@@ -278,7 +288,7 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
             {editSub.id && (
               <button onClick={() => { setSubs(prev => prev.filter(s=>s.id!==editSub.id)); setScreen("home"); }}
                 style={{ background:"#2E1A1A", color: "var(--red)", border:`1px solid ${'var(--red)'}`,
-                  borderRadius:10, padding:"12px 16px", cursor:"pointer" }}>🗑️</button>
+                  borderRadius:10, padding:"12px 16px", cursor:"pointer", display:"flex" }}><Trash2 size={16} /></button>
             )}
             <button onClick={() => setScreen("home")}
               style={{ flex:1, background: "var(--border)", color: "var(--muted)", border:"none", borderRadius:10, padding:13, cursor:"pointer" }}>
@@ -295,7 +305,7 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
               style={{ flex:2, background: editSub.name ? "var(--yellow)" : "var(--border)",
                 color: editSub.name ? "#1C2027" : "var(--muted)",
                 border:"none", borderRadius:10, padding:13, fontWeight:700, cursor:"pointer", fontSize:15 }}>
-              💾 Speichern
+              Speichern
             </button>
           </div>
         </div>

@@ -34,19 +34,18 @@ export function AufgabenFormular({ initial, kolonnen, onSave, onClose }) {
       background:"rgba(15,23,42,0.7)",
       zIndex:500, display:"flex", alignItems:"flex-end",
       justifyContent:"center" }}>
-      <div style={{ background:"var(--surface)", borderRadius:"20px 20px 0 0",
+      <div style={{ background:"var(--surface)",
         padding:22, width:"100%", maxWidth:520,
-        maxHeight:"92vh", overflowY:"auto",
-        boxShadow:"0 -4px 30px rgba(0,0,0,0.15)" }}>
+        maxHeight:"92vh", overflowY:"auto" }}>
 
         <div style={{ display:"flex", justifyContent:"space-between",
           alignItems:"center", marginBottom:18 }}>
-          <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:17 }}>
-            {initial ? "✏️ Aufgabe bearbeiten" : "➕ Neue Aufgabe"}
+          <div style={{ color:"var(--text)", fontWeight:800, fontSize:19, letterSpacing:-0.4 }}>
+            {initial ? "Aufgabe bearbeiten" : "Neue Aufgabe"}
           </div>
           <button onClick={onClose}
-            style={{ background:"none", border:"none", color:"var(--muted)",
-              fontSize:24, cursor:"pointer" }}>✕</button>
+            style={{ width:34, height:34, background:"var(--surface2)", border:"none",
+              color:"var(--text2)", fontSize:16, cursor:"pointer" }}>✕</button>
         </div>
 
         {/* Typ */}
@@ -251,15 +250,15 @@ export function AufgabenFormular({ initial, kolonnen, onSave, onClose }) {
         <div style={{ display:"flex", gap:10 }}>
           <button onClick={onClose}
             style={{ flex:1, background:"var(--surface2)", color:"var(--muted)",
-              border:"1.5px solid var(--border)", borderRadius:12, padding:14,
-              cursor:"pointer", fontFamily:"inherit" }}>Abbrechen</button>
+              border:"1.5px solid var(--border)", padding:16,
+              cursor:"pointer", fontFamily:"inherit", fontWeight:600 }}>Abbrechen</button>
           <button onClick={() => valid && onSave(a)} disabled={!valid}
             style={{ flex:2, background: valid ? "var(--yellow)" : "var(--surface2)",
               color: valid ? "#1a1200" : "var(--muted)",
-              border:"none", borderRadius:12, padding:14, fontWeight:800,
-              cursor: valid ? "pointer" : "default", fontSize:15,
+              border:"none", padding:16, fontWeight:800,
+              cursor: valid ? "pointer" : "default", fontSize:16,
               fontFamily:"inherit" }}>
-            💾 Speichern
+            Speichern
           </button>
         </div>
       </div>

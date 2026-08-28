@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { FileText, Plus } from "lucide-react";
 import { AngebotEditor } from "./AngebotEditor.jsx";
 
 export function AngebotView({ projekt, aufgaben, einheitspreise, lvVorlagen, eigeneFirma }) {
@@ -39,20 +40,22 @@ export function AngebotView({ projekt, aufgaben, einheitspreise, lvVorlagen, eig
     <div>
       <div style={{ display:"flex", justifyContent:"space-between",
         alignItems:"center", marginBottom:14 }}>
-        <div style={{ color:"var(--text)", fontWeight:700, fontSize:15 }}>
-          📄 Angebote
+        <div style={{ color:"var(--text)", fontWeight:700, fontSize:15,
+          display:"flex", alignItems:"center", gap:7 }}>
+          <FileText size={16} /> Angebote
         </div>
         <button onClick={neuesAngebot}
           style={{ background:"var(--yellow)", color:"#1a1200", border:"none",
             borderRadius:10, padding:"8px 16px", fontWeight:700,
-            cursor:"pointer", fontSize:13, fontFamily:"inherit" }}>
-          + Angebot
+            cursor:"pointer", fontSize:13, fontFamily:"inherit",
+            display:"flex", alignItems:"center", gap:5 }}>
+          <Plus size={14} /> Angebot
         </button>
       </div>
 
       {angebote.length === 0 && (
         <div style={{ textAlign:"center", padding:"48px 20px", color:"var(--muted)" }}>
-          <div style={{ fontSize:48, marginBottom:12 }}>📄</div>
+          <div style={{ display:"flex", justifyContent:"center", marginBottom:12, color:"var(--muted)" }}><FileText size={40} /></div>
           <div style={{ fontWeight:700, color:"var(--text)", marginBottom:6 }}>
             Noch keine Angebote
           </div>

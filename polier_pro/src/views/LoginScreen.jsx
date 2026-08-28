@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Eye, EyeOff, CircleX, ArrowRight, ArrowLeft, Mail } from "lucide-react";
 import { Label, inputStyle } from "../components/Label.jsx";
 import { ROLLEN } from "../config/konstanten.js";
 
@@ -19,7 +20,7 @@ export function LoginScreen({ auth, onDemoLogin, onRegistrieren }) {
     return (
       <div style={{ background:"var(--bg)", minHeight:"100dvh", display:"flex",
         flexDirection:"column", alignItems:"center", justifyContent:"center",
-        padding:"24px 20px", fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
+        padding:"24px 20px" }}>
         <div style={{ textAlign:"center", marginBottom:32 }}>
           <div style={{ fontWeight:900, fontSize:24, letterSpacing:-1, color:"var(--text)" }}>
             <span style={{ color:"var(--yellow)" }}>★</span> POLARIS
@@ -38,8 +39,9 @@ export function LoginScreen({ auth, onDemoLogin, onRegistrieren }) {
               {auth.fehler && (
                 <div style={{ background:"var(--rbg)", color:"var(--red)",
                   borderRadius:10, padding:"10px 14px", marginBottom:16,
-                  fontSize:13, border:"1px solid var(--red)" }}>
-                  ❌ {auth.fehler}
+                  fontSize:13, border:"1px solid var(--red)",
+                  display:"flex", alignItems:"center", gap:6 }}>
+                  <CircleX size={14} /> {auth.fehler}
                 </div>
               )}
               <div style={{ marginBottom:20 }}>
@@ -52,13 +54,14 @@ export function LoginScreen({ auth, onDemoLogin, onRegistrieren }) {
                 style={{ width:"100%", background: email ? "var(--yellow)" : "var(--surface2)",
                   color: email ? "#1a1200" : "var(--muted)",
                   border:"none", borderRadius:12, padding:15, fontWeight:800,
-                  fontSize:15, cursor: email ? "pointer" : "default", fontFamily:"inherit" }}>
-                {auth.loading ? "⏳ Wird gesendet…" : "Link senden →"}
+                  fontSize:15, cursor: email ? "pointer" : "default", fontFamily:"inherit",
+                  display:"flex", alignItems:"center", justifyContent:"center", gap:7 }}>
+                {auth.loading ? "Wird gesendet…" : <>Link senden <ArrowRight size={15} /></>}
               </button>
             </>
           ) : (
             <div style={{ textAlign:"center" }}>
-              <div style={{ fontSize:48, marginBottom:12 }}>📧</div>
+              <div style={{ display:"flex", justifyContent:"center", marginBottom:12, color:"var(--muted)" }}><Mail size={40} /></div>
               <div style={{ color:"var(--text)", fontWeight:800, fontSize:16,
                 marginBottom:8 }}>E-Mail gesendet!</div>
               <div style={{ color:"var(--muted)", fontSize:13, lineHeight:1.6 }}>
@@ -70,8 +73,9 @@ export function LoginScreen({ auth, onDemoLogin, onRegistrieren }) {
           <div style={{ textAlign:"center", marginTop:16 }}>
             <button onClick={() => { setZeigeReset(false); setResetGesendet(false); }}
               style={{ background:"none", border:"none", color:"var(--muted)",
-                cursor:"pointer", fontSize:13, fontFamily:"inherit" }}>
-              ← Zurück zur Anmeldung
+                cursor:"pointer", fontSize:13, fontFamily:"inherit",
+                display:"inline-flex", alignItems:"center", gap:5 }}>
+              <ArrowLeft size={13} /> Zurück zur Anmeldung
             </button>
           </div>
         </div>
@@ -82,7 +86,7 @@ export function LoginScreen({ auth, onDemoLogin, onRegistrieren }) {
   return (
     <div style={{ background:"var(--bg)", minHeight:"100dvh", display:"flex",
       flexDirection:"column", alignItems:"center", justifyContent:"center",
-      padding:"24px 20px", fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
+      padding:"24px 20px" }}>
 
       {/* Logo */}
       <div style={{ textAlign:"center", marginBottom:40 }}>
@@ -106,8 +110,9 @@ export function LoginScreen({ auth, onDemoLogin, onRegistrieren }) {
         {auth.fehler && (
           <div style={{ background:"var(--rbg)", color:"var(--red)",
             borderRadius:10, padding:"10px 14px", marginBottom:16,
-            fontSize:13, border:"1px solid var(--red)" }}>
-            ❌ {auth.fehler}
+            fontSize:13, border:"1px solid var(--red)",
+            display:"flex", alignItems:"center", gap:6 }}>
+            <CircleX size={14} /> {auth.fehler}
           </div>
         )}
 
@@ -128,8 +133,8 @@ export function LoginScreen({ auth, onDemoLogin, onRegistrieren }) {
             <button onClick={() => setShowPw(p=>!p)}
               style={{ position:"absolute", right:12, top:"50%",
                 transform:"translateY(-50%)", background:"none", border:"none",
-                cursor:"pointer", fontSize:16, color:"var(--muted)" }}>
-              {showPw ? "🙈" : "👁️"}
+                cursor:"pointer", color:"var(--muted)", display:"flex" }}>
+              {showPw ? <EyeOff size={17} /> : <Eye size={17} />}
             </button>
           </div>
         </div>
@@ -148,8 +153,9 @@ export function LoginScreen({ auth, onDemoLogin, onRegistrieren }) {
             color: email && password ? "#1a1200" : "var(--muted)",
             border:"none", borderRadius:12, padding:16, fontWeight:800,
             fontSize:16, cursor: email && password ? "pointer" : "default",
-            fontFamily:"inherit" }}>
-          {auth.loading ? "⏳ Anmelden…" : "Anmelden →"}
+            fontFamily:"inherit",
+            display:"flex", alignItems:"center", justifyContent:"center", gap:7 }}>
+          {auth.loading ? "Anmelden…" : <>Anmelden <ArrowRight size={16} /></>}
         </button>
 
         {/* Demo-Modus wenn Supabase nicht konfiguriert */}

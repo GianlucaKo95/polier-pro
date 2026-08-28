@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Users, Plus, TriangleAlert, X, Pencil, HardHat, Phone, CircleCheckBig, Ban, User, Calendar, Copy, ArrowUpRight, Mail } from "lucide-react";
 import { sbFetch } from "../lib/supabase.js";
 import { ROLLEN } from "../config/konstanten.js";
 import { EinladungGenerieren } from "./EinladungGenerieren.jsx";
@@ -92,22 +93,25 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
       {/* Header */}
       <div style={{ display:"flex", justifyContent:"space-between",
         alignItems:"center", marginBottom:16 }}>
-        <div style={{ color:"var(--text)", fontWeight:800, fontSize:16 }}>
-          👥 Nutzerverwaltung
+        <div style={{ color:"var(--text)", fontWeight:800, fontSize:16,
+          display:"flex", alignItems:"center", gap:8 }}>
+          <Users size={17} /> Nutzerverwaltung
         </div>
         <button onClick={() => setZeigeEinladen(true)}
           style={{ background:"var(--yellow)", color:"#1a1200", border:"none",
             borderRadius:10, padding:"8px 14px", fontWeight:700,
-            cursor:"pointer", fontSize:13, fontFamily:"inherit" }}>
-          + Einladen
+            cursor:"pointer", fontSize:13, fontFamily:"inherit",
+            display:"flex", alignItems:"center", gap:5 }}>
+          <Plus size={14} /> Einladen
         </button>
       </div>
 
       {aktionsFehler && (
         <div style={{ background:"var(--rbg)", color:"var(--red)", borderRadius:12,
           padding:"10px 14px", marginBottom:14, fontSize:12,
-          border:"1px solid var(--red)" }}>
-          ⚠️ {aktionsFehler}
+          border:"1px solid var(--red)",
+          display:"flex", alignItems:"center", gap:6 }}>
+          <TriangleAlert size={13} /> {aktionsFehler}
         </div>
       )}
 
@@ -133,19 +137,20 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
 
       {/* Tab Toggle */}
       <div style={{ display:"flex", gap:6, marginBottom:14 }}>
-        {[["nutzer","👤 Nutzer"], ["einladungen","📨 Einladungen"]].map(([k,l]) => (
+        {[["nutzer",User,"Nutzer"], ["einladungen",Mail,"Einladungen"]].map(([k,Icon,l]) => (
           <button key={k} onClick={() => setAnsicht(k)}
             style={{ flex:1, background: ansicht===k ? "var(--yellow)" : "var(--surface2)",
               color: ansicht===k ? "#1a1200" : "var(--muted)",
               border:`1.5px solid ${ansicht===k ? "var(--yellow)" : "var(--border)"}`,
               borderRadius:10, padding:9, fontWeight: ansicht===k ? 700 : 400,
-              cursor:"pointer", fontSize:13, fontFamily:"inherit" }}>{l}</button>
+              cursor:"pointer", fontSize:13, fontFamily:"inherit",
+              display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}><Icon size={13} /> {l}</button>
         ))}
       </div>
 
       {laden && (
         <div style={{ textAlign:"center", color:"var(--muted)", padding:32 }}>
-          ⏳ Laden…
+          Laden…
         </div>
       )}
 
@@ -193,14 +198,16 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
                           {rolle.icon} {rolle.label}
                         </div>
                         {kolonne && (
-                          <div style={{ color:"var(--muted)", fontSize:11 }}>
-                            👷 {kolonne.name}
+                          <div style={{ color:"var(--muted)", fontSize:11,
+                            display:"flex", alignItems:"center", gap:3 }}>
+                            <HardHat size={10} /> {kolonne.name}
                           </div>
                         )}
                       </div>
                       {n.telefon && (
-                        <div style={{ color:"var(--muted)", fontSize:11, marginTop:2 }}>
-                          📞 {n.telefon}
+                        <div style={{ color:"var(--muted)", fontSize:11, marginTop:2,
+                          display:"flex", alignItems:"center", gap:3 }}>
+                          <Phone size={10} /> {n.telefon}
                         </div>
                       )}
                     </div>
@@ -208,8 +215,8 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
                   <button onClick={() => setEditNutzer(isEdit ? null : n.id)}
                     style={{ background:"var(--surface2)", border:"1px solid var(--border)",
                       color:"var(--muted)", borderRadius:8, padding:"4px 10px",
-                      cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>
-                    {isEdit ? "✕" : "✏️"}
+                      cursor:"pointer", fontSize:12, fontFamily:"inherit", display:"flex" }}>
+                    {isEdit ? <X size={13} /> : <Pencil size={13} />}
                   </button>
                 </div>
 
@@ -255,8 +262,9 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
                         color: n.aktiv === false ? "var(--green)" : "var(--red)",
                         border:`1px solid ${n.aktiv === false ? "var(--green)" : "var(--red)"}`,
                         borderRadius:8, padding:"8px 14px", cursor:"pointer",
-                        fontWeight:700, fontSize:13, fontFamily:"inherit" }}>
-                      {n.aktiv === false ? "✅ Nutzer reaktivieren" : "🚫 Nutzer deaktivieren"}
+                        fontWeight:700, fontSize:13, fontFamily:"inherit",
+                        display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+                      {n.aktiv === false ? <><CircleCheckBig size={13} /> Nutzer reaktivieren</> : <><Ban size={13} /> Nutzer deaktivieren</>}
                     </button>
                   </div>
                 )}
@@ -266,7 +274,7 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
           {nutzer.length === 0 && !laden && (
             <div style={{ textAlign:"center", padding:"32px 20px",
               color:"var(--muted)" }}>
-              <div style={{ fontSize:40, marginBottom:8 }}>👤</div>
+              <div style={{ display:"flex", justifyContent:"center", marginBottom:8 }}><User size={32} /></div>
               <div>Noch keine Nutzer · Lade Mitarbeiter ein</div>
             </div>
           )}
@@ -298,8 +306,9 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
                         {rolle.icon} {rolle.label}
                       </div>
                     </div>
-                    <div style={{ color:"var(--muted)", fontSize:11, marginTop:4 }}>
-                      📅 Gültig bis {abgelaufen}
+                    <div style={{ color:"var(--muted)", fontSize:11, marginTop:4,
+                      display:"flex", alignItems:"center", gap:4 }}>
+                      <Calendar size={10} /> Gültig bis {abgelaufen}
                       {e.email && ` · ${e.email}`}
                     </div>
                   </div>
@@ -320,16 +329,16 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
                   <button onClick={() => navigator.clipboard?.writeText(link)}
                     style={{ background:"var(--surface2)", color:"var(--muted)",
                       border:"1px solid var(--border)", borderRadius:8,
-                      padding:"0 12px", cursor:"pointer", fontSize:14,
-                      fontFamily:"inherit", flexShrink:0 }}>
-                    📋
+                      padding:"0 12px", cursor:"pointer",
+                      fontFamily:"inherit", flexShrink:0, display:"flex", alignItems:"center" }}>
+                    <Copy size={14} />
                   </button>
                   <button onClick={() => teilen(link)}
                     style={{ background:"var(--green)", color:"#fff",
                       border:"none", borderRadius:8, padding:"0 12px",
-                      cursor:"pointer", fontSize:14, fontFamily:"inherit",
-                      flexShrink:0 }}>
-                    ↗
+                      cursor:"pointer", fontFamily:"inherit",
+                      flexShrink:0, display:"flex", alignItems:"center" }}>
+                    <ArrowUpRight size={14} />
                   </button>
                 </div>
               </div>
@@ -363,7 +372,7 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
           {einladungen.length === 0 && !laden && (
             <div style={{ textAlign:"center", padding:"32px 20px",
               color:"var(--muted)" }}>
-              <div style={{ fontSize:40, marginBottom:8 }}>📨</div>
+              <div style={{ display:"flex", justifyContent:"center", marginBottom:8 }}><Mail size={32} /></div>
               <div>Noch keine Einladungen generiert</div>
             </div>
           )}
@@ -378,13 +387,14 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
           <div style={{ background:"var(--surface)", padding:"14px 18px",
             borderBottom:"3px solid var(--yellow)", position:"sticky", top:0,
             display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-            <div style={{ fontWeight:700, fontSize:16, color:"var(--text)" }}>
-              👤 Mitarbeiter einladen
+            <div style={{ fontWeight:700, fontSize:16, color:"var(--text)",
+              display:"flex", alignItems:"center", gap:8 }}>
+              <User size={16} /> Mitarbeiter einladen
             </div>
             <button onClick={() => { setZeigeEinladen(false); ladeAlles(); }}
               style={{ background:"var(--surface2)", border:"1px solid var(--border)",
                 color:"var(--text)", borderRadius:8, padding:"6px 14px",
-                cursor:"pointer", fontFamily:"inherit" }}>✕</button>
+                cursor:"pointer", fontFamily:"inherit", display:"flex" }}><X size={15} /></button>
           </div>
           <div style={{ padding:"20px 16px" }}>
             <EinladungGenerieren

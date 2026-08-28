@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Settings, Euro, ClipboardList, Pencil, X, Plus } from "lucide-react";
 import { PreisFormular } from "./PreisFormular.jsx";
 import { VorlageFormular } from "./VorlageFormular.jsx";
 
@@ -23,19 +24,21 @@ export function AdminParameterView({ einheitspreise, setEinheitspreise, lvVorlag
 
   return (
     <div>
-      <div style={{ color:"var(--text)", fontWeight:700, fontSize:15, marginBottom:14 }}>
-        ⚙️ Angebots-Parameter
+      <div style={{ color:"var(--text)", fontWeight:700, fontSize:15, marginBottom:14,
+        display:"flex", alignItems:"center", gap:7 }}>
+        <Settings size={16} /> Angebots-Parameter
       </div>
 
       {/* Tab-Toggle */}
       <div style={{ display:"flex", gap:6, marginBottom:16 }}>
-        {[["preise","💰 Einheitspreise"],["vorlagen","📋 LV-Vorlagen"]].map(([k,l]) => (
+        {[["preise",Euro,"Einheitspreise"],["vorlagen",ClipboardList,"LV-Vorlagen"]].map(([k,Icon,l]) => (
           <button key={k} onClick={() => setAktiv(k)}
             style={{ flex:1, background: aktiv===k ? "var(--yellow)" : "var(--surface2)",
               color: aktiv===k ? "#1a1200" : "var(--muted)",
               border:`1.5px solid ${aktiv===k ? "var(--yellow)" : "var(--border)"}`,
               borderRadius:10, padding:10, fontWeight: aktiv===k ? 700 : 400,
-              cursor:"pointer", fontSize:13, fontFamily:"inherit" }}>{l}</button>
+              cursor:"pointer", fontSize:13, fontFamily:"inherit",
+              display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}><Icon size={13} /> {l}</button>
         ))}
       </div>
 
@@ -50,8 +53,9 @@ export function AdminParameterView({ einheitspreise, setEinheitspreise, lvVorlag
             <button onClick={() => setNeuPreis({ gewerk:"", einheit:"m²", preis:0, beschreibung:"" })}
               style={{ background:"var(--yellow)", color:"#1a1200", border:"none",
                 borderRadius:10, padding:"7px 14px", fontWeight:700,
-                cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>
-              + Position
+                cursor:"pointer", fontSize:12, fontFamily:"inherit",
+                display:"flex", alignItems:"center", gap:5 }}>
+              <Plus size={13} /> Position
             </button>
           </div>
 
@@ -73,11 +77,11 @@ export function AdminParameterView({ einheitspreise, setEinheitspreise, lvVorlag
                   <button onClick={() => setEditPreis(p)}
                     style={{ background:"var(--surface2)", border:"1px solid var(--border)",
                       color:"var(--muted)", borderRadius:8, padding:"4px 10px",
-                      cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>✏️</button>
+                      cursor:"pointer", fontSize:12, fontFamily:"inherit", display:"flex" }}><Pencil size={13} /></button>
                   <button onClick={() => preisLoeschen(p.id)}
                     style={{ background:"var(--rbg)", border:"1px solid var(--red)",
                       color:"var(--red)", borderRadius:8, padding:"4px 10px",
-                      cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>✕</button>
+                      cursor:"pointer", fontSize:12, fontFamily:"inherit", display:"flex" }}><X size={13} /></button>
                 </div>
               </div>
             </div>
@@ -96,8 +100,9 @@ export function AdminParameterView({ einheitspreise, setEinheitspreise, lvVorlag
             <button onClick={() => setNeuVorlage({ name:"", gewerk:"", positionen:[] })}
               style={{ background:"var(--yellow)", color:"#1a1200", border:"none",
                 borderRadius:10, padding:"7px 14px", fontWeight:700,
-                cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>
-              + Vorlage
+                cursor:"pointer", fontSize:12, fontFamily:"inherit",
+                display:"flex", alignItems:"center", gap:5 }}>
+              <Plus size={13} /> Vorlage
             </button>
           </div>
 
@@ -113,7 +118,7 @@ export function AdminParameterView({ einheitspreise, setEinheitspreise, lvVorlag
                 <button onClick={() => setLvVorlagen(prev => prev.filter(x=>x.id!==v.id))}
                   style={{ background:"var(--rbg)", border:"1px solid var(--red)",
                     color:"var(--red)", borderRadius:8, padding:"4px 10px",
-                    cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>✕</button>
+                    cursor:"pointer", fontSize:12, fontFamily:"inherit", display:"flex" }}><X size={13} /></button>
               </div>
               {v.positionen.map((pos,i) => (
                 <div key={i} style={{ color:"var(--muted)", fontSize:11,

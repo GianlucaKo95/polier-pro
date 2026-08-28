@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Users, CircleX, Link, Copy } from "lucide-react";
 import { sbClientMitToken } from "../lib/supabase.js";
 import { Label, inputStyle } from "../components/Label.jsx";
 import { ROLLEN } from "../config/konstanten.js";
@@ -53,7 +54,7 @@ export function EinladungGenerieren({ session, firmaId, kolonnen }) {
     <div style={{ background:"var(--surface)", borderRadius:16, padding:20,
       border:"1.5px solid var(--border)", marginBottom:16 }}>
       <div style={{ fontWeight:700, fontSize:14, color:"var(--text)",
-        marginBottom:16 }}>👥 Mitarbeiter einladen</div>
+        marginBottom:16, display:"flex", alignItems:"center", gap:7 }}><Users size={15} /> Mitarbeiter einladen</div>
 
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10,
         marginBottom:14 }}>
@@ -100,16 +101,17 @@ export function EinladungGenerieren({ session, firmaId, kolonnen }) {
       {fehler && (
         <div style={{ background:"var(--rbg)", color:"var(--red)", borderRadius:10,
           padding:"10px 14px", marginBottom:12, fontSize:12,
-          border:"1px solid var(--red)" }}>
-          ❌ {fehler}
+          border:"1px solid var(--red)", display:"flex", alignItems:"center", gap:6 }}>
+          <CircleX size={13} /> {fehler}
         </div>
       )}
 
       <button onClick={generieren} disabled={laden}
         style={{ width:"100%", background:"var(--yellow)", color:"#1a1200",
           border:"none", borderRadius:10, padding:12, fontWeight:700,
-          cursor:"pointer", fontFamily:"inherit", fontSize:14 }}>
-        {laden ? "⏳…" : "🔗 Einladungslink generieren"}
+          cursor:"pointer", fontFamily:"inherit", fontSize:14,
+          display:"flex", alignItems:"center", justifyContent:"center", gap:7 }}>
+        {laden ? "…" : <><Link size={15} /> Einladungslink generieren</>}
       </button>
 
       {link && (
@@ -125,8 +127,8 @@ export function EinladungGenerieren({ session, firmaId, kolonnen }) {
             <button onClick={kopieren}
               style={{ background:"var(--green)", color:"#fff", border:"none",
                 borderRadius:10, padding:"0 14px", cursor:"pointer",
-                fontSize:16, flexShrink:0 }}>
-              📋
+                flexShrink:0, display:"flex", alignItems:"center" }}>
+              <Copy size={15} />
             </button>
           </div>
           <div style={{ color:"var(--muted)", fontSize:11, marginTop:6 }}>

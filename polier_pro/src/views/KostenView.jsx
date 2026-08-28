@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Euro } from "lucide-react";
 import { Label, inputStyle } from "../components/Label.jsx";
 
 export function KostenView({ projekt, aufgaben, kolonnen, zeitbuchungen }) {
@@ -30,7 +31,7 @@ export function KostenView({ projekt, aufgaben, kolonnen, zeitbuchungen }) {
       <div style={{ background:"var(--surface)", borderRadius:16, padding:18,
         marginBottom:16, border:"1.5px solid var(--border)" }}>
         <div style={{ color:"var(--text)", fontWeight:700, fontSize:15,
-          marginBottom:14 }}>💰 Kostenübersicht</div>
+          marginBottom:14, display:"flex", alignItems:"center", gap:7 }}><Euro size={16} /> Kostenübersicht</div>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10,
           marginBottom:14 }}>
           {[

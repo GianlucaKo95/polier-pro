@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { CircleX, ArrowRight, CircleCheckBig, PartyPopper } from "lucide-react";
 import { supabase, sbClientMitToken } from "../lib/supabase.js";
 import { ROLLEN } from "../config/konstanten.js";
 import { Label, inputStyle } from "../components/Label.jsx";
@@ -77,15 +78,14 @@ export function EinladungScreen({ token, onErfolg }) {
     <div style={{ display:"flex", alignItems:"center", justifyContent:"center",
       minHeight:"100dvh", background:"var(--bg)", color:"var(--muted)",
       fontFamily:"inherit" }}>
-      ⏳ Einladung wird geprüft…
+      Einladung wird geprüft…
     </div>
   );
 
   return (
     <div style={{ background:"var(--bg)", minHeight:"100dvh",
       display:"flex", flexDirection:"column", alignItems:"center",
-      justifyContent:"center", padding:"24px 20px",
-      fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
+      justifyContent:"center", padding:"24px 20px" }}>
 
       <div style={{ fontWeight:900, fontSize:24, letterSpacing:-1,
         color:"var(--text)", marginBottom:24, textAlign:"center" }}>
@@ -98,15 +98,16 @@ export function EinladungScreen({ token, onErfolg }) {
         {fehler && (
           <div style={{ background:"var(--rbg)", color:"var(--red)",
             borderRadius:10, padding:"10px 14px", marginBottom:16,
-            fontSize:13, border:"1px solid var(--red)" }}>
-            ❌ {fehler}
+            fontSize:13, border:"1px solid var(--red)",
+            display:"flex", alignItems:"center", gap:6 }}>
+            <CircleX size={14} /> {fehler}
           </div>
         )}
 
         {schritt === 1 && einladung && (
           <div>
             <div style={{ textAlign:"center", marginBottom:20 }}>
-              <div style={{ fontSize:40, marginBottom:8 }}>👋</div>
+              <div style={{ display:"flex", justifyContent:"center", marginBottom:8, color:"var(--yellow)" }}><PartyPopper size={34} /></div>
               <div style={{ fontWeight:800, fontSize:18, color:"var(--text)" }}>
                 Du wurdest eingeladen!
               </div>
@@ -131,15 +132,16 @@ export function EinladungScreen({ token, onErfolg }) {
             <button onClick={registrierenUndEinloesen} disabled={laden}
               style={{ width:"100%", background:"var(--yellow)", color:"#1a1200",
                 border:"none", borderRadius:12, padding:15, fontWeight:800,
-                fontSize:15, cursor:"pointer", fontFamily:"inherit" }}>
-              {laden ? "⏳…" : "Einladung annehmen →"}
+                fontSize:15, cursor:"pointer", fontFamily:"inherit",
+                display:"flex", alignItems:"center", justifyContent:"center", gap:7 }}>
+              {laden ? "…" : <>Einladung annehmen <ArrowRight size={15} /></>}
             </button>
           </div>
         )}
 
         {schritt === 2 && (
           <div style={{ textAlign:"center" }}>
-            <div style={{ fontSize:48, marginBottom:12 }}>✅</div>
+            <div style={{ display:"flex", justifyContent:"center", marginBottom:12, color:"var(--green)" }}><CircleCheckBig size={40} /></div>
             <div style={{ fontWeight:800, fontSize:18, color:"var(--green)" }}>
               Willkommen im Team!
             </div>

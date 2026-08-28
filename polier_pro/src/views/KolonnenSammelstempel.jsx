@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { HardHat, X, MapPin, Check, CircleCheckBig, TriangleAlert, Play } from "lucide-react";
 import { getGPSPosition, reverseGeocode } from "../lib/geo.js";
 import { sbFetch } from "../lib/supabase.js";
 import { Label } from "../components/Label.jsx";
@@ -60,20 +61,20 @@ export function KolonnenSammelstempel({ kolonne, projekte, session, onClose }) {
   return (
     <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
       background:"var(--bg)", zIndex:500, overflowY:"auto",
-      WebkitOverflowScrolling:"touch",
-      fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
+      WebkitOverflowScrolling:"touch" }}>
 
       <div style={{ background:"var(--surface)", padding:"14px 18px",
         borderBottom:"3px solid var(--yellow)", position:"sticky", top:0,
         zIndex:10, display:"flex", justifyContent:"space-between",
         alignItems:"center" }}>
-        <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:17 }}>
-          👷 Kolonne einstempeln
+        <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:17,
+          display:"flex", alignItems:"center", gap:8 }}>
+          <HardHat size={16} /> Kolonne einstempeln
         </div>
         <button onClick={onClose}
           style={{ background:"var(--surface2)", border:"1px solid var(--border)",
             color:"var(--text)", borderRadius:8, padding:"6px 14px",
-            cursor:"pointer", fontSize:14, fontFamily:"inherit" }}>✕</button>
+            cursor:"pointer", fontSize:14, fontFamily:"inherit", display:"flex" }}><X size={15} /></button>
       </div>
 
       <div style={{ padding:"18px 16px 100px" }}>
@@ -147,8 +148,8 @@ export function KolonnenSammelstempel({ kolonne, projekte, session, onClose }) {
                   background: ausgewaehlt[i] ? "var(--yellow)" : "var(--surface2)",
                   border:`1.5px solid ${ausgewaehlt[i] ? "var(--yellow)" : "var(--border)"}`,
                   display:"flex", alignItems:"center", justifyContent:"center",
-                  fontSize:13, color:"#1a1200" }}>
-                  {ausgewaehlt[i] && "✓"}
+                  color:"#1a1200" }}>
+                  {ausgewaehlt[i] && <Check size={14} />}
                 </div>
                 <div style={{ color:"var(--text)", fontSize:13, fontWeight:600 }}>
                   {mitarbeiter.name}
@@ -163,14 +164,16 @@ export function KolonnenSammelstempel({ kolonne, projekte, session, onClose }) {
                 border:"none", borderRadius:14, padding:16, fontWeight:800,
                 fontSize:16, marginTop:20,
                 cursor: anzahlAusgewaehlt>0 && aktivProjekt ? "pointer" : "default",
-                fontFamily:"inherit" }}>
-              {gpsLaden ? "📍 GPS…" : `▶ ${anzahlAusgewaehlt} Mitarbeiter einstempeln`}
+                fontFamily:"inherit",
+                display:"flex", alignItems:"center", justifyContent:"center", gap:7 }}>
+              {gpsLaden ? <><MapPin size={15} /> GPS…</> : <><Play size={14} /> {anzahlAusgewaehlt} Mitarbeiter einstempeln</>}
             </button>
           </>
         ) : (
           <div style={{ textAlign:"center", paddingTop:20 }}>
-            <div style={{ fontSize:48, marginBottom:16 }}>
-              {ergebnis.fehlgeschlagen === 0 ? "✅" : "⚠️"}
+            <div style={{ display:"flex", justifyContent:"center", marginBottom:16,
+              color: ergebnis.fehlgeschlagen === 0 ? "var(--green)" : "var(--yellow)" }}>
+              {ergebnis.fehlgeschlagen === 0 ? <CircleCheckBig size={40} /> : <TriangleAlert size={40} />}
             </div>
             <div style={{ color:"var(--text)", fontWeight:800, fontSize:18,
               marginBottom:8 }}>
