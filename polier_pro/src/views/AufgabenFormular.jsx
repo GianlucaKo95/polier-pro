@@ -30,7 +30,7 @@ export function AufgabenFormular({ initial, kolonnen, onSave, onClose }) {
   const valid = a.titel.trim().length > 0;
 
   return (
-    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
+    <div style={{ position:"fixed", top:0, left:0, right:0, height:"100dvh",
       background:"rgba(15,23,42,0.7)",
       zIndex:500, display:"flex", alignItems:"flex-end",
       justifyContent:"center" }}>
