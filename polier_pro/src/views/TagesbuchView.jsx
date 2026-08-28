@@ -317,10 +317,11 @@ export function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eig
       {open && (
         <div style={{ position:"fixed", top:0, left:0, right:0, height:"100dvh", background:"var(--bg)", zIndex:200, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
           <div style={{ background: "var(--surface)", borderRadius:"16px 16px 0 0", padding:16,
-            paddingTop:"calc(22px + env(safe-area-inset-top))",
-            width:"100%", maxWidth:520, maxHeight:"92vh", overflowY:"auto" }}>
+            width:"100%", maxWidth:520 }}>
 
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+              marginBottom:12, paddingTop:"calc(6px + env(safe-area-inset-top))",
+              position:"sticky", top:0, background:"var(--surface)", zIndex:5 }}>
               <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:16 }}>
                 📋 Tagesbericht – {new Date().toLocaleDateString("de-DE")}
               </div>

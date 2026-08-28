@@ -36,7 +36,7 @@ export function AufgabenFormular({ initial, kolonnen, onSave, onClose }) {
       justifyContent:"center" }}>
       <div style={{ background:"var(--surface)",
         width:"100%", maxWidth:520,
-        maxHeight:"92vh", overflowY:"auto" }}>
+        maxHeight:"92dvh", overflowY:"auto" }}>
 
         <div style={{ display:"flex", justifyContent:"space-between",
           alignItems:"center", padding:16, paddingBottom:13,
