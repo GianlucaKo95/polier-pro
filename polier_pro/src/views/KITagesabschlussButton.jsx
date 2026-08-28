@@ -64,11 +64,12 @@ export function KITagesabschlussButton({ projekt, kolonnen, wetter, onErgebnis }
       {offen && (
         <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"var(--bg)", zIndex:600, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
           <div style={{ background:"var(--surface)", borderRadius:"20px 20px 0 0",
-            padding:22, width:"100%", maxWidth:520, maxHeight:"92vh",
+            padding:16, paddingTop:"calc(22px + env(safe-area-inset-top))",
+            width:"100%", maxWidth:520, maxHeight:"92vh",
             overflowY:"auto", boxShadow:"0 -4px 30px rgba(0,0,0,0.2)" }}>
 
             <div style={{ display:"flex", justifyContent:"space-between",
-              alignItems:"center", marginBottom:16 }}>
+              alignItems:"center", marginBottom:12 }}>
               <div style={{ fontWeight:800, fontSize:17, color:"var(--text)",
                 display:"flex", alignItems:"center", gap:8 }}>
                 <Bot size={16} /> KI-Tagesabschluss
@@ -80,7 +81,7 @@ export function KITagesabschlussButton({ projekt, kolonnen, wetter, onErgebnis }
 
             {!ergebnis ? (
               <>
-                <div style={{ color:"var(--text2)", fontSize:13, marginBottom:14,
+                <div style={{ color:"var(--text2)", fontSize:13, marginBottom:10,
                   lineHeight:1.6 }}>
                   Beschreibe kurz was heute auf der Baustelle passiert ist.
                   Die KI erstellt automatisch den Tagesbericht, neue Aufgaben und Mängel.
@@ -88,14 +89,14 @@ export function KITagesabschlussButton({ projekt, kolonnen, wetter, onErgebnis }
 
                 {fehler && (
                   <div style={{ background:"var(--rbg)", color:"var(--red)",
-                    borderRadius:10, padding:"10px 14px", marginBottom:14,
+                    borderRadius:10, padding:"7px 14px", marginBottom:10,
                     fontSize:13, border:"1px solid var(--red)",
                     display:"flex", alignItems:"center", gap:6 }}>
                     <CircleX size={13} /> {fehler}
                   </div>
                 )}
 
-                <div style={{ position:"relative", marginBottom:14 }}>
+                <div style={{ position:"relative", marginBottom:10 }}>
                   <textarea rows={6} value={diktat}
                     onChange={e=>setDiktat(e.target.value)}
                     placeholder='z.B. "Heute Bodenplatte B1 fertig betoniert, 8 Mann, Kolonne Huber. Elektriker hat Schalung beschädigt, muss morgen repariert werden. Bewehrung C1 fange ich morgen an..."'
@@ -132,10 +133,10 @@ export function KITagesabschlussButton({ projekt, kolonnen, wetter, onErgebnis }
             ) : (
               <>
                 {/* Bericht-Vorschau */}
-                <div style={{ background:"var(--gbg)", borderRadius:12, padding:14,
-                  marginBottom:12, border:"1px solid var(--green)" }}>
+                <div style={{ background:"var(--gbg)", borderRadius:12, padding:10,
+                  marginBottom:9, border:"1px solid var(--green)" }}>
                   <div style={{ color:"var(--green)", fontWeight:700, fontSize:12,
-                    marginBottom:8, display:"flex", alignItems:"center", gap:6 }}><ClipboardList size={13} /> Tagesbericht</div>
+                    marginBottom:6, display:"flex", alignItems:"center", gap:6 }}><ClipboardList size={13} /> Tagesbericht</div>
                   <div style={{ color:"var(--text)", fontSize:13,
                     lineHeight:1.6 }}>{ergebnis.bericht?.taetigkeit}</div>
                   {ergebnis.bericht?.besonderheiten && (
@@ -146,14 +147,14 @@ export function KITagesabschlussButton({ projekt, kolonnen, wetter, onErgebnis }
 
                 {/* Neue Aufgaben */}
                 {ergebnis.neue_aufgaben?.length > 0 && (
-                  <div style={{ marginBottom:12 }}>
+                  <div style={{ marginBottom:9 }}>
                     <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:12,
-                      marginBottom:8, display:"flex", alignItems:"center", gap:6 }}>
+                      marginBottom:6, display:"flex", alignItems:"center", gap:6 }}>
                       <CircleCheckBig size={13} /> {ergebnis.neue_aufgaben.length} neue Aufgaben erkannt
                     </div>
                     {ergebnis.neue_aufgaben.map((a,i) => (
                       <div key={i} style={{ background:"var(--ybg)", borderRadius:10,
-                        padding:"8px 12px", marginBottom:6,
+                        padding:"6px 12px", marginBottom:6,
                         border:"1px solid var(--yellow)" }}>
                         <div style={{ color:"var(--text)", fontWeight:600, fontSize:12 }}>
                           {AUFGABEN_TYPEN[a.typ]?.icon} {a.titel}
@@ -168,14 +169,14 @@ export function KITagesabschlussButton({ projekt, kolonnen, wetter, onErgebnis }
 
                 {/* Neue Mängel */}
                 {ergebnis.neue_maengel?.length > 0 && (
-                  <div style={{ marginBottom:12 }}>
+                  <div style={{ marginBottom:9 }}>
                     <div style={{ color:"var(--red)", fontWeight:700, fontSize:12,
-                      marginBottom:8, display:"flex", alignItems:"center", gap:6 }}>
+                      marginBottom:6, display:"flex", alignItems:"center", gap:6 }}>
                       <TriangleAlert size={13} /> {ergebnis.neue_maengel.length} Mängel erkannt
                     </div>
                     {ergebnis.neue_maengel.map((m,i) => (
                       <div key={i} style={{ background:"var(--rbg)", borderRadius:10,
-                        padding:"8px 12px", marginBottom:6,
+                        padding:"6px 12px", marginBottom:6,
                         border:"1px solid var(--red)" }}>
                         <div style={{ color:"var(--red)", fontWeight:600, fontSize:12 }}>
                           {m.titel}
@@ -193,8 +194,8 @@ export function KITagesabschlussButton({ projekt, kolonnen, wetter, onErgebnis }
 
                 {/* Wetter-Warnung */}
                 {ergebnis.wetter_warnung && (
-                  <div style={{ background:"var(--obg)", borderRadius:10, padding:12,
-                    marginBottom:12, border:"1px solid var(--orange)" }}>
+                  <div style={{ background:"var(--obg)", borderRadius:10, padding:9,
+                    marginBottom:9, border:"1px solid var(--orange)" }}>
                     <div style={{ color:"var(--orange)", fontWeight:700, fontSize:12,
                       display:"flex", alignItems:"center", gap:6 }}>
                       <CloudRain size={13} /> Wetter-Warnung

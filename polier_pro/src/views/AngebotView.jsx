@@ -39,7 +39,7 @@ export function AngebotView({ projekt, aufgaben, einheitspreise, lvVorlagen, eig
   return (
     <div>
       <div style={{ display:"flex", justifyContent:"space-between",
-        alignItems:"center", marginBottom:14 }}>
+        alignItems:"center", marginBottom:10 }}>
         <div style={{ color:"var(--text)", fontWeight:700, fontSize:15,
           display:"flex", alignItems:"center", gap:7 }}>
           <FileText size={16} /> Angebote
@@ -54,8 +54,8 @@ export function AngebotView({ projekt, aufgaben, einheitspreise, lvVorlagen, eig
       </div>
 
       {angebote.length === 0 && (
-        <div style={{ textAlign:"center", padding:"48px 20px", color:"var(--muted)" }}>
-          <div style={{ display:"flex", justifyContent:"center", marginBottom:12, color:"var(--muted)" }}><FileText size={40} /></div>
+        <div style={{ textAlign:"center", padding:"35px 20px", color:"var(--muted)" }}>
+          <div style={{ display:"flex", justifyContent:"center", marginBottom:9, color:"var(--muted)" }}><FileText size={40} /></div>
           <div style={{ fontWeight:700, color:"var(--text)", marginBottom:6 }}>
             Noch keine Angebote
           </div>
@@ -73,7 +73,7 @@ export function AngebotView({ projekt, aufgaben, einheitspreise, lvVorlagen, eig
         return (
           <div key={a.id} onClick={() => setAktAngebot(a)}
             style={{ background:"var(--surface)", borderRadius:14,
-              padding:"16px 18px", marginBottom:10, cursor:"pointer",
+              padding:"12px 18px", marginBottom:7, cursor:"pointer",
               border:"1.5px solid var(--border)",
               boxShadow:"0 2px 8px rgba(0,0,0,0.05)" }}>
             <div style={{ display:"flex", justifyContent:"space-between",

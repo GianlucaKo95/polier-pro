@@ -41,21 +41,44 @@ export function EinladungScreen({ token, onErfolg }) {
     }
     setLaden(true); setFehler("");
 
-    // Registrieren (Fehler hier ignorieren wir bewusst — falls der Account
-    // schon existiert, greift direkt danach der Login-Versuch)
-    await supabase.auth.signUp({ email, password });
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password });
 
-    // Falls schon registriert: einloggen
-    const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
-    if (loginError || !loginData.session?.access_token) {
-      setFehler("Anmeldung fehlgeschlagen. Passwort korrekt?");
+    // Wenn das Supabase-Projekt "Confirm email" verlangt (Standardeinstellung),
+    // liefert signUp() keinen sofort nutzbaren Session zurück — der Account
+    // existiert, kann sich aber erst nach Bestätigung einloggen. Vorher
+    // versuchte der Code hier direkt signInWithPassword(), was in diesem Fall
+    // mit "Email not confirmed" fehlschlägt und fälschlich als falsches
+    // Passwort angezeigt wurde. Deshalb: signUp()-Session direkt verwenden,
+    // wenn vorhanden — sonst erst dann signInWithPassword versuchen (deckt
+    // den Fall ab, dass der Account schon vorher bestand) und bei einem
+    // "email not confirmed"-Fehler die tatsächliche Ursache benennen.
+    let loginSession = signUpData?.session || null;
+
+    if (!loginSession) {
+      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+      if (loginError) {
+        if (loginError.message?.toLowerCase().includes("email not confirmed")) {
+          setFehler("Bitte bestätige zuerst deine E-Mail-Adresse (Link in deinem Postfach) und öffne diesen Einladungslink danach erneut.");
+        } else if (signUpError) {
+          setFehler(signUpError.message || "Registrierung fehlgeschlagen.");
+        } else {
+          setFehler("Anmeldung fehlgeschlagen. Passwort korrekt?");
+        }
+        setLaden(false); return;
+      }
+      loginSession = loginData.session;
+    }
+
+    if (!loginSession?.access_token) {
+      setFehler("Anmeldung fehlgeschlagen.");
       setLaden(false); return;
     }
+
     const session = {
-      access_token:  loginData.session.access_token,
-      refresh_token: loginData.session.refresh_token,
-      expires_in:    loginData.session.expires_in,
-      user:          loginData.user,
+      access_token:  loginSession.access_token,
+      refresh_token: loginSession.refresh_token,
+      expires_in:    loginSession.expires_in,
+      user:          loginSession.user,
     };
 
     // Einladung einlösen
@@ -85,19 +108,19 @@ export function EinladungScreen({ token, onErfolg }) {
   return (
     <div style={{ background:"var(--bg)", minHeight:"100dvh",
       display:"flex", flexDirection:"column", alignItems:"center",
-      justifyContent:"center", padding:"24px 20px" }}>
+      justifyContent:"center", padding:"17px 20px" }}>
 
       <div style={{ fontWeight:900, fontSize:24, letterSpacing:-1,
-        color:"var(--text)", marginBottom:24, textAlign:"center" }}>
+        color:"var(--text)", marginBottom:17, textAlign:"center" }}>
         <span style={{ color:"var(--yellow)" }}>★</span> POLARIS
       </div>
 
-      <div style={{ background:"var(--surface)", borderRadius:20, padding:28,
+      <div style={{ background:"var(--surface)", borderRadius:20, padding:20,
         width:"100%", maxWidth:400, border:"1.5px solid var(--border)" }}>
 
         {fehler && (
           <div style={{ background:"var(--rbg)", color:"var(--red)",
-            borderRadius:10, padding:"10px 14px", marginBottom:16,
+            borderRadius:10, padding:"7px 14px", marginBottom:12,
             fontSize:13, border:"1px solid var(--red)",
             display:"flex", alignItems:"center", gap:6 }}>
             <CircleX size={14} /> {fehler}
@@ -106,8 +129,8 @@ export function EinladungScreen({ token, onErfolg }) {
 
         {schritt === 1 && einladung && (
           <div>
-            <div style={{ textAlign:"center", marginBottom:20 }}>
-              <div style={{ display:"flex", justifyContent:"center", marginBottom:8, color:"var(--yellow)" }}><PartyPopper size={34} /></div>
+            <div style={{ textAlign:"center", marginBottom:14 }}>
+              <div style={{ display:"flex", justifyContent:"center", marginBottom:6, color:"var(--yellow)" }}><PartyPopper size={34} /></div>
               <div style={{ fontWeight:800, fontSize:18, color:"var(--text)" }}>
                 Du wurdest eingeladen!
               </div>
@@ -117,13 +140,13 @@ export function EinladungScreen({ token, onErfolg }) {
               </div>
             </div>
 
-            <div style={{ marginBottom:14 }}>
+            <div style={{ marginBottom:10 }}>
               <Label>E-Mail</Label>
               <input type="email" value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="deine@email.de" style={inputStyle()} />
             </div>
-            <div style={{ marginBottom:20 }}>
+            <div style={{ marginBottom:14 }}>
               <Label>Passwort wählen</Label>
               <input type="password" value={password}
                 onChange={e => setPassword(e.target.value)}
@@ -141,7 +164,7 @@ export function EinladungScreen({ token, onErfolg }) {
 
         {schritt === 2 && (
           <div style={{ textAlign:"center" }}>
-            <div style={{ display:"flex", justifyContent:"center", marginBottom:12, color:"var(--green)" }}><CircleCheckBig size={40} /></div>
+            <div style={{ display:"flex", justifyContent:"center", marginBottom:9, color:"var(--green)" }}><CircleCheckBig size={40} /></div>
             <div style={{ fontWeight:800, fontSize:18, color:"var(--green)" }}>
               Willkommen im Team!
             </div>

@@ -76,20 +76,20 @@ export function WeatherView({ compact = false, ort = null, plz = null, projektId
   const ok = warn.length === 0;
 
   if (loading) return (
-    <div style={{ background: "var(--surface)", borderRadius: 12, padding: 20, textAlign:"center", color: "var(--muted)" }}>
+    <div style={{ background: "var(--surface)", borderRadius: 12, padding:14, textAlign:"center", color: "var(--muted)" }}>
       Wetterdaten werden geladen…
     </div>
   );
 
   if (!weather) return (
-    <div style={{ background: "var(--surface)", borderRadius: 12, padding: 20, textAlign:"center", color: "var(--red)",
+    <div style={{ background: "var(--surface)", borderRadius: 12, padding:14, textAlign:"center", color: "var(--red)",
       display:"flex", alignItems:"center", justifyContent:"center", gap:7 }}>
       <CircleX size={15} /> Wetterdaten nicht verfügbar
     </div>
   );
 
   if (compact) return (
-    <div style={{ background: "var(--surface)", borderRadius: 12, padding: "14px 16px", border: `1px solid ${ok ? "var(--green)" : "var(--orange)"}`, marginBottom: 14 }}>
+    <div style={{ background: "var(--surface)", borderRadius: 12, padding:"10px 16px", border: `1px solid ${ok ? "var(--green)" : "var(--orange)"}`, marginBottom:10 }}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
         <div>
           <div style={{ color: "var(--muted)", fontSize: 11, textTransform:"uppercase", letterSpacing:1 }}>{loc.name}</div>
@@ -98,19 +98,19 @@ export function WeatherView({ compact = false, ort = null, plz = null, projektId
             <Wind size={11} /> {weather.wind} km/h · <Droplet size={11} /> {weather.humidity}% · <CloudRain size={11} /> {weather.rain}mm
           </div>
         </div>
-        <div style={{ background: ok ? "var(--green)" : "var(--orange)", color:"#fff", borderRadius:8, padding:"8px 14px", fontWeight:700, fontSize:13, textAlign:"center",
+        <div style={{ background: ok ? "var(--green)" : "var(--orange)", color:"#fff", borderRadius:8, padding:"6px 14px", fontWeight:700, fontSize:13, textAlign:"center",
           display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
           {ok ? <><CircleCheckBig size={16} /> Betonage möglich</> : <><Ban size={16} /> Prüfen</>}
         </div>
       </div>
       {warn.length > 0 && (
-        <div style={{ background:"#3A1A1A", borderRadius:8, padding:"8px 12px", marginTop:10 }}>
+        <div style={{ background:"#3A1A1A", borderRadius:8, padding:"6px 12px", marginTop:10 }}>
           {warn.map((w,i) => <div key={i} style={{ color:"#FF9999", fontSize:12 }}>{w}</div>)}
         </div>
       )}
       <div style={{ display:"flex", gap:6, marginTop:10, overflowX:"auto" }}>
         {weather.forecast.map((f,i) => (
-          <div key={i} style={{ minWidth:52, background: "var(--surface2)", borderRadius:12, padding:"8px 4px", textAlign:"center",
+          <div key={i} style={{ minWidth:52, background: "var(--surface2)", borderRadius:12, padding:"6px 4px", textAlign:"center",
             border: betonCheck({temp:f.max,wind:0,rain:f.rain,humidity:70}).length > 0
               ? `2px solid ${'var(--red)'}` : `1px solid ${'var(--border)'}` }}>
             <div style={{ color: "var(--muted)", fontSize:10 }}>{f.day}</div>
@@ -126,7 +126,7 @@ export function WeatherView({ compact = false, ort = null, plz = null, projektId
   // Full weather view
   return (
     <div>
-      <div style={{ background: "var(--surface)", borderRadius:12, padding:18, border:`1px solid ${ok ? "var(--green)" : "var(--orange)"}`, marginBottom:14 }}>
+      <div style={{ background: "var(--surface)", borderRadius:12, padding:13, border:`1px solid ${ok ? "var(--green)" : "var(--orange)"}`, marginBottom:10 }}>
         <div style={{ color: "var(--muted)", fontSize:11, textTransform:"uppercase", letterSpacing:1, marginBottom:4,
           display:"flex", alignItems:"center", gap:4 }}><MapPin size={10} /> {loc.name} · Live-Wetter</div>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
@@ -138,7 +138,7 @@ export function WeatherView({ compact = false, ort = null, plz = null, projektId
             </div>
           </div>
         </div>
-        <div style={{ background: ok ? "#1A3A28" : "#3A1A1A", borderRadius:10, padding:14, marginTop:14 }}>
+        <div style={{ background: ok ? "#1A3A28" : "#3A1A1A", borderRadius:10, padding:10, marginTop:14 }}>
           <div style={{ color: ok ? "var(--green)" : "var(--red)", fontWeight:700, fontSize:15, marginBottom: warn.length ? 8 : 0,
             display:"flex", alignItems:"center", gap:7 }}>
             {ok ? <><CircleCheckBig size={15} /> Betonage heute möglich</> : <><Ban size={15} /> Betonage eingeschränkt</>}
@@ -148,8 +148,8 @@ export function WeatherView({ compact = false, ort = null, plz = null, projektId
       </div>
 
       {/* Checkliste */}
-      <div style={{ background: "var(--surface)", borderRadius:12, padding:16, marginBottom:14 }}>
-        <div style={{ color: "var(--yellow)", fontWeight:700, marginBottom:12,
+      <div style={{ background: "var(--surface)", borderRadius:12, padding:12, marginBottom:10 }}>
+        <div style={{ color: "var(--yellow)", fontWeight:700, marginBottom:9,
           display:"flex", alignItems:"center", gap:7 }}><Blocks size={15} /> Betonier-Checkliste</div>
         {[
           ["Temperatur",    `${weather.temp}°C`,        weather.temp >= 5 && weather.temp <= 30, "5°C – 30°C"],
@@ -171,15 +171,15 @@ export function WeatherView({ compact = false, ort = null, plz = null, projektId
       </div>
 
       {/* 7-Tage */}
-      <div style={{ background: "var(--surface)", borderRadius:12, padding:16 }}>
-        <div style={{ color: "var(--yellow)", fontWeight:700, marginBottom:12,
+      <div style={{ background: "var(--surface)", borderRadius:12, padding:12 }}>
+        <div style={{ color: "var(--yellow)", fontWeight:700, marginBottom:9,
           display:"flex", alignItems:"center", gap:7 }}><Calendar size={15} /> 7-Tage Betonierplan</div>
         {weather.forecast.map((f,i) => {
           const dayWarn = betonCheck({ temp:f.max, wind:30, rain:f.rain, humidity:70 });
           const dayOk = dayWarn.length === 0;
           return (
             <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
-              padding:"10px 12px", borderRadius:8, marginBottom:6,
+              padding:"7px 12px", borderRadius:8, marginBottom:6,
               background: dayOk ? "#1A2E1E" : "#2E1A1A",
               border: `1px solid ${dayOk ? "var(--green)" : "var(--red)"}` }}>
               <div style={{ display:"flex", alignItems:"center", gap:10 }}>

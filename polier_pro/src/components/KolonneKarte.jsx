@@ -43,10 +43,10 @@ export function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, erfasstVerbunde
   })).length;
 
   return (
-    <div style={{ marginBottom:12 }}>
+    <div style={{ marginBottom:9 }}>
       {/* Kolonne Header */}
       <div style={{ background: "var(--surface)", borderRadius: expanded ? "12px 12px 0 0" : 12,
-        padding:"14px 16px", border:`1px solid ${'var(--border)'}`,
+        padding:"10px 16px", border:`1px solid ${'var(--border)'}`,
         borderBottom: expanded ? "none" : undefined }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
           <div style={{ flex:1 }}>
@@ -113,7 +113,7 @@ export function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, erfasstVerbunde
       {/* Aufgeklappte MA-Liste */}
       {expanded && (
         <div style={{ background: "var(--surface2)", borderRadius:"0 0 12px 12px",
-          border:`1px solid ${'var(--border)'}`, borderTop:"none", padding:"10px 12px" }}>
+          border:`1px solid ${'var(--border)'}`, borderTop:"none", padding:"7px 12px" }}>
           {mas.map(ma => (
             <div key={ma.id} style={{ display:"flex", alignItems:"center", gap:8 }}>
               <div style={{ flex:1 }}>
@@ -159,7 +159,7 @@ export function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, erfasstVerbunde
           {/* Kolonnen-Summe */}
           {erfasstVerbunden && kolonneH > 0 && (
             <div style={{ display:"flex", justifyContent:"space-between",
-              background: "var(--border)", borderRadius:8, padding:"10px 12px", marginTop:8 }}>
+              background: "var(--border)", borderRadius:8, padding:"7px 12px", marginTop:8 }}>
               <div style={{ color: "var(--muted)", fontSize:12 }}>Kolonne gesamt</div>
               <div style={{ color: "var(--yellow)", fontWeight:800, fontSize:15 }}>{kolonneH.toFixed(1)} h</div>
             </div>

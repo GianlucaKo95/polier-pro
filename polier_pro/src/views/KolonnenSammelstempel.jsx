@@ -63,7 +63,8 @@ export function KolonnenSammelstempel({ kolonne, projekte, session, onClose }) {
       background:"var(--bg)", zIndex:500, overflowY:"auto",
       WebkitOverflowScrolling:"touch" }}>
 
-      <div style={{ background:"var(--surface)", padding:"14px 18px",
+      <div style={{ background:"var(--surface)", padding:"10px 18px",
+        paddingTop:"calc(14px + env(safe-area-inset-top))",
         borderBottom:"3px solid var(--yellow)", position:"sticky", top:0,
         zIndex:10, display:"flex", justifyContent:"space-between",
         alignItems:"center" }}>
@@ -81,14 +82,14 @@ export function KolonnenSammelstempel({ kolonne, projekte, session, onClose }) {
 
         {!ergebnis ? (
           <>
-            <div style={{ color:"var(--muted)", fontSize:13, marginBottom:16,
+            <div style={{ color:"var(--muted)", fontSize:13, marginBottom:12,
               lineHeight:1.5 }}>
               Stempelt <strong>{kolonne.name}</strong> gesammelt ein. Praktisch
               wenn nicht jeder Mitarbeiter ein eigenes Smartphone mit App hat —
               der Vorarbeiter erfasst für das ganze Team auf einmal.
             </div>
 
-            <div style={{ marginBottom:14 }}>
+            <div style={{ marginBottom:10 }}>
               <Label>Projekt</Label>
               <div style={{ display:"flex", flexDirection:"column", gap:6, marginTop:6 }}>
                 {projekte.map(p => (
@@ -104,7 +105,7 @@ export function KolonnenSammelstempel({ kolonne, projekte, session, onClose }) {
               </div>
             </div>
 
-            <div style={{ marginBottom:16 }}>
+            <div style={{ marginBottom:12 }}>
               <Label>Tätigkeit</Label>
               <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:6 }}>
                 {Object.entries(TAETIGKEITEN).map(([key, t]) => (
@@ -122,7 +123,7 @@ export function KolonnenSammelstempel({ kolonne, projekte, session, onClose }) {
             </div>
 
             <div style={{ display:"flex", justifyContent:"space-between",
-              alignItems:"center", marginBottom:10 }}>
+              alignItems:"center", marginBottom:7 }}>
               <Label>Mitarbeiter</Label>
               <div style={{ color:"var(--muted)", fontSize:12 }}>
                 {anzahlAusgewaehlt} / {(kolonne.mitarbeiter||[]).length} ausgewählt
@@ -131,7 +132,7 @@ export function KolonnenSammelstempel({ kolonne, projekte, session, onClose }) {
 
             {(kolonne.mitarbeiter||[]).length === 0 && (
               <div style={{ background:"var(--surface)", borderRadius:12,
-                padding:"20px 16px", textAlign:"center", color:"var(--muted)",
+                padding:"14px 16px", textAlign:"center", color:"var(--muted)",
                 fontSize:13, border:"1px solid var(--border)" }}>
                 Diese Kolonne hat noch keine Mitarbeiter hinterlegt.
                 Füge sie in der Kolonnen-Verwaltung hinzu.
@@ -142,7 +143,7 @@ export function KolonnenSammelstempel({ kolonne, projekte, session, onClose }) {
               <div key={mitarbeiter.id ?? i} onClick={() => setAusgewaehlt(p=>({...p,[i]:!p[i]}))}
                 style={{ display:"flex", alignItems:"center", gap:10,
                   background:"var(--surface)", borderRadius:10,
-                  padding:"10px 14px", marginBottom:6, cursor:"pointer",
+                  padding:"7px 14px", marginBottom:6, cursor:"pointer",
                   border:`1.5px solid ${ausgewaehlt[i] ? "var(--yellow)" : "var(--border)"}` }}>
                 <div style={{ width:22, height:22, borderRadius:6, flexShrink:0,
                   background: ausgewaehlt[i] ? "var(--yellow)" : "var(--surface2)",
@@ -171,16 +172,16 @@ export function KolonnenSammelstempel({ kolonne, projekte, session, onClose }) {
           </>
         ) : (
           <div style={{ textAlign:"center", paddingTop:20 }}>
-            <div style={{ display:"flex", justifyContent:"center", marginBottom:16,
+            <div style={{ display:"flex", justifyContent:"center", marginBottom:12,
               color: ergebnis.fehlgeschlagen === 0 ? "var(--green)" : "var(--yellow)" }}>
               {ergebnis.fehlgeschlagen === 0 ? <CircleCheckBig size={40} /> : <TriangleAlert size={40} />}
             </div>
             <div style={{ color:"var(--text)", fontWeight:800, fontSize:18,
-              marginBottom:8 }}>
+              marginBottom:6 }}>
               {ergebnis.erfolgreich} von {ergebnis.gesamt} eingestempelt
             </div>
             {ergebnis.fehlgeschlagen > 0 && (
-              <div style={{ color:"var(--red)", fontSize:13, marginBottom:16 }}>
+              <div style={{ color:"var(--red)", fontSize:13, marginBottom:12 }}>
                 {ergebnis.fehlgeschlagen} Buchung(en) fehlgeschlagen — bitte erneut versuchen.
               </div>
             )}

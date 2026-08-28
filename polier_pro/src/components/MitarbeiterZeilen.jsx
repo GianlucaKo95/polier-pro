@@ -25,7 +25,7 @@ export function MitarbeiterZeilen({ ma, zeitdaten, vonDatum, bisDatum }) {
         style={{ display:"flex", alignItems:"center", gap:10,
           background: open ? "var(--surface2)" : "var(--border)",
           borderRadius: open ? "8px 8px 0 0" : 8,
-          padding:"10px 12px",
+          padding:"7px 12px",
           cursor: hatDaten ? "pointer" : "default",
           border:`1px solid ${open ? "var(--yellow)"+"66" : "transparent"}` }}>
         {/* Avatar */}
@@ -60,7 +60,7 @@ export function MitarbeiterZeilen({ ma, zeitdaten, vonDatum, bisDatum }) {
       {/* Aufgeklappte Buchungen */}
       {open && maBuchungen.length > 0 && (
         <div style={{ background: "var(--surface)", borderRadius:"0 0 8px 8px",
-          border:`1px solid ${"var(--yellow)"+"66"}`, borderTop:"none", padding:"8px 10px" }}>
+          border:`1px solid ${"var(--yellow)"+"66"}`, borderTop:"none", padding:"6px 10px" }}>
           {maBuchungen.map((z, i) => (
             <div key={i} style={{ display:"flex", justifyContent:"space-between",
               alignItems:"center", padding:"6px 4px",

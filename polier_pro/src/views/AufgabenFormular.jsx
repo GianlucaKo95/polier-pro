@@ -35,11 +35,11 @@ export function AufgabenFormular({ initial, kolonnen, onSave, onClose }) {
       zIndex:500, display:"flex", alignItems:"flex-end",
       justifyContent:"center" }}>
       <div style={{ background:"var(--surface)",
-        padding:22, width:"100%", maxWidth:520,
+        padding:16, width:"100%", maxWidth:520,
         maxHeight:"92vh", overflowY:"auto" }}>
 
         <div style={{ display:"flex", justifyContent:"space-between",
-          alignItems:"center", marginBottom:18 }}>
+          alignItems:"center", marginBottom:13 }}>
           <div style={{ color:"var(--text)", fontWeight:800, fontSize:19, letterSpacing:-0.4 }}>
             {initial ? "Aufgabe bearbeiten" : "Neue Aufgabe"}
           </div>
@@ -49,7 +49,7 @@ export function AufgabenFormular({ initial, kolonnen, onSave, onClose }) {
         </div>
 
         {/* Typ */}
-        <div style={{ marginBottom:14 }}>
+        <div style={{ marginBottom:10 }}>
           <Label>Aufgabentyp</Label>
           <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginTop:6 }}>
             {Object.entries(AUFGABEN_TYPEN).map(([key, t]) => (
@@ -68,14 +68,14 @@ export function AufgabenFormular({ initial, kolonnen, onSave, onClose }) {
         </div>
 
         {/* Titel */}
-        <div style={{ marginBottom:13 }}>
+        <div style={{ marginBottom:9 }}>
           <Label>Titel *</Label>
           <input value={a.titel} onChange={e=>setA(p=>({...p,titel:e.target.value}))}
             placeholder="z.B. Bodenplatte B1 betonieren" style={inputStyle()} />
         </div>
 
         {/* Status + Priorität */}
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:13 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:9 }}>
           <div>
             <Label>Status</Label>
             <select value={a.status} onChange={e=>setA(p=>({...p,status:e.target.value}))}
@@ -97,7 +97,7 @@ export function AufgabenFormular({ initial, kolonnen, onSave, onClose }) {
         </div>
 
         {/* Zuständig + Fällig */}
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:13 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:9 }}>
           <div>
             <Label>Zuständig</Label>
             <select value={a.zustaendig} onChange={e=>setA(p=>({...p,zustaendig:e.target.value}))}
@@ -117,7 +117,7 @@ export function AufgabenFormular({ initial, kolonnen, onSave, onClose }) {
         </div>
 
         {/* Beschreibung */}
-        <div style={{ marginBottom:13 }}>
+        <div style={{ marginBottom:9 }}>
           <Label>Beschreibung</Label>
           <textarea rows={3} value={a.beschreibung}
             onChange={e=>setA(p=>({...p,beschreibung:e.target.value}))}
@@ -129,10 +129,10 @@ export function AufgabenFormular({ initial, kolonnen, onSave, onClose }) {
 
         {/* Beton-spezifisch */}
         {a.typ === "beton" && (
-          <div style={{ background:"var(--ybg)", borderRadius:12, padding:14,
-            marginBottom:14, border:"1px solid var(--yellow)" }}>
+          <div style={{ background:"var(--ybg)", borderRadius:12, padding:10,
+            marginBottom:10, border:"1px solid var(--yellow)" }}>
             <div style={{ color:"var(--ydark)", fontWeight:700, fontSize:12,
-              marginBottom:10 }}>🏗️ Betonage-Details</div>
+              marginBottom:7 }}>🏗️ Betonage-Details</div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
               <div>
                 <Label>Fläche (m²)</Label>
@@ -152,11 +152,11 @@ export function AufgabenFormular({ initial, kolonnen, onSave, onClose }) {
 
         {/* Mangel-spezifisch */}
         {a.ist_mangel && (
-          <div style={{ background:"var(--rbg)", borderRadius:12, padding:14,
-            marginBottom:14, border:"1px solid var(--red)" }}>
+          <div style={{ background:"var(--rbg)", borderRadius:12, padding:10,
+            marginBottom:10, border:"1px solid var(--red)" }}>
             <div style={{ color:"var(--red)", fontWeight:700, fontSize:12,
-              marginBottom:10 }}>⚠️ Mangel-Details</div>
-            <div style={{ marginBottom:10 }}>
+              marginBottom:7 }}>⚠️ Mangel-Details</div>
+            <div style={{ marginBottom:7 }}>
               <Label>Verursacher / Gewerk</Label>
               <input value={a.mangel_verursacher||""}
                 onChange={e=>setA(p=>({...p,mangel_verursacher:e.target.value}))}
@@ -218,7 +218,7 @@ export function AufgabenFormular({ initial, kolonnen, onSave, onClose }) {
         )}
 
         {/* Fotos */}
-        <div style={{ marginBottom:16 }}>
+        <div style={{ marginBottom:12 }}>
           <Label>Fotos ({a.fotos?.length || 0})</Label>
           <input ref={fileRef} type="file" accept="image/*" multiple
             style={{ display:"none" }} onChange={handleBild} />

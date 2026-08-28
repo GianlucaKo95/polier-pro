@@ -187,7 +187,8 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
       <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
         background:"var(--bg)", zIndex:700, overflowY:"auto",
         WebkitOverflowScrolling:"touch" }}>
-        <div style={{ background:"var(--surface)", padding:"14px 18px",
+        <div style={{ background:"var(--surface)", padding:"10px 18px",
+          paddingTop:"calc(14px + env(safe-area-inset-top))",
           borderBottom:"3px solid var(--yellow)", position:"sticky", top:0,
           display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:16,
@@ -199,16 +200,16 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
               color:"var(--text)", borderRadius:8, padding:"6px 14px",
               cursor:"pointer", fontFamily:"inherit", display:"flex" }}><X size={15} /></button>
         </div>
-        <div style={{ padding:"20px 16px" }}>
+        <div style={{ padding:"14px 16px" }}>
           {lvVorlagen.length === 0 && (
-            <div style={{ color:"var(--muted)", textAlign:"center", padding:24 }}>
+            <div style={{ color:"var(--muted)", textAlign:"center", padding:17 }}>
               Keine Vorlagen vorhanden · Administrator anlegen lassen
             </div>
           )}
           {lvVorlagen.map(v => (
             <div key={v.id} onClick={() => vorlageLaden(v)}
               style={{ background:"var(--surface)", borderRadius:12,
-                padding:"12px 14px", marginBottom:8, cursor:"pointer",
+                padding:"9px 14px", marginBottom:6, cursor:"pointer",
                 border:"1.5px solid var(--border)" }}>
               <div style={{ color:"var(--text)", fontWeight:700 }}>{v.name}</div>
               <div style={{ color:"var(--muted)", fontSize:12, marginTop:3 }}>
@@ -227,7 +228,8 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
       <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
         background:"var(--bg)", zIndex:700, overflowY:"auto",
         WebkitOverflowScrolling:"touch" }}>
-        <div style={{ background:"var(--surface)", padding:"14px 18px",
+        <div style={{ background:"var(--surface)", padding:"10px 18px",
+          paddingTop:"calc(14px + env(safe-area-inset-top))",
           borderBottom:"3px solid var(--green)", position:"sticky", top:0,
           display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div style={{ color:"var(--green)", fontWeight:700, fontSize:16,
@@ -239,16 +241,16 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
               color:"var(--text)", borderRadius:8, padding:"6px 14px",
               cursor:"pointer", fontFamily:"inherit", display:"flex" }}><X size={15} /></button>
         </div>
-        <div style={{ padding:"20px 16px" }}>
+        <div style={{ padding:"14px 16px" }}>
           {aufgaben.length === 0 && (
-            <div style={{ color:"var(--muted)", textAlign:"center", padding:24 }}>
+            <div style={{ color:"var(--muted)", textAlign:"center", padding:17 }}>
               Keine Aufgaben vorhanden
             </div>
           )}
           {aufgaben.map(aufg => (
             <div key={aufg.id} onClick={() => aufgabeImportieren(aufg)}
               style={{ background:"var(--surface)", borderRadius:12,
-                padding:"12px 14px", marginBottom:8, cursor:"pointer",
+                padding:"9px 14px", marginBottom:6, cursor:"pointer",
                 border:"1.5px solid var(--border)",
                 borderLeftWidth:4,
                 borderLeftColor:AUFGABEN_TYPEN[aufg.typ]?.farbe||"var(--muted)" }}>
@@ -268,7 +270,8 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
   return (
     <div>
       {/* Header */}
-      <div style={{ background:"var(--surface)", padding:"14px 16px",
+      <div style={{ background:"var(--surface)", padding:"10px 16px",
+        paddingTop:"calc(14px + env(safe-area-inset-top))",
         borderBottom:"1px solid var(--border)", position:"sticky", top:0,
         zIndex:10, display:"flex", justifyContent:"space-between",
         alignItems:"center" }}>
@@ -294,8 +297,8 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
 
       <div style={{ padding:"16px 14px 100px" }}>
         {/* Summen-Banner */}
-        <div style={{ background:"#1a1a1a", borderRadius:14, padding:"14px 18px",
-          marginBottom:16, display:"flex", justifyContent:"space-between",
+        <div style={{ background:"#1a1a1a", borderRadius:14, padding:"10px 18px",
+          marginBottom:12, display:"flex", justifyContent:"space-between",
           alignItems:"center" }}>
           <div>
             <div style={{ color:"#888", fontSize:11 }}>Angebotssumme (brutto)</div>
@@ -315,7 +318,7 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
         </div>
 
         {/* Tab-Toggle */}
-        <div style={{ display:"flex", gap:6, marginBottom:14 }}>
+        <div style={{ display:"flex", gap:6, marginBottom:10 }}>
           {[["positionen",ClipboardList,"Positionen"],["einstellungen",Settings,"Einstellungen"]].map(([k,Icon,l]) => (
             <button key={k} onClick={() => setAnsicht(k)}
               style={{ flex:1, background: ansicht===k ? "var(--yellow)" : "var(--surface2)",
@@ -331,7 +334,7 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
         {ansicht === "positionen" && (
           <div>
             {/* Import-Buttons */}
-            <div style={{ display:"flex", gap:8, marginBottom:12 }}>
+            <div style={{ display:"flex", gap:8, marginBottom:9 }}>
               <button onClick={() => setVonVorlage(true)}
                 style={{ flex:1, background:"var(--bbg)", color:"var(--blue)",
                   border:"1.5px solid var(--blue)", borderRadius:10, padding:"9px 0",
@@ -353,14 +356,14 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
 
             {/* Positionen */}
             {a.positionen.length === 0 && (
-              <div style={{ textAlign:"center", padding:"32px 20px", color:"var(--muted)",
+              <div style={{ textAlign:"center", padding:"23px 20px", color:"var(--muted)",
                 fontSize:13 }}>
                 Noch keine Positionen · Aus Vorlage oder Aufgaben importieren
               </div>
             )}
             {a.positionen.map((pos, i) => (
               <div key={pos.id} style={{ background:"var(--surface)", borderRadius:12,
-                padding:"12px 14px", marginBottom:8,
+                padding:"9px 14px", marginBottom:6,
                 border:"1.5px solid var(--border)" }}>
                 <div style={{ display:"flex", justifyContent:"space-between",
                   alignItems:"center", marginBottom:6 }}>
@@ -417,13 +420,13 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
               ["Titel","titel","Angebot Bodenplatte"],
               ["Empfänger","empfaenger","Auftraggeber GmbH"],
             ].map(([l,k,ph]) => (
-              <div key={k} style={{ marginBottom:12 }}>
+              <div key={k} style={{ marginBottom:9 }}>
                 <Label>{l}</Label>
                 <input value={a[k]||""} onChange={e=>setA(x=>({...x,[k]:e.target.value}))}
                   placeholder={ph} style={inputStyle()} />
               </div>
             ))}
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:9 }}>
               <div>
                 <Label>Angebotsdatum</Label>
                 <input type="date" value={a.datum}
@@ -437,7 +440,7 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
                   style={inputStyle()} />
               </div>
             </div>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:9 }}>
               <div>
                 <Label>Rabatt (%)</Label>
                 <input type="number" value={a.rabatt||0}
@@ -455,7 +458,7 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
                 </select>
               </div>
             </div>
-            <div style={{ marginBottom:12 }}>
+            <div style={{ marginBottom:9 }}>
               <Label>Status</Label>
               <select value={a.status}
                 onChange={e=>setA(x=>({...x,status:e.target.value}))}

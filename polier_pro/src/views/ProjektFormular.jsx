@@ -36,7 +36,8 @@ export function ProjektFormular({ initial, onSave, onClose, subs = [], speicherF
       WebkitOverflowScrolling:"touch" }}>
 
       {/* Header */}
-      <div style={{ background:"var(--surface)", padding:"14px 18px",
+      <div style={{ background:"var(--surface)", padding:"10px 18px",
+        paddingTop:"calc(14px + env(safe-area-inset-top))",
         borderBottom:"3px solid var(--yellow)", position:"sticky", top:0,
         zIndex:10, display:"flex", justifyContent:"space-between",
         alignItems:"center" }}>
@@ -53,7 +54,7 @@ export function ProjektFormular({ initial, onSave, onClose, subs = [], speicherF
       <div style={{ padding:"20px 16px 100px" }}>
 
         <div style={{ display:"flex", justifyContent:"space-between",
-          alignItems:"center", marginBottom:18 }}>
+          alignItems:"center", marginBottom:13 }}>
           <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:17,
             display:"flex", alignItems:"center", gap:8 }}>
             {initial?.name ? <><Pencil size={15} /> Baustelle bearbeiten</> : <><Plus size={15} /> Neue Baustelle</>}
@@ -64,14 +65,14 @@ export function ProjektFormular({ initial, onSave, onClose, subs = [], speicherF
         </div>
 
         {/* Projekttyp */}
-        <div style={{ marginBottom:18 }}>
+        <div style={{ marginBottom:13 }}>
           <Label>Projekttyp *</Label>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginTop:6 }}>
             {Object.entries(PROJEKTTYPEN).map(([key, cfg]) => (
               <div key={key} onClick={() => setP(prev=>({...prev, typ:key}))}
                 style={{ background: p.typ===key ? "var(--ybg)" : "var(--surface2)",
                   border:`2px solid ${p.typ===key ? "var(--yellow)" : "var(--border)"}`,
-                  borderRadius:12, padding:"12px 12px", cursor:"pointer",
+                  borderRadius:12, padding:"9px 12px", cursor:"pointer",
                   display:"flex", alignItems:"center", gap:8,
                   transition:"all 0.15s" }}>
                 <span style={{ fontSize:20 }}>{cfg.icon}</span>
@@ -88,7 +89,7 @@ export function ProjektFormular({ initial, onSave, onClose, subs = [], speicherF
           ["Projektname *",  "name",          "Neubau Wohnanlage Nord"],
           ["Straße + Nr.",   "adresse",       "Musterstraße 1"],
         ].map(([label, key, ph]) => (
-          <div key={key} style={{ marginBottom:13 }}>
+          <div key={key} style={{ marginBottom:9 }}>
             <Label>{label}</Label>
             <input value={p[key]} onChange={e => setP(prev=>({...prev,[key]:e.target.value}))}
               placeholder={ph} style={inputStyle()} />
@@ -98,7 +99,7 @@ export function ProjektFormular({ initial, onSave, onClose, subs = [], speicherF
         {/* PLZ + Ort getrennt — Ort wird für die Wetter-Standortsuche genutzt,
             eine vollständige Straßenadresse ist dafür nicht nötig und führte
             bisher zu missverständlicher Anzeige (Straßenname statt Stadt). */}
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 2fr", gap:10, marginBottom:13 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 2fr", gap:10, marginBottom:9 }}>
           <div>
             <Label>PLZ</Label>
             <input value={p.plz||""} onChange={e => setP(prev=>({...prev,plz:e.target.value}))}
@@ -116,7 +117,7 @@ export function ProjektFormular({ initial, onSave, onClose, subs = [], speicherF
           ["Bauleiter",      "bauleiter",     "Max Mustermann"],
           ["Auftraggeber",   "auftraggeber",  "Muster GmbH"],
         ].map(([label, key, ph]) => (
-          <div key={key} style={{ marginBottom:13 }}>
+          <div key={key} style={{ marginBottom:9 }}>
             <Label>{label}</Label>
             <input value={p[key]} onChange={e => setP(prev=>({...prev,[key]:e.target.value}))}
               placeholder={ph} style={inputStyle()} />
@@ -124,7 +125,7 @@ export function ProjektFormular({ initial, onSave, onClose, subs = [], speicherF
         ))}
 
         {/* Farbe */}
-        <div style={{ marginBottom:16 }}>
+        <div style={{ marginBottom:12 }}>
           <Label>Projektfarbe</Label>
           <div style={{ display:"flex", gap:10, marginTop:6 }}>
             {FARBEN.map(f => (
@@ -141,7 +142,7 @@ export function ProjektFormular({ initial, onSave, onClose, subs = [], speicherF
 
         {/* Subunternehmer */}
         {subs.filter(s=>s.status==="aktiv").length > 0 && (
-          <div style={{ marginBottom:20 }}>
+          <div style={{ marginBottom:14 }}>
             <Label>Subunternehmer zuweisen</Label>
             <div style={{ display:"flex", flexDirection:"column", gap:6, marginTop:8 }}>
               {subs.filter(s=>s.status==="aktiv").map(s => {
@@ -152,7 +153,7 @@ export function ProjektFormular({ initial, onSave, onClose, subs = [], speicherF
                       alignItems:"center",
                       background: aktiv ? "var(--bbg)" : "var(--surface2)",
                       border:`1.5px solid ${aktiv ? "var(--blue)" : "var(--border)"}`,
-                      borderRadius:10, padding:"10px 12px", cursor:"pointer" }}>
+                      borderRadius:10, padding:"7px 12px", cursor:"pointer" }}>
                     <div>
                       <div style={{ color:"var(--text)", fontSize:13,
                         fontWeight: aktiv ? 700 : 400 }}>{s.name}</div>
@@ -179,7 +180,7 @@ export function ProjektFormular({ initial, onSave, onClose, subs = [], speicherF
 
         {speicherFehler && (
           <div style={{ background:"var(--rbg)", color:"var(--red)", borderRadius:12,
-            padding:"12px 16px", marginBottom:14, fontSize:12,
+            padding:"9px 16px", marginBottom:10, fontSize:12,
             border:"1px solid var(--red)",
             display:"flex", alignItems:"center", gap:6 }}>
             <TriangleAlert size={14} /> {speicherFehler}

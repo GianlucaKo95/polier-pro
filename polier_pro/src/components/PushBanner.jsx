@@ -4,7 +4,7 @@ import { PUSH_VAPID_PUBLIC } from "../lib/push.js";
 export function PushBanner({ erlaubt, berechtigung }) {
   if (erlaubt) return null;
   return (
-    <div style={{ background: "var(--bbg)", borderRadius:12, padding:"12px 16px", marginBottom:12,
+    <div style={{ background: "var(--bbg)", borderRadius:12, padding:"9px 16px", marginBottom:9,
       border:`1.5px solid ${'var(--blue)'}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
       <div>
         <div style={{ color: "var(--text)", fontSize:13, fontWeight:700,

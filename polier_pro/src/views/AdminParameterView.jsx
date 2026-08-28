@@ -24,13 +24,13 @@ export function AdminParameterView({ einheitspreise, setEinheitspreise, lvVorlag
 
   return (
     <div>
-      <div style={{ color:"var(--text)", fontWeight:700, fontSize:15, marginBottom:14,
+      <div style={{ color:"var(--text)", fontWeight:700, fontSize:15, marginBottom:10,
         display:"flex", alignItems:"center", gap:7 }}>
         <Settings size={16} /> Angebots-Parameter
       </div>
 
       {/* Tab-Toggle */}
-      <div style={{ display:"flex", gap:6, marginBottom:16 }}>
+      <div style={{ display:"flex", gap:6, marginBottom:12 }}>
         {[["preise",Euro,"Einheitspreise"],["vorlagen",ClipboardList,"LV-Vorlagen"]].map(([k,Icon,l]) => (
           <button key={k} onClick={() => setAktiv(k)}
             style={{ flex:1, background: aktiv===k ? "var(--yellow)" : "var(--surface2)",
@@ -46,7 +46,7 @@ export function AdminParameterView({ einheitspreise, setEinheitspreise, lvVorlag
       {aktiv === "preise" && (
         <div>
           <div style={{ display:"flex", justifyContent:"space-between",
-            alignItems:"center", marginBottom:10 }}>
+            alignItems:"center", marginBottom:7 }}>
             <div style={{ color:"var(--muted)", fontSize:12 }}>
               {einheitspreise.length} Positionen
             </div>
@@ -61,7 +61,7 @@ export function AdminParameterView({ einheitspreise, setEinheitspreise, lvVorlag
 
           {einheitspreise.map(p => (
             <div key={p.id} style={{ background:"var(--surface)", borderRadius:12,
-              padding:"12px 14px", marginBottom:8,
+              padding:"9px 14px", marginBottom:6,
               border:"1.5px solid var(--border)" }}>
               <div style={{ display:"flex", justifyContent:"space-between",
                 alignItems:"flex-start" }}>
@@ -93,7 +93,7 @@ export function AdminParameterView({ einheitspreise, setEinheitspreise, lvVorlag
       {aktiv === "vorlagen" && (
         <div>
           <div style={{ display:"flex", justifyContent:"space-between",
-            alignItems:"center", marginBottom:10 }}>
+            alignItems:"center", marginBottom:7 }}>
             <div style={{ color:"var(--muted)", fontSize:12 }}>
               {lvVorlagen.length} Vorlagen
             </div>
@@ -108,7 +108,7 @@ export function AdminParameterView({ einheitspreise, setEinheitspreise, lvVorlag
 
           {lvVorlagen.map(v => (
             <div key={v.id} style={{ background:"var(--surface)", borderRadius:12,
-              padding:"12px 14px", marginBottom:8,
+              padding:"9px 14px", marginBottom:6,
               border:"1.5px solid var(--border)" }}>
               <div style={{ display:"flex", justifyContent:"space-between",
                 alignItems:"center", marginBottom:6 }}>
@@ -135,7 +135,8 @@ export function AdminParameterView({ einheitspreise, setEinheitspreise, lvVorlag
       {(neuPreis || editPreis) && (
         <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"var(--bg)", zIndex:600, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
           <div style={{ background:"var(--surface)", borderRadius:"20px 20px 0 0",
-            padding:22, width:"100%", maxWidth:480 }}>
+            padding:16, paddingTop:"calc(22px + env(safe-area-inset-top))",
+            width:"100%", maxWidth:480 }}>
             <PreisFormular
               initial={editPreis || neuPreis}
               onSave={preisSpeichern}
@@ -149,7 +150,8 @@ export function AdminParameterView({ einheitspreise, setEinheitspreise, lvVorlag
       {neuVorlage && (
         <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"var(--bg)", zIndex:600, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
           <div style={{ background:"var(--surface)", borderRadius:"20px 20px 0 0",
-            padding:22, width:"100%", maxWidth:480, maxHeight:"80vh",
+            padding:16, paddingTop:"calc(22px + env(safe-area-inset-top))",
+            width:"100%", maxWidth:480, maxHeight:"80vh",
             overflowY:"auto" }}>
             <VorlageFormular
               initial={neuVorlage}

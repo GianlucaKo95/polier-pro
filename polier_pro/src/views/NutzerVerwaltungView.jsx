@@ -92,7 +92,7 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
     <div>
       {/* Header */}
       <div style={{ display:"flex", justifyContent:"space-between",
-        alignItems:"center", marginBottom:16 }}>
+        alignItems:"center", marginBottom:12 }}>
         <div style={{ color:"var(--text)", fontWeight:800, fontSize:16,
           display:"flex", alignItems:"center", gap:8 }}>
           <Users size={17} /> Nutzerverwaltung
@@ -108,7 +108,7 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
 
       {aktionsFehler && (
         <div style={{ background:"var(--rbg)", color:"var(--red)", borderRadius:12,
-          padding:"10px 14px", marginBottom:14, fontSize:12,
+          padding:"7px 14px", marginBottom:10, fontSize:12,
           border:"1px solid var(--red)",
           display:"flex", alignItems:"center", gap:6 }}>
           <TriangleAlert size={13} /> {aktionsFehler}
@@ -117,14 +117,14 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
 
       {/* Stats */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr",
-        gap:8, marginBottom:16 }}>
+        gap:8, marginBottom:12 }}>
         {[
           ["Aktive Nutzer",    aktiveNutzer.length,    "var(--green)"],
           ["Inaktiv",          inaktiveNutzer.length,  "var(--muted)"],
           ["Offen. Einl.",     offeneEinl.length,      "var(--yellow)"],
         ].map(([l,v,c]) => (
           <div key={l} style={{ background:"var(--surface)", borderRadius:12,
-            padding:"10px 12px", border:"1.5px solid var(--border)",
+            padding:"7px 12px", border:"1.5px solid var(--border)",
             position:"relative", overflow:"hidden" }}>
             <div style={{ position:"absolute", top:0, left:0, right:0,
               height:3, background:c }} />
@@ -136,7 +136,7 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
       </div>
 
       {/* Tab Toggle */}
-      <div style={{ display:"flex", gap:6, marginBottom:14 }}>
+      <div style={{ display:"flex", gap:6, marginBottom:10 }}>
         {[["nutzer",User,"Nutzer"], ["einladungen",Mail,"Einladungen"]].map(([k,Icon,l]) => (
           <button key={k} onClick={() => setAnsicht(k)}
             style={{ flex:1, background: ansicht===k ? "var(--yellow)" : "var(--surface2)",
@@ -149,7 +149,7 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
       </div>
 
       {laden && (
-        <div style={{ textAlign:"center", color:"var(--muted)", padding:32 }}>
+        <div style={{ textAlign:"center", color:"var(--muted)", padding:23 }}>
           Laden…
         </div>
       )}
@@ -163,7 +163,7 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
             const isEdit = editNutzer === n.id;
             return (
               <div key={n.id} style={{ background:"var(--surface)", borderRadius:14,
-                padding:"14px 16px", marginBottom:10,
+                padding:"10px 16px", marginBottom:7,
                 border:`1.5px solid ${n.aktiv === false ? "var(--border)" : "var(--border)"}`,
                 opacity: n.aktiv === false ? 0.6 : 1 }}>
 
@@ -272,9 +272,9 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
             );
           })}
           {nutzer.length === 0 && !laden && (
-            <div style={{ textAlign:"center", padding:"32px 20px",
+            <div style={{ textAlign:"center", padding:"23px 20px",
               color:"var(--muted)" }}>
-              <div style={{ display:"flex", justifyContent:"center", marginBottom:8 }}><User size={32} /></div>
+              <div style={{ display:"flex", justifyContent:"center", marginBottom:6 }}><User size={32} /></div>
               <div>Noch keine Nutzer · Lade Mitarbeiter ein</div>
             </div>
           )}
@@ -286,7 +286,7 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
         <div>
           {offeneEinl.length > 0 && (
             <div style={{ color:"var(--text)", fontWeight:700, fontSize:13,
-              marginBottom:8 }}>Offene Einladungen</div>
+              marginBottom:6 }}>Offene Einladungen</div>
           )}
           {offeneEinl.map(e => {
             const rolle = ROLLEN[e.rolle] || ROLLEN.facharbeiter;
@@ -294,10 +294,10 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
             const abgelaufen = new Date(e.läuft_ab_at).toLocaleDateString("de-DE");
             return (
               <div key={e.id} style={{ background:"var(--surface)", borderRadius:12,
-                padding:"12px 14px", marginBottom:8,
+                padding:"9px 14px", marginBottom:6,
                 border:"1.5px solid var(--yellow)" }}>
                 <div style={{ display:"flex", justifyContent:"space-between",
-                  alignItems:"flex-start", marginBottom:8 }}>
+                  alignItems:"flex-start", marginBottom:6 }}>
                   <div>
                     <div style={{ display:"flex", gap:6, alignItems:"center" }}>
                       <div style={{ background:`${rolle.farbe}22`, color:rolle.farbe,
@@ -348,12 +348,12 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
           {abgelaufeneEinl.length > 0 && (
             <div>
               <div style={{ color:"var(--muted)", fontWeight:600, fontSize:12,
-                marginTop:16, marginBottom:8 }}>Abgelaufen / Widerrufen</div>
+                marginTop:16, marginBottom:6 }}>Abgelaufen / Widerrufen</div>
               {abgelaufeneEinl.map(e => {
                 const rolle = ROLLEN[e.rolle] || ROLLEN.facharbeiter;
                 return (
                   <div key={e.id} style={{ background:"var(--surface)", borderRadius:10,
-                    padding:"10px 12px", marginBottom:6, opacity:0.5,
+                    padding:"7px 12px", marginBottom:6, opacity:0.5,
                     border:"1px solid var(--border)" }}>
                     <div style={{ display:"flex", gap:6, alignItems:"center" }}>
                       <div style={{ color:rolle.farbe, fontSize:11,
@@ -370,9 +370,9 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
           )}
 
           {einladungen.length === 0 && !laden && (
-            <div style={{ textAlign:"center", padding:"32px 20px",
+            <div style={{ textAlign:"center", padding:"23px 20px",
               color:"var(--muted)" }}>
-              <div style={{ display:"flex", justifyContent:"center", marginBottom:8 }}><Mail size={32} /></div>
+              <div style={{ display:"flex", justifyContent:"center", marginBottom:6 }}><Mail size={32} /></div>
               <div>Noch keine Einladungen generiert</div>
             </div>
           )}
@@ -384,7 +384,8 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
         <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
           background:"var(--bg)", zIndex:500, overflowY:"auto",
           WebkitOverflowScrolling:"touch" }}>
-          <div style={{ background:"var(--surface)", padding:"14px 18px",
+          <div style={{ background:"var(--surface)", padding:"10px 18px",
+            paddingTop:"calc(14px + env(safe-area-inset-top))",
             borderBottom:"3px solid var(--yellow)", position:"sticky", top:0,
             display:"flex", justifyContent:"space-between", alignItems:"center" }}>
             <div style={{ fontWeight:700, fontSize:16, color:"var(--text)",
@@ -396,7 +397,7 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
                 color:"var(--text)", borderRadius:8, padding:"6px 14px",
                 cursor:"pointer", fontFamily:"inherit", display:"flex" }}><X size={15} /></button>
           </div>
-          <div style={{ padding:"20px 16px" }}>
+          <div style={{ padding:"14px 16px" }}>
             <EinladungGenerieren
               session={session}
               firmaId={firmaId}

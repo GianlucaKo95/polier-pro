@@ -64,7 +64,8 @@ export function SchnellErstellung({ onSave, onClose }) {
       background:"var(--bg)", zIndex:500, overflowY:"auto",
       WebkitOverflowScrolling:"touch" }}>
 
-      <div style={{ background:"var(--ink)", color:"#fff", padding:"16px 18px",
+      <div style={{ background:"var(--ink)", color:"#fff", padding:"12px 18px",
+        paddingTop:"calc(16px + env(safe-area-inset-top))",
         position:"sticky", top:0,
         zIndex:10, display:"flex", justifyContent:"space-between",
         alignItems:"center" }}>
@@ -79,7 +80,7 @@ export function SchnellErstellung({ onSave, onClose }) {
 
       <div style={{ padding:"18px 16px 100px" }}>
         {/* Modus-Umschalter */}
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:1, marginBottom:20,
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:1, marginBottom:14,
           background:"var(--border)" }}>
           {[["vorlage","Vorlage"],["einzeln","Einzeln"],["liste","Liste"],["plan","DXF"]].map(([k,l]) => (
             <button key={k} onClick={() => setModus(k)}
@@ -93,7 +94,7 @@ export function SchnellErstellung({ onSave, onClose }) {
         {/* VORLAGE: ein Tap → sofort angelegt */}
         {modus === "vorlage" && (
           <div>
-            <div style={{ color:"var(--muted)", fontSize:12, marginBottom:12,
+            <div style={{ color:"var(--muted)", fontSize:12, marginBottom:9,
               lineHeight:1.5 }}>
               Häufige Aufgabentypen antippen — wird sofort mit sinnvollen
               Standardwerten angelegt. Details kannst du danach ergänzen.
@@ -101,7 +102,7 @@ export function SchnellErstellung({ onSave, onClose }) {
             {AUFGABEN_VORLAGEN.map((v, i) => (
               <div key={i} onClick={() => ausVorlage(v)}
                 style={{ background:"var(--surface)",
-                  padding:"14px 16px", marginBottom:8, cursor:"pointer",
+                  padding:"10px 16px", marginBottom:6, cursor:"pointer",
                   border:"1px solid var(--border)",
                   borderLeftWidth:4,
                   borderLeftColor:AUFGABEN_TYPEN[v.typ]?.farbe,
@@ -125,13 +126,13 @@ export function SchnellErstellung({ onSave, onClose }) {
         {/* EINZELN: minimales Formular */}
         {modus === "einzeln" && (
           <div>
-            <div style={{ marginBottom:14 }}>
+            <div style={{ marginBottom:10 }}>
               <Label>Titel *</Label>
               <input value={titel} onChange={e=>setTitel(e.target.value)}
                 placeholder="z.B. Bodenplatte B1" style={inputStyle()}
                 autoFocus />
             </div>
-            <div style={{ marginBottom:14 }}>
+            <div style={{ marginBottom:10 }}>
               <Label>Typ</Label>
               <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginTop:6 }}>
                 {Object.entries(AUFGABEN_TYPEN).filter(([k])=>k!=="mangel").map(([k,t]) => (
@@ -149,7 +150,7 @@ export function SchnellErstellung({ onSave, onClose }) {
             </div>
             {typ === "beton" && (
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10,
-                marginBottom:14 }}>
+                marginBottom:10 }}>
                 <div>
                   <Label>Fläche (m²)</Label>
                   <input type="number" value={m2} onChange={e=>setM2(e.target.value)}
@@ -176,7 +177,7 @@ export function SchnellErstellung({ onSave, onClose }) {
         {/* LISTE: mehrere auf einmal */}
         {modus === "liste" && (
           <div>
-            <div style={{ color:"var(--muted)", fontSize:12, marginBottom:10,
+            <div style={{ color:"var(--muted)", fontSize:12, marginBottom:7,
               lineHeight:1.5 }}>
               Ein Betonfeld pro Zeile. Optional Fläche mit „|" trennen:
               <br/><code style={{ background:"var(--surface2)", padding:"1px 6px",

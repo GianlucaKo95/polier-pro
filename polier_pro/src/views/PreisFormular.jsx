@@ -14,7 +14,7 @@ export function PreisFormular({ initial, onSave, onClose }) {
     && Number.isFinite(p.preis) && p.preis >= 0;
   return (
     <div>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
         <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:16,
           display:"flex", alignItems:"center", gap:7 }}>
           {initial?.id ? <><Pencil size={15} /> Preis bearbeiten</> : <><Plus size={15} /> Neuer Einheitspreis</>}
@@ -23,13 +23,13 @@ export function PreisFormular({ initial, onSave, onClose }) {
           color:"var(--muted)", fontSize:24, cursor:"pointer" }}>✕</button>
       </div>
       {[["Gewerk","gewerk","z.B. Betonage"],["Beschreibung","beschreibung","z.B. Beton C25/30 inkl. Einbau"]].map(([l,k,ph]) => (
-        <div key={k} style={{ marginBottom:12 }}>
+        <div key={k} style={{ marginBottom:9 }}>
           <Label>{l}</Label>
           <input value={p[k]||""} onChange={e=>setP(x=>({...x,[k]:e.target.value}))}
             placeholder={ph} style={inputStyle()} />
         </div>
       ))}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:16 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12 }}>
         <div>
           <Label>Einheit</Label>
           <select value={p.einheit} onChange={e=>setP(x=>({...x,einheit:e.target.value}))}

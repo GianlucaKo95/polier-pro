@@ -52,7 +52,7 @@ export function UnterschriftPad({ label, onSave }) {
   }
 
   return (
-    <div style={{ marginBottom:16 }}>
+    <div style={{ marginBottom:12 }}>
       <div style={{ color:"var(--muted)", fontSize:11, fontWeight:600,
         marginBottom:6 }}>{label}</div>
       <div style={{ position:"relative", border:"1.5px solid var(--border)",

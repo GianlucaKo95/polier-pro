@@ -13,14 +13,14 @@ export function PlanGuard({ firma, children, ressource }) {
   return (
     <div style={{ background:"var(--bg)", minHeight:"100dvh",
       display:"flex", flexDirection:"column", alignItems:"center",
-      justifyContent:"center", padding:24 }}>
-      <div style={{ display:"flex", justifyContent:"center", marginBottom:16, color:"var(--muted)" }}><Lock size={40} /></div>
+      justifyContent:"center", padding:17 }}>
+      <div style={{ display:"flex", justifyContent:"center", marginBottom:12, color:"var(--muted)" }}><Lock size={40} /></div>
       <div style={{ fontWeight:800, fontSize:22, color:"var(--text)",
-        marginBottom:8, textAlign:"center" }}>
+        marginBottom:6, textAlign:"center" }}>
         {trial_abgelaufen ? "Testphase abgelaufen" : "Abo inaktiv"}
       </div>
       <div style={{ color:"var(--text2)", fontSize:14, textAlign:"center",
-        maxWidth:320, marginBottom:28, lineHeight:1.6 }}>
+        maxWidth:320, marginBottom:20, lineHeight:1.6 }}>
         {trial_abgelaufen
           ? "Deine 14-tägige Testphase ist beendet. Wähle einen Plan um weiterzumachen."
           : "Dein Abo ist nicht mehr aktiv. Bitte erneuere dein Abonnement."}
@@ -32,7 +32,7 @@ export function PlanGuard({ firma, children, ressource }) {
           { key:"pro",     label:"Pro",       preis:"99 €/Monat", features:"20 Projekte, 50 Nutzer, API" },
         ].map(p => (
           <div key={p.key} style={{ background:"var(--surface)", borderRadius:14,
-            padding:"16px 20px", border:`2px solid ${p.key === "pro" ? "var(--yellow)" : "var(--border)"}` }}>
+            padding:"12px 20px", border:`2px solid ${p.key === "pro" ? "var(--yellow)" : "var(--border)"}` }}>
             <div style={{ display:"flex", justifyContent:"space-between",
               alignItems:"center", marginBottom:6 }}>
               <div style={{ fontWeight:800, fontSize:16, color:"var(--text)" }}>
@@ -40,7 +40,7 @@ export function PlanGuard({ firma, children, ressource }) {
               </div>
               <div style={{ fontWeight:700, color:"var(--yellow)" }}>{p.preis}</div>
             </div>
-            <div style={{ color:"var(--muted)", fontSize:12, marginBottom:12 }}>
+            <div style={{ color:"var(--muted)", fontSize:12, marginBottom:9 }}>
               {p.features}
             </div>
             <button

@@ -51,13 +51,13 @@ export function EinladungGenerieren({ session, firmaId, kolonnen }) {
   }
 
   return (
-    <div style={{ background:"var(--surface)", borderRadius:16, padding:20,
-      border:"1.5px solid var(--border)", marginBottom:16 }}>
+    <div style={{ background:"var(--surface)", borderRadius:16, padding:14,
+      border:"1.5px solid var(--border)", marginBottom:12 }}>
       <div style={{ fontWeight:700, fontSize:14, color:"var(--text)",
-        marginBottom:16, display:"flex", alignItems:"center", gap:7 }}><Users size={15} /> Mitarbeiter einladen</div>
+        marginBottom:12, display:"flex", alignItems:"center", gap:7 }}><Users size={15} /> Mitarbeiter einladen</div>
 
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10,
-        marginBottom:14 }}>
+        marginBottom:10 }}>
         <div>
           <Label>Rolle</Label>
           <select value={rolle} onChange={e => setRolle(e.target.value)}
@@ -79,7 +79,7 @@ export function EinladungGenerieren({ session, firmaId, kolonnen }) {
       </div>
 
       {kolonnen?.length > 0 && (rolle === "vorarbeiter" || rolle === "facharbeiter") && (
-        <div style={{ marginBottom:14 }}>
+        <div style={{ marginBottom:10 }}>
           <Label>Kolonne (optional)</Label>
           <select value={kolonneId} onChange={e => setKolonneId(e.target.value)}
             style={{ ...inputStyle(), padding:"10px 12px" }}>
@@ -91,7 +91,7 @@ export function EinladungGenerieren({ session, firmaId, kolonnen }) {
         </div>
       )}
 
-      <div style={{ marginBottom:14 }}>
+      <div style={{ marginBottom:10 }}>
         <Label>E-Mail vorausfüllen (optional)</Label>
         <input type="email" value={email}
           onChange={e => setEmail(e.target.value)}
@@ -100,7 +100,7 @@ export function EinladungGenerieren({ session, firmaId, kolonnen }) {
 
       {fehler && (
         <div style={{ background:"var(--rbg)", color:"var(--red)", borderRadius:10,
-          padding:"10px 14px", marginBottom:12, fontSize:12,
+          padding:"7px 14px", marginBottom:9, fontSize:12,
           border:"1px solid var(--red)", display:"flex", alignItems:"center", gap:6 }}>
           <CircleX size={13} /> {fehler}
         </div>
@@ -119,7 +119,7 @@ export function EinladungGenerieren({ session, firmaId, kolonnen }) {
           <Label>Einladungslink</Label>
           <div style={{ display:"flex", gap:8, marginTop:6 }}>
             <div style={{ flex:1, background:"var(--surface2)",
-              borderRadius:10, padding:"10px 12px", fontSize:11,
+              borderRadius:10, padding:"7px 12px", fontSize:11,
               color:"var(--text2)", wordBreak:"break-all",
               border:"1px solid var(--border)" }}>
               {link}

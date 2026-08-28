@@ -12,29 +12,29 @@ export function PasswortSetzenScreen({ auth, type }) {
   return (
     <div style={{ background:"var(--bg)", minHeight:"100dvh", display:"flex",
       flexDirection:"column", alignItems:"center", justifyContent:"center",
-      padding:"24px 20px" }}>
-      <div style={{ textAlign:"center", marginBottom:32 }}>
+      padding:"17px 20px" }}>
+      <div style={{ textAlign:"center", marginBottom:23 }}>
         <div style={{ fontWeight:900, fontSize:28, letterSpacing:-1.5, color:"var(--text)" }}>
           <span style={{ color:"var(--yellow)" }}>★</span> POLARIS
         </div>
       </div>
-      <div style={{ background:"var(--surface)", borderRadius:20, padding:28,
+      <div style={{ background:"var(--surface)", borderRadius:20, padding:20,
         width:"100%", maxWidth:380, border:"1.5px solid var(--border)" }}>
         <div style={{ fontWeight:800, fontSize:18, color:"var(--text)", marginBottom:6 }}>
           {titel}
         </div>
-        <div style={{ color:"var(--muted)", fontSize:13, marginBottom:20 }}>
+        <div style={{ color:"var(--muted)", fontSize:13, marginBottom:14 }}>
           Wähle ein sicheres Passwort (min. 8 Zeichen).
         </div>
 
         {auth.fehler && (
           <div style={{ background:"var(--rbg)", color:"var(--red)", borderRadius:10,
-            padding:"10px 14px", marginBottom:16, fontSize:13,
+            padding:"7px 14px", marginBottom:12, fontSize:13,
             border:"1px solid var(--red)",
             display:"flex", alignItems:"center", gap:6 }}><CircleX size={14} /> {auth.fehler}</div>
         )}
 
-        <div style={{ marginBottom:14 }}>
+        <div style={{ marginBottom:10 }}>
           <div style={{ color:"var(--muted)", fontSize:11, fontWeight:600,
             marginBottom:6 }}>Neues Passwort</div>
           <div style={{ position:"relative" }}>
@@ -53,7 +53,7 @@ export function PasswortSetzenScreen({ auth, type }) {
           </div>
         </div>
 
-        <div style={{ marginBottom:20 }}>
+        <div style={{ marginBottom:14 }}>
           <div style={{ color:"var(--muted)", fontSize:11, fontWeight:600,
             marginBottom:6 }}>Passwort wiederholen</div>
           <input type={showPw ? "text" : "password"} value={password2}

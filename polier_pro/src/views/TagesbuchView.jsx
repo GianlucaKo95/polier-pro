@@ -125,7 +125,7 @@ export function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eig
     <div>
       {/* Diktat zuerst: der Haupteinstieg in einen neuen Bericht */}
       <div onClick={() => setOpen(true)}
-        style={{ background:"var(--ink)", color:"#fff", padding:18, marginBottom:12, cursor:"pointer" }}>
+        style={{ background:"var(--ink)", color:"#fff", padding:13, marginBottom:9, cursor:"pointer" }}>
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
           <div style={{ width:52, height:52, background:"var(--yellow)", color:"var(--ink)",
             display:"flex", alignItems:"center", justifyContent:"center", flex:"none" }}>
@@ -140,7 +140,7 @@ export function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eig
         </div>
       </div>
 
-      <div style={{ display:"flex", gap:8, marginBottom:20 }}>
+      <div style={{ display:"flex", gap:8, marginBottom:14 }}>
         {[[Camera,"Foto"],[PenLine,"Tippen"]].map(([Icon,label]) => (
           <button key={label} onClick={() => setOpen(true)}
             style={{ flex:1, background:"var(--surface)", border:"1px solid var(--border)",
@@ -152,7 +152,7 @@ export function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eig
         ))}
       </div>
 
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:12, gap:10, flexWrap:"wrap" }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:9, gap:10, flexWrap:"wrap" }}>
         <div style={{ color: "var(--text)", fontWeight:800, fontSize:13, paddingTop:6 }}>Einträge</div>
         <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
           <KITagesabschlussButton
@@ -205,7 +205,7 @@ export function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eig
       {/* Berichtsliste */}
       {berichte.map((b, i) => (
         <div key={i} onClick={() => setDetail(b)}
-          style={{ background:"var(--surface)", padding:"16px 18px", marginBottom:10,
+          style={{ background:"var(--surface)", padding:"12px 18px", marginBottom:7,
             borderLeft:`4px solid ${'var(--yellow)'}`, border:"1px solid var(--border)", cursor:"pointer" }}>
           <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6, alignItems:"flex-start" }}>
             <div style={{ color: "var(--text)", fontWeight:700 }}>{b.datum}</div>
@@ -245,8 +245,9 @@ export function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eig
       {detail && (
         <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"var(--bg)", zIndex:300,
           overflowY:"auto" }}>
-          <div style={{ background: "var(--surface)", minHeight:"100dvh", maxWidth:520, margin:"0 auto", padding:20 }}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+          <div style={{ background: "var(--surface)", minHeight:"100dvh", maxWidth:520, margin:"0 auto", padding:14,
+            paddingTop:"calc(20px + env(safe-area-inset-top))" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
               <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:16 }}>📋 {detail.datum}</div>
               <div style={{ display:"flex", gap:8 }}>
                 <RevisionssichererExport
@@ -264,14 +265,14 @@ export function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eig
             </div>
 
             {/* Meta */}
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:14 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:10 }}>
               {[
                 ["Wetter",    detail.wetter],
                 ["Arbeiter",  detail.arbeiter],
                 ["Mängel",    detail.maengel || 0],
                 ["Fotos",     detail.bilder?.length || 0],
               ].map(([k,v]) => (
-                <div key={k} style={{ background: "var(--border)", borderRadius:8, padding:"10px 12px" }}>
+                <div key={k} style={{ background: "var(--border)", borderRadius:8, padding:"7px 12px" }}>
                   <div style={{ color: "var(--muted)", fontSize:10 }}>{k}</div>
                   <div style={{ color: "var(--text)", fontWeight:700, fontSize:16 }}>{v}</div>
                 </div>
@@ -284,9 +285,9 @@ export function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eig
               ["Besonderheiten / Mängel", detail.besonderheiten],
               ["Materiallieferungen",    detail.material],
             ].filter(([,v]) => v).map(([k,v]) => (
-              <div key={k} style={{ marginBottom:14 }}>
+              <div key={k} style={{ marginBottom:10 }}>
                 <div style={{ color: "var(--muted)", fontSize:11, marginBottom:4 }}>{k}</div>
-                <div style={{ background: "var(--border)", borderRadius:8, padding:"10px 12px",
+                <div style={{ background: "var(--border)", borderRadius:8, padding:"7px 12px",
                   color: "var(--text2)", fontSize:13, lineHeight:1.5 }}>{v}</div>
               </div>
             ))}
@@ -294,7 +295,7 @@ export function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eig
             {/* Bilder Galerie */}
             {detail.bilder?.length > 0 && (
               <div>
-                <div style={{ color: "var(--muted)", fontSize:11, marginBottom:8 }}>
+                <div style={{ color: "var(--muted)", fontSize:11, marginBottom:6 }}>
                   FOTOS ({detail.bilder.length})
                 </div>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
@@ -315,10 +316,11 @@ export function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eig
       {/* ── Neuer Bericht Modal ── */}
       {open && (
         <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"var(--bg)", zIndex:200, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
-          <div style={{ background: "var(--surface)", borderRadius:"16px 16px 0 0", padding:22,
+          <div style={{ background: "var(--surface)", borderRadius:"16px 16px 0 0", padding:16,
+            paddingTop:"calc(22px + env(safe-area-inset-top))",
             width:"100%", maxWidth:520, maxHeight:"92vh", overflowY:"auto" }}>
 
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
               <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:16 }}>
                 📋 Tagesbericht – {new Date().toLocaleDateString("de-DE")}
               </div>
@@ -327,7 +329,7 @@ export function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eig
             </div>
 
             {/* Zahlenfelder */}
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:10 }}>
               <div>
                 <Label>Arbeiter heute</Label>
                 <input type="number" value={form.arbeiter||""}
@@ -358,13 +360,13 @@ export function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eig
             ))}
 
             {/* ── Foto Upload ── */}
-            <div style={{ marginBottom:18 }}>
+            <div style={{ marginBottom:13 }}>
               <Label>Fotos ({bilder.length})</Label>
               <input ref={fileRef} type="file" accept="image/*" multiple capture="environment"
                 style={{ display:"none" }} onChange={handleBilderWahl} />
 
               {/* Upload-Button */}
-              <div style={{ display:"flex", gap:8, marginTop:6, marginBottom:10 }}>
+              <div style={{ display:"flex", gap:8, marginTop:6, marginBottom:7 }}>
                 <button onClick={() => { fileRef.current.removeAttribute("capture"); fileRef.current.click(); }}
                   style={{ flex:1, background: "var(--border)", color: "var(--text)",
                     border:`1px dashed ${'var(--muted)'}`, borderRadius:10, padding:"10px 0",

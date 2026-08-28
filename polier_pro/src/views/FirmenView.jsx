@@ -54,7 +54,7 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
         <>
           {/* Eigene Firma Karte */}
           <div onClick={() => { setTmpFirma({...owneFirma}); setScreen("eigene"); }}
-            style={{ background: "var(--surface)", borderRadius:14, padding:"16px 18px", marginBottom:14,
+            style={{ background: "var(--surface)", borderRadius:14, padding:"12px 18px", marginBottom:10,
               border:`2px solid ${'var(--yellow)'}`, cursor:"pointer" }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
               <div>
@@ -77,7 +77,7 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
           </div>
 
           {/* Subunternehmer */}
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:7 }}>
             <div style={{ color: "var(--text)", fontWeight:700 }}>Subunternehmer ({subs.length})</div>
             <button onClick={() => { setEditSub({ id:null, name:"", gewerke:[], kontakt:"", telefon:"", email:"", status:"aktiv", stundensatz:0 }); setScreen("subEdit"); }}
               style={{ background: "var(--yellow)", color:"#1C2027", border:"none", borderRadius:9,
@@ -88,13 +88,13 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
           </div>
 
           {subs.length === 0 ? (
-            <div style={{ background: "var(--surface)", borderRadius:12, padding:24, textAlign:"center" }}>
+            <div style={{ background: "var(--surface)", borderRadius:12, padding:17, textAlign:"center" }}>
               <div style={{ display:"flex", justifyContent:"center", color:"var(--muted)" }}><Building2 size={28} /></div>
               <div style={{ color: "var(--muted)", marginTop:8 }}>Noch keine Subunternehmer angelegt.</div>
             </div>
           ) : subs.map(s => (
             <div key={s.id} onClick={() => { setEditSub({...s}); setScreen("subEdit"); }}
-              style={{ background: "var(--surface)", borderRadius:11, padding:"13px 15px", marginBottom:9,
+              style={{ background: "var(--surface)", borderRadius:11, padding:"9px 15px", marginBottom:6,
                 border:`1.5px solid ${s.status==="aktiv" ? "var(--border)" : "var(--red)"}`, cursor:"pointer" }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
                 <div style={{ flex:1 }}>
@@ -146,7 +146,7 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
       {/* Eigene Firma bearbeiten */}
       {screen === "eigene" && (
         <div>
-          <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
             <button onClick={() => setScreen("home")}
               style={{ background: "var(--border)", border:"none", color: "var(--text)", borderRadius:8,
                 padding:"6px 10px", cursor:"pointer", display:"flex" }}><ChevronLeft size={16} /></button>
@@ -164,7 +164,7 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
             ["E-Mail",              "email",             "info@firma.de"],
             ["Steuernummer",        "steuernummer",      "123/456/78900"],
           ].map(([label, key, ph]) => (
-            <div key={key} style={{ marginBottom:12 }}>
+            <div key={key} style={{ marginBottom:9 }}>
               <Label>{label}</Label>
               <input value={tmpFirma[key]||""} onChange={e => setTmpFirma(p=>({...p,[key]:e.target.value}))}
                 placeholder={ph} style={inputStyle()} />
@@ -172,7 +172,7 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
           ))}
 
           {/* Gewerke */}
-          <div style={{ marginBottom:20 }}>
+          <div style={{ marginBottom:14 }}>
             <Label>Ausgeführte Gewerke</Label>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6, marginTop:8 }}>
               {ALLE_GEWERKE.map(g => {
@@ -185,7 +185,7 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
                   }))}
                     style={{ background: aktiv ? "var(--surface2)" : "var(--border)",
                       border:`2px solid ${aktiv ? "var(--yellow)" : "transparent"}`,
-                      borderRadius:9, padding:"8px 10px", cursor:"pointer",
+                      borderRadius:9, padding:"6px 10px", cursor:"pointer",
                       display:"flex", alignItems:"center", gap:7 }}>
                     <span style={{ fontSize:16 }}>{g.icon}</span>
                     <span style={{ color: aktiv ? "var(--text)" : "var(--muted)", fontSize:11, fontWeight: aktiv ? 700 : 400 }}>{g.label}</span>
@@ -197,7 +197,7 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
 
           {speicherFehler && (
             <div style={{ background:"var(--rbg)", color:"var(--red)", borderRadius:10,
-              padding:"10px 14px", marginBottom:12, fontSize:12,
+              padding:"7px 14px", marginBottom:9, fontSize:12,
               border:"1px solid var(--red)",
               display:"flex", alignItems:"center", gap:6 }}>
               <CircleX size={13} /> {speicherFehler}
@@ -215,7 +215,7 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
       {/* Sub bearbeiten / anlegen */}
       {screen === "subEdit" && editSub && (
         <div>
-          <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
             <button onClick={() => setScreen("home")}
               style={{ background: "var(--border)", border:"none", color: "var(--text)", borderRadius:8,
                 padding:"6px 10px", cursor:"pointer", display:"flex" }}><ChevronLeft size={16} /></button>
@@ -231,21 +231,21 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
             ["Telefon",          "telefon",  "+49 89 123456"],
             ["E-Mail",           "email",    "info@firma.de"],
           ].map(([label, key, ph]) => (
-            <div key={key} style={{ marginBottom:12 }}>
+            <div key={key} style={{ marginBottom:9 }}>
               <Label>{label}</Label>
               <input value={editSub[key]||""} onChange={e => setEditSub(p=>({...p,[key]:e.target.value}))}
                 placeholder={ph} style={inputStyle()} />
             </div>
           ))}
 
-          <div style={{ marginBottom:12 }}>
+          <div style={{ marginBottom:9 }}>
             <Label>Stundensatz (€)</Label>
             <input type="number" value={editSub.stundensatz||""} onChange={e => setEditSub(p=>({...p,stundensatz:+e.target.value}))}
               placeholder="85" style={inputStyle()} />
           </div>
 
           {/* Status */}
-          <div style={{ marginBottom:16 }}>
+          <div style={{ marginBottom:12 }}>
             <Label>Status</Label>
             <div style={{ display:"flex", gap:8, marginTop:6 }}>
               {["aktiv","inaktiv","gesperrt"].map(s => (
@@ -261,7 +261,7 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
           </div>
 
           {/* Gewerke des Subs */}
-          <div style={{ marginBottom:20 }}>
+          <div style={{ marginBottom:14 }}>
             <Label>Gewerke dieses Subunternehmers</Label>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6, marginTop:8 }}>
               {ALLE_GEWERKE.map(g => {
@@ -274,7 +274,7 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
                   }))}
                     style={{ background: aktiv ? "var(--surface2)" : "var(--border)",
                       border:`2px solid ${aktiv ? "var(--blue)" : "transparent"}`,
-                      borderRadius:9, padding:"8px 10px", cursor:"pointer",
+                      borderRadius:9, padding:"6px 10px", cursor:"pointer",
                       display:"flex", alignItems:"center", gap:7 }}>
                     <span style={{ fontSize:16 }}>{g.icon}</span>
                     <span style={{ color: aktiv ? "var(--text)" : "var(--muted)", fontSize:11, fontWeight: aktiv ? 700 : 400 }}>{g.label}</span>
