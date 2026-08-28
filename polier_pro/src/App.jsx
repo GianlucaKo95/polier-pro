@@ -969,7 +969,7 @@ export default function PolierApp() {
 
       {/* ── MEHR-MENÜ (Bottom Sheet) ── */}
       {zeigeMehr && (
-        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
+        <div style={{ position:"fixed", top:0, left:0, right:0, height:"100dvh",
           background:"rgba(11,17,32,0.55)", zIndex:60 }}
           onClick={() => setZeigeMehr(false)}>
           <div onClick={e => e.stopPropagation()}
