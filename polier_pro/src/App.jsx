@@ -555,7 +555,8 @@ export default function PolierApp() {
         <div style={{ background:"var(--bg)", minHeight:"100dvh", color:"var(--text)" }}>
 
           {/* Header — dunkler Anker */}
-          <div style={{ background:"var(--ink)", color:"#fff", padding:"20px 18px 0" }}>
+          <div style={{ background:"var(--ink)", color:"#fff", padding:"20px 18px 0",
+            paddingTop:"calc(20px + env(safe-area-inset-top))" }}>
             <div style={{ display:"flex", justifyContent:"space-between",
               alignItems:"flex-start" }}>
               <div>
