@@ -30,26 +30,32 @@ export function AufgabenFormular({ initial, kolonnen, onSave, onClose }) {
   const valid = a.titel.trim().length > 0;
 
   return (
+    // Bottom-sheet-Aufbau (Backdrop mit alignItems:"flex-end" + Panel mit
+    // eigenem maxHeight/overflowY-Cap) blieb auf installierten iOS-PWAs
+    // trotz mehrerer vh/dvh-Anläufe fehlerhaft — Header und Typ-Auswahl
+    // starteten oberhalb des sichtbaren Bereichs. Daher jetzt derselbe
+    // simple, bereits an anderer Stelle (ProjektFormular, PlanErkennung,
+    // SchnellErstellung, …) bewährte Aufbau: EIN einziger, vollflächiger
+    // Scroll-Container mit sticky Header statt geschachtelter Container.
     <div style={{ position:"fixed", top:0, left:0, right:0, height:"100dvh",
-      background:"rgba(15,23,42,0.7)",
-      zIndex:500, display:"flex", alignItems:"flex-end",
-      justifyContent:"center" }}>
-      <div style={{ background:"var(--surface)",
-        width:"100%", maxWidth:520,
-        maxHeight:"92dvh", overflowY:"auto" }}>
+      background:"var(--bg)", zIndex:500, overflowY:"auto",
+      WebkitOverflowScrolling:"touch" }}>
 
-        <div style={{ display:"flex", justifyContent:"space-between",
-          alignItems:"center", padding:16, paddingBottom:13,
-          position:"sticky", top:0, zIndex:5, background:"var(--surface)" }}>
-          <div style={{ color:"var(--text)", fontWeight:800, fontSize:19, letterSpacing:-0.4 }}>
-            {initial ? "Aufgabe bearbeiten" : "Neue Aufgabe"}
-          </div>
-          <button onClick={onClose}
-            style={{ width:34, height:34, background:"var(--surface2)", border:"none",
-              color:"var(--text2)", fontSize:16, cursor:"pointer" }}>✕</button>
+      <div style={{ background:"var(--surface)", padding:"10px 18px",
+        paddingTop:"calc(14px + env(safe-area-inset-top))",
+        borderBottom:"3px solid var(--yellow)", position:"sticky", top:0,
+        zIndex:10, display:"flex", justifyContent:"space-between",
+        alignItems:"center" }}>
+        <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:17 }}>
+          {initial ? "Aufgabe bearbeiten" : "Neue Aufgabe"}
         </div>
+        <button onClick={onClose}
+          style={{ background:"var(--surface2)", border:"1px solid var(--border)",
+            color:"var(--text)", borderRadius:8, padding:"6px 14px",
+            cursor:"pointer", fontSize:14, fontFamily:"inherit", display:"flex" }}>✕</button>
+      </div>
 
-        <div style={{ padding:"0 16px 16px" }}>
+      <div style={{ padding:"18px 16px 100px" }}>
 
         {/* Typ */}
         <div style={{ marginBottom:10 }}>
@@ -263,7 +269,6 @@ export function AufgabenFormular({ initial, kolonnen, onSave, onClose }) {
               fontFamily:"inherit" }}>
             Speichern
           </button>
-        </div>
         </div>
       </div>
     </div>
