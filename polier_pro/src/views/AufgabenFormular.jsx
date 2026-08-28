@@ -35,11 +35,12 @@ export function AufgabenFormular({ initial, kolonnen, onSave, onClose }) {
       zIndex:500, display:"flex", alignItems:"flex-end",
       justifyContent:"center" }}>
       <div style={{ background:"var(--surface)",
-        padding:16, width:"100%", maxWidth:520,
+        width:"100%", maxWidth:520,
         maxHeight:"92vh", overflowY:"auto" }}>
 
         <div style={{ display:"flex", justifyContent:"space-between",
-          alignItems:"center", marginBottom:13 }}>
+          alignItems:"center", padding:16, paddingBottom:13,
+          position:"sticky", top:0, zIndex:5, background:"var(--surface)" }}>
           <div style={{ color:"var(--text)", fontWeight:800, fontSize:19, letterSpacing:-0.4 }}>
             {initial ? "Aufgabe bearbeiten" : "Neue Aufgabe"}
           </div>
@@ -47,6 +48,8 @@ export function AufgabenFormular({ initial, kolonnen, onSave, onClose }) {
             style={{ width:34, height:34, background:"var(--surface2)", border:"none",
               color:"var(--text2)", fontSize:16, cursor:"pointer" }}>✕</button>
         </div>
+
+        <div style={{ padding:"0 16px 16px" }}>
 
         {/* Typ */}
         <div style={{ marginBottom:10 }}>
@@ -260,6 +263,7 @@ export function AufgabenFormular({ initial, kolonnen, onSave, onClose }) {
               fontFamily:"inherit" }}>
             Speichern
           </button>
+        </div>
         </div>
       </div>
     </div>

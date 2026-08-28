@@ -171,14 +171,20 @@ ${offeneMaengel.length > 0 ? `<div class="section">
       </button>
 
       {offen && (
-        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"var(--bg)", zIndex:600, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
+        <div style={{ position:"fixed", top:0, left:0, right:0, height:"100dvh", background:"var(--bg)", zIndex:600, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
           <div style={{ background:"var(--surface)", borderRadius:"20px 20px 0 0",
-            padding:16, paddingTop:"calc(22px + env(safe-area-inset-top))",
-            width:"100%", maxWidth:520, maxHeight:"92vh",
-            overflowY:"auto", boxShadow:"0 -4px 30px rgba(0,0,0,0.2)" }}>
+            padding:16,
+            width:"100%", maxWidth:520,
+            boxShadow:"0 -4px 30px rgba(0,0,0,0.2)" }}>
 
+            {/* position:sticky pinnt diesen Header beim Scrollen an den echten
+               oberen Bildschirmrand (nicht an den Anfang des gepolsterten
+               Panels) — deshalb braucht er sein eigenes safe-area-Padding,
+               statt sich auf das einmalige Padding des Panels zu verlassen. */}
             <div style={{ display:"flex", justifyContent:"space-between",
-              alignItems:"center", marginBottom:12 }}>
+              alignItems:"center", marginBottom:12,
+              paddingTop:"calc(6px + env(safe-area-inset-top))",
+              position:"sticky", top:0, background:"var(--surface)", zIndex:5 }}>
               <div style={{ fontWeight:800, fontSize:17, color:"var(--text)",
                 display:"flex", alignItems:"center", gap:8 }}>
                 <PenLine size={16} /> Digitale Unterschrift

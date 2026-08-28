@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Calendar, TriangleAlert } from "lucide-react";
 import { daysBetween } from "../lib/utils.js";
-import { STATUS_LABEL, STATUS_COLOR } from "../config/konstanten.js";
+import { AUFGABEN_STATUS } from "../config/konstanten.js";
 
 export function GanttView({ felder }) {
   const heute = new Date();
@@ -36,10 +36,10 @@ export function GanttView({ felder }) {
 
       {/* Legend */}
       <div style={{ display:"flex", gap:12, marginBottom:9, flexWrap:"wrap" }}>
-        {Object.entries(STATUS_LABEL).map(([k,v]) => (
+        {Object.entries(AUFGABEN_STATUS).map(([k,v]) => (
           <div key={k} style={{ display:"flex", alignItems:"center", gap:5, fontSize:11 }}>
-            <div style={{ width:10, height:10, borderRadius:2, background: STATUS_COLOR[k] }} />
-            <span style={{ color: "var(--muted)" }}>{v.split(" ")[1]}</span>
+            <div style={{ width:10, height:10, borderRadius:2, background: v.farbe }} />
+            <span style={{ color: "var(--muted)" }}>{v.label}</span>
           </div>
         ))}
       </div>
@@ -73,14 +73,14 @@ export function GanttView({ felder }) {
             </div>
 
             {/* Felder rows */}
-            {felder.map(f => {
-              const startOff = daysBetween(startDate.toISOString().slice(0,10), f.geplant);
+            {felder.filter(f => f.faellig_am).map(f => {
+              const startOff = daysBetween(startDate.toISOString().slice(0,10), f.faellig_am);
               const dur = f.dauer_tage || 1;
-              const isLate = f.status !== "done" && new Date(f.geplant) < heute;
+              const isLate = f.status !== "abgeschlossen" && new Date(f.faellig_am) < heute;
               return (
                 <div key={f.id} style={{ display:"flex", alignItems:"center", borderBottom:`1px solid ${'var(--border)'}`, minHeight:40 }}>
                   <div style={{ width:130, minWidth:130, padding:"6px 10px", borderRight:`1px solid ${'var(--border)'}` }}>
-                    <div style={{ color: "var(--text)", fontSize:11, fontWeight:600, lineHeight:1.2 }}>{f.name.split("–")[0].trim()}</div>
+                    <div style={{ color: "var(--text)", fontSize:11, fontWeight:600, lineHeight:1.2 }}>{f.titel}</div>
                     <div style={{ color: "var(--muted)", fontSize:10 }}>{f.m2}m²</div>
                   </div>
                   <div style={{ flex:1, position:"relative", height:40 }}>
@@ -93,7 +93,7 @@ export function GanttView({ felder }) {
                       left: startOff * DAY_W + 2,
                       top: 8, height: 24,
                       width: dur * DAY_W - 4,
-                      background: STATUS_COLOR[f.status],
+                      background: AUFGABEN_STATUS[f.status]?.farbe || AUFGABEN_STATUS.offen.farbe,
                       borderRadius: 5,
                       opacity: 0.9,
                       display:"flex", alignItems:"center", paddingLeft:6,
@@ -102,7 +102,7 @@ export function GanttView({ felder }) {
                     }}>
                       <span style={{ color:"#fff", fontSize:10, fontWeight:700, whiteSpace:"nowrap",
                         display:"flex", alignItems:"center", gap:3 }}>
-                        {f.status === "in_progress" ? "▶ " : ""}{f.name.split("–")[1]?.trim() || f.name}
+                        {f.status === "in_arbeit" ? "▶ " : ""}{f.titel}
                         {isLate ? <TriangleAlert size={10} /> : null}
                       </span>
                     </div>
@@ -129,13 +129,13 @@ export function GanttView({ felder }) {
       </div>
 
       {/* Verzögerungen */}
-      {felder.filter(f => f.status !== "done" && new Date(f.geplant) < heute).length > 0 && (
+      {felder.filter(f => f.faellig_am && f.status !== "abgeschlossen" && new Date(f.faellig_am) < heute).length > 0 && (
         <div style={{ background:"#2E1A1A", borderRadius:10, padding:10, marginTop:12 }}>
           <div style={{ color: "var(--red)", fontWeight:700, marginBottom:6,
             display:"flex", alignItems:"center", gap:6 }}><TriangleAlert size={14} /> Verzögerungen</div>
-          {felder.filter(f => f.status !== "done" && new Date(f.geplant) < heute).map(f => (
+          {felder.filter(f => f.faellig_am && f.status !== "abgeschlossen" && new Date(f.faellig_am) < heute).map(f => (
             <div key={f.id} style={{ color:"#FF9999", fontSize:13, marginBottom:4 }}>
-              {f.name} – {daysBetween(f.geplant, heute.toISOString().slice(0,10))} Tage Verzug
+              {f.titel} – {daysBetween(f.faellig_am, heute.toISOString().slice(0,10))} Tage Verzug
             </div>
           ))}
         </div>

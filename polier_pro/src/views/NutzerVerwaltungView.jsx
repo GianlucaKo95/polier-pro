@@ -381,7 +381,7 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
 
       {/* Einladungs-Generator Modal */}
       {zeigeEinladen && (
-        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
+        <div style={{ position:"fixed", top:0, left:0, right:0, height:"100dvh",
           background:"var(--bg)", zIndex:500, overflowY:"auto",
           WebkitOverflowScrolling:"touch" }}>
           <div style={{ background:"var(--surface)", padding:"10px 18px",
