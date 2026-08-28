@@ -816,12 +816,22 @@ export default function PolierApp() {
     stunden:ChartColumn, angebot:FileText, admin_params:Settings, nutzer:UserCog };
 
   return (
-    <div style={{ background:"var(--bg)", minHeight:"100dvh", color:"var(--text)" }}>
+    // position:fixed + flex-column macht den Root zur eigenen Scroll-Wurzel: nur
+    // der CONTENT-Bereich unten scrollt (overflowY:"auto"), das Dokument (body)
+    // selbst bleibt unscrollbar. Vorher scrollte body komplett (Top-Bar war nur
+    // "sticky", Bottom-Nav nur "fixed" relativ zum Viewport) — in iOS-Standalone-
+    // PWAs bleiben position:fixed-Elemente während eines body-weiten Scrolls in
+    // WebKit nachweislich nicht zuverlässig am Rand kleben. Mit dieser Struktur
+    // bleiben Top-Bar und Bottom-Nav als reguläre Flex-Geschwister strukturell
+    // immer sichtbar, unabhängig vom Scroll-Verhalten.
+    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
+      display:"flex", flexDirection:"column", overflow:"hidden",
+      background:"var(--bg)", color:"var(--text)" }}>
 
       {/* ── TOP BAR — dunkler Anker ── */}
       <div style={{ background:"var(--ink)", padding:"13px 16px 0",
         paddingTop:"calc(13px + env(safe-area-inset-top))",
-        position:"sticky", top:0, zIndex:60 }}>
+        flexShrink:0, zIndex:60 }}>
         <div style={{ display:"flex", justifyContent:"space-between",
           alignItems:"center", marginBottom:10 }}>
           <div style={{ minWidth:0, flexShrink:1, overflow:"hidden" }}>
@@ -858,9 +868,10 @@ export default function PolierApp() {
       {/* ── PROJEKT INFO STRIP ── */}
       <ProjektInfoStrip projekt={projekt} aufgaben={felder} />
 
-      {/* ── CONTENT ── */}
+      {/* ── CONTENT — einziger scrollender Bereich ── */}
       <PlanGuard firma={firma} ressource="app">
-      <div style={{ padding:"16px 14px 100px", background:"var(--bg)", minHeight:"100dvh" }}>
+      <div style={{ padding:"16px 14px 20px", background:"var(--bg)",
+        flex:"1 1 0", minHeight:0, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
         {tab === "dashboard" && (
           <PushBanner erlaubt={push.erlaubt} berechtigung={() => push.berechtigung(auth.session)} />
         )}
@@ -907,10 +918,10 @@ export default function PolierApp() {
       </div>
       </PlanGuard>
 
-      {/* ── BOTTOM NAV ── */}
-      <div style={{ position:"fixed", bottom:0, left:0, right:0,
+      {/* ── BOTTOM NAV — Flex-Geschwister statt position:fixed, siehe Kommentar oben ── */}
+      <div style={{ flexShrink:0,
         background:"var(--surface)", borderTop:"1px solid var(--border)",
-        display:"flex", zIndex:50, padding:"8px 6px",
+        display:"flex", padding:"8px 6px",
         paddingBottom:"calc(8px + env(safe-area-inset-bottom))" }}>
         {hauptTabs.map(t => {
           const Icon = TAB_ICONS[t.id];
