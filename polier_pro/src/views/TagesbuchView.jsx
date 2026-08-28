@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Mic, Camera, PenLine, CloudSun, CloudRain, Users } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
 import { KITagesabschlussButton } from "./KITagesabschlussButton.jsx";
 import { leereAufgabe } from "../lib/utils.js";
@@ -122,8 +123,37 @@ export function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eig
 
   return (
     <div>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-        <div style={{ color: "var(--text)", fontWeight:700 }}>Bautagebuch</div>
+      {/* Diktat zuerst: der Haupteinstieg in einen neuen Bericht */}
+      <div onClick={() => setOpen(true)}
+        style={{ background:"var(--ink)", color:"#fff", padding:18, marginBottom:12, cursor:"pointer" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <div style={{ width:52, height:52, background:"var(--yellow)", color:"var(--ink)",
+            display:"flex", alignItems:"center", justifyContent:"center", flex:"none" }}>
+            <Mic size={26} />
+          </div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:14.5, fontWeight:700 }}>Bericht diktieren</div>
+            <div style={{ fontSize:11.5, color:"var(--ink-text2)", marginTop:2 }}>
+              Sprechen — Polaris füllt Tätigkeit, Besonderheiten und Material
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display:"flex", gap:8, marginBottom:20 }}>
+        {[[Camera,"Foto"],[PenLine,"Tippen"]].map(([Icon,label]) => (
+          <button key={label} onClick={() => setOpen(true)}
+            style={{ flex:1, background:"var(--surface)", border:"1px solid var(--border)",
+              padding:12, display:"flex", flexDirection:"column", alignItems:"center", gap:6,
+              cursor:"pointer", fontFamily:"inherit" }}>
+            <Icon size={20} color="var(--text2)" />
+            <span style={{ fontSize:11.5, fontWeight:700, color:"var(--text)" }}>{label}</span>
+          </button>
+        ))}
+      </div>
+
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:12, gap:10, flexWrap:"wrap" }}>
+        <div style={{ color: "var(--text)", fontWeight:800, fontSize:13, paddingTop:6 }}>Einträge</div>
         <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
           <KITagesabschlussButton
             projekt={projekt} kolonnen={kolonnen} wetter={wetter}
@@ -166,7 +196,7 @@ export function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eig
           />
           <button onClick={() => setOpen(true)}
             style={{ background: "var(--yellow)", color:"#1C2027", border:"none",
-              borderRadius:8, padding:"6px 14px", fontWeight:700, cursor:"pointer", fontSize:13 }}>
+              padding:"6px 14px", fontWeight:700, cursor:"pointer", fontSize:13 }}>
             + Bericht
           </button>
         </div>
@@ -175,30 +205,34 @@ export function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eig
       {/* Berichtsliste */}
       {berichte.map((b, i) => (
         <div key={i} onClick={() => setDetail(b)}
-          style={{ background:"var(--surface)", borderRadius:14, padding:"16px 18px", marginBottom:12,
-            borderLeft:`4px solid ${'var(--yellow)'}`, cursor:"pointer",
-            boxShadow:"0 2px 8px rgba(0,0,0,0.05)" }}>
+          style={{ background:"var(--surface)", padding:"16px 18px", marginBottom:10,
+            borderLeft:`4px solid ${'var(--yellow)'}`, border:"1px solid var(--border)", cursor:"pointer" }}>
           <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6, alignItems:"flex-start" }}>
-            <div style={{ color: "var(--text)", fontWeight:600 }}>{b.datum}</div>
+            <div style={{ color: "var(--text)", fontWeight:700 }}>{b.datum}</div>
             <div style={{ display:"flex", gap:6, alignItems:"center" }} onClick={e => e.stopPropagation()}>
               <PDFExportButton bericht={b} projekt={projekt} eigeneFirma={eigeneFirma} wetter={b.wetterData || wetter} kolonnen={kolonnen} typ="bericht" />
               {b.bilder?.length > 0 && (
-                <div style={{ background: "var(--blue)"+"33", color: "var(--blue)", fontSize:10, padding:"2px 7px", borderRadius:10 }}>
-                  📷 {b.bilder.length}
+                <div style={{ background: "var(--blue)"+"33", color: "var(--blue)", fontSize:10, padding:"2px 7px", display:"flex", alignItems:"center", gap:3 }}>
+                  <Camera size={10} />{b.bilder.length}
                 </div>
               )}
             </div>
           </div>
-          <div style={{ color: "var(--muted)", fontSize:11, marginBottom:4 }}>{b.wetter} · {b.arbeiter} Arbeiter</div>
-          <div style={{ color: "var(--text2)", fontSize:13 }}>{b.taetigkeit}</div>
-          {b.maengel > 0 && <div style={{ color: "var(--orange)", fontSize:12, marginTop:6 }}>⚠️ {b.maengel} Mängel</div>}
+          <div style={{ display:"flex", alignItems:"center", gap:12, color: "var(--muted)", fontSize:11.5, fontWeight:600, marginBottom:6 }}>
+            <span style={{ display:"flex", alignItems:"center", gap:4 }}>
+              {(b.wetterData?.rain ?? 0) > 0 ? <CloudRain size={13} /> : <CloudSun size={13} />}{b.wetter}
+            </span>
+            <span style={{ display:"flex", alignItems:"center", gap:4 }}><Users size={13} />{b.arbeiter}</span>
+          </div>
+          <div style={{ color: "var(--text2)", fontSize:13.5, lineHeight:1.4 }}>{b.taetigkeit}</div>
+          {b.maengel > 0 && <div style={{ color: "var(--orange)", fontSize:12, marginTop:6, fontWeight:700 }}>⚠ {b.maengel} Mängel</div>}
           {b.bilder?.length > 0 && (
             <div style={{ display:"flex", gap:6, marginTop:10, flexWrap:"wrap" }}>
               {b.bilder.slice(0,4).map((url, j) => (
-                <img key={j} src={url} alt="" style={{ width:56, height:56, borderRadius:6, objectFit:"cover", border:`1px solid ${'var(--border)'}` }} />
+                <img key={j} src={url} alt="" style={{ width:56, height:56, objectFit:"cover", border:`1px solid ${'var(--border)'}` }} />
               ))}
               {b.bilder.length > 4 && (
-                <div style={{ width:56, height:56, borderRadius:6, background: "var(--border)", display:"flex", alignItems:"center", justifyContent:"center", color: "var(--muted)", fontSize:12, fontWeight:700 }}>
+                <div style={{ width:56, height:56, background: "var(--border)", display:"flex", alignItems:"center", justifyContent:"center", color: "var(--muted)", fontSize:12, fontWeight:700 }}>
                   +{b.bilder.length - 4}
                 </div>
               )}
@@ -374,17 +408,17 @@ export function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eig
             {/* Speichern */}
             <div style={{ display:"flex", gap:10 }}>
               <button onClick={resetForm}
-                style={{ flex:1, background: "var(--border)", color: "var(--muted)",
-                  border:"none", borderRadius:8, padding:13, cursor:"pointer" }}>
+                style={{ flex:1, background: "var(--surface2)", color: "var(--muted)",
+                  border:"1px solid var(--border)", padding:15, cursor:"pointer", fontWeight:600 }}>
                 Abbrechen
               </button>
               <button onClick={saveBericht} disabled={uploading}
                 style={{ flex:2, background: uploading ? "var(--border)" : "var(--yellow)",
                   color: uploading ? "var(--muted)" : "#1C2027",
-                  border:"none", borderRadius:8, padding:13, fontWeight:700,
+                  border:"none", padding:15, fontWeight:800,
                   cursor: uploading ? "default" : "pointer", fontSize:15 }}>
-                {uploading ? "⏳ Bilder werden hochgeladen…"
-                  : sbConnected ? "💾 Speichern & Sync" : "💾 Speichern"}
+                {uploading ? "Bilder werden hochgeladen…"
+                  : sbConnected ? "Speichern & Sync" : "Speichern"}
               </button>
             </div>
           </div>

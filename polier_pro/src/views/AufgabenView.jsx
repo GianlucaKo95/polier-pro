@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Search, SlidersHorizontal, Plus, TriangleAlert, CircleCheck } from "lucide-react";
 import { SchnellErstellung } from "./SchnellErstellung.jsx";
 import { AufgabenFormular } from "./AufgabenFormular.jsx";
 import { leereAufgabe } from "../lib/utils.js";
@@ -12,7 +13,6 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
   const [neuAufgabe,  setNeuAufgabe]  = useState(false);
   const [neuMangel,   setNeuMangel]   = useState(false);
   const [editAufgabe, setEditAufgabe] = useState(null);
-  const [detail,      setDetail]      = useState(null);
 
   const gefiltert = aufgaben.filter(a => {
     if (filter === "alle")      return true;
@@ -68,108 +68,103 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
     );
   }
 
-  function statusWechsel(id, neuerStatus) {
-    setAufgaben(prev => prev.map(a =>
-      a.id === id ? { ...a, status: neuerStatus } : a
-    ));
-  }
-
+  const offen         = aufgaben.filter(a => a.status !== "abgeschlossen");
   const stats = {
     gesamt:        aufgaben.length,
     offen:         aufgaben.filter(a=>a.status==="offen").length,
-    in_arbeit:     aufgaben.filter(a=>a.status==="in_arbeit").length,
-    abgeschlossen: aufgaben.filter(a=>a.status==="abgeschlossen").length,
     maengel:       aufgaben.filter(a=>a.ist_mangel && a.status!=="abgeschlossen").length,
-    ueberfaellig:  aufgaben.filter(a=>a.faellig_am &&
-      new Date(a.faellig_am)<new Date() && a.status!=="abgeschlossen").length,
+    abgeschlossen: aufgaben.filter(a=>a.status==="abgeschlossen").length,
   };
 
+  const ueberfaelligListe = gefiltert.filter(a => a.status !== "abgeschlossen" && a.faellig_am && new Date(a.faellig_am) < new Date());
+  const offenListe        = gefiltert.filter(a => a.status !== "abgeschlossen" && !ueberfaelligListe.includes(a));
+  const erledigtListe     = gefiltert.filter(a => a.status === "abgeschlossen");
+
   return (
-    <div>
-      {/* Stats */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)",
-        gap:8, marginBottom:14 }}>
-        {[
-          ["Offen",       stats.offen,         "var(--muted)"],
-          ["In Arbeit",   stats.in_arbeit,      "var(--yellow)"],
-          ["Fertig",      stats.abgeschlossen,  "var(--green)"],
-          ["Mängel",      stats.maengel,        "var(--red)"],
-          ["Überfällig",  stats.ueberfaellig,   "var(--orange)"],
-          ["Gesamt",      stats.gesamt,         "var(--text)"],
-        ].map(([l,v,c]) => (
-          <div key={l} style={{ background:"var(--surface)", borderRadius:12,
-            padding:"10px 12px", border:"1.5px solid var(--border)",
-            position:"relative", overflow:"hidden" }}>
-            <div style={{ position:"absolute", top:0, left:0, right:0,
-              height:3, background:c }} />
-            <div style={{ color:"var(--muted)", fontSize:10,
-              fontWeight:700, textTransform:"uppercase", marginBottom:4 }}>{l}</div>
-            <div style={{ color:"var(--text)", fontWeight:900,
-              fontSize:22 }}>{v}</div>
-          </div>
+    <div style={{ position:"relative", paddingBottom:64 }}>
+      {/* Segment-Reiter über den Gesamtbestand (unabhängig vom Chip-Filter darunter) */}
+      <div style={{ display:"flex", gap:1, background:"var(--border)", marginBottom:14,
+        marginLeft:-14, marginRight:-14, width:"calc(100% + 28px)" }}>
+        {[["alle","Alle",stats.gesamt],["offen","Offen",stats.offen],["maengel","Mängel",stats.maengel],["abgeschlossen","Fertig",stats.abgeschlossen]].map(([k,l,v]) => (
+          <button key={k} onClick={() => setFilter(k === "abgeschlossen" ? "alle" : k)}
+            style={{ flex:1, background: filter===k ? "var(--ink)" : "var(--surface)",
+              color: filter===k ? "var(--yellow)" : "var(--muted)",
+              border:"none", padding:"9px 0", textAlign:"center",
+              fontSize:11.5, fontWeight: filter===k ? 800 : 600, cursor:"pointer", fontFamily:"inherit" }}>
+            {l} {v}
+          </button>
         ))}
       </div>
 
       {/* Toolbar */}
-      <div style={{ display:"flex", justifyContent:"space-between",
-        alignItems:"center", marginBottom:10 }}>
-        <div style={{ display:"flex", gap:6, overflowX:"auto" }}>
-          {[
-            ["alle","Alle"],
-            ["maengel","⚠️ Mängel"],
-            ["offen","Offen"],
-            ["kritisch","Kritisch"],
-            ["beton","🏗️"],
-            ["schalung","🪵"],
-            ["bewehrung","🔩"],
-          ].map(([k,l]) => (
-            <FilterBtn key={k} active={filter===k}
-              onClick={() => setFilter(k)}>{l}</FilterBtn>
-          ))}
+      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12, overflowX:"auto" }}>
+        {[
+          ["alle","Alle"],
+          ["kritisch","Kritisch"],
+          ["beton","Betonage"],
+          ["schalung","Schalung"],
+          ["bewehrung","Bewehrung"],
+        ].map(([k,l]) => (
+          <FilterBtn key={k} active={filter===k}
+            onClick={() => setFilter(k)}>{l}</FilterBtn>
+        ))}
+        <div style={{ marginLeft:"auto", display:"flex", gap:6, flexShrink:0, color:"var(--muted)" }}>
+          <SlidersHorizontal size={17} />
         </div>
-        {darfBearbeiten && (
-          <button onClick={() => filter === "maengel" ? setNeuMangel(true) : setNeuAufgabe(true)}
-            style={{ background: filter === "maengel" ? "var(--red)" : "var(--yellow)",
-              color: filter === "maengel" ? "#fff" : "#1a1200", border:"none",
-              borderRadius:10, padding:"8px 14px", fontWeight:700,
-              cursor:"pointer", fontSize:13, fontFamily:"inherit",
-              flexShrink:0, marginLeft:8 }}>
-            {filter === "maengel" ? "+ Mangel" : "+ Aufgabe"}
-          </button>
-        )}
       </div>
 
       {/* Kanban / Liste Toggle */}
-      <div style={{ display:"flex", gap:6, marginBottom:12 }}>
-        {[["liste","☰ Liste"],["kanban","⊞ Kanban"]].map(([v,l]) => (
+      <div style={{ display:"flex", gap:6, marginBottom:14 }}>
+        {[["liste","Liste"],["kanban","Kanban"]].map(([v,l]) => (
           <button key={v} onClick={() => setAnsicht(v)}
-            style={{ background: ansicht===v ? "var(--surface)" : "transparent",
-              color: ansicht===v ? "var(--text)" : "var(--muted)",
-              border:`1px solid ${ansicht===v ? "var(--border)" : "transparent"}`,
-              borderRadius:8, padding:"5px 12px", cursor:"pointer",
+            style={{ background: ansicht===v ? "var(--ink)" : "transparent",
+              color: ansicht===v ? "#fff" : "var(--muted)",
+              border:`1px solid ${ansicht===v ? "var(--ink)" : "var(--border)"}`,
+              padding:"5px 14px", cursor:"pointer",
               fontSize:12, fontFamily:"inherit",
-              fontWeight: ansicht===v ? 700 : 400 }}>{l}</button>
+              fontWeight: ansicht===v ? 700 : 500 }}>{l}</button>
         ))}
       </div>
 
-      {/* Liste */}
+      {/* Liste — nach Dringlichkeit gruppiert */}
       {ansicht === "liste" && (
         <div>
           {gefiltert.length === 0 && (
-            <div style={{ textAlign:"center", padding:"40px 20px",
-              color:"var(--muted)" }}>
-              <div style={{ fontSize:40, marginBottom:8 }}>
-                {filter === "maengel" ? "✅" : "✅"}
-              </div>
-              <div>
-                {filter === "maengel" ? "Keine Mängel erfasst" : "Keine Aufgaben gefunden"}
-              </div>
+            <div style={{ textAlign:"center", padding:"40px 20px", color:"var(--muted)" }}>
+              <CircleCheck size={40} style={{ marginBottom:8, opacity:0.5 }} />
+              <div>{filter === "maengel" ? "Keine Mängel erfasst" : "Keine Aufgaben gefunden"}</div>
             </div>
           )}
-          {gefiltert.map(a => (
-            <AufgabenKarte key={a.id} aufgabe={a} kolonnen={kolonnen}
-              onClick={() => darfBearbeiten && setEditAufgabe(a)} />
-          ))}
+
+          {ueberfaelligListe.length > 0 && (
+            <>
+              <SektionsTitel label="Überfällig" />
+              {ueberfaelligListe.map(a => (
+                <AufgabenKarte key={a.id} aufgabe={a} kolonnen={kolonnen}
+                  onClick={() => darfBearbeiten && setEditAufgabe(a)} />
+              ))}
+            </>
+          )}
+
+          {offenListe.length > 0 && (
+            <>
+              <SektionsTitel label="Offen" />
+              {offenListe.map(a => (
+                <AufgabenKarte key={a.id} aufgabe={a} kolonnen={kolonnen}
+                  onClick={() => darfBearbeiten && setEditAufgabe(a)} />
+              ))}
+            </>
+          )}
+
+          {erledigtListe.length > 0 && (
+            <>
+              <SektionsTitel label="Erledigt" />
+              {erledigtListe.map(a => (
+                <AufgabenKarte key={a.id} aufgabe={a} kolonnen={kolonnen}
+                  onClick={() => darfBearbeiten && setEditAufgabe(a)} />
+              ))}
+            </>
+          )}
         </div>
       )}
 
@@ -180,29 +175,27 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
             const spalte = gefiltert.filter(a => a.status === statusKey);
             return (
               <div key={statusKey} style={{ background:"var(--surface2)",
-                borderRadius:12, padding:10,
-                border:"1px solid var(--border)" }}>
+                padding:10, border:"1px solid var(--border)" }}>
                 <div style={{ display:"flex", justifyContent:"space-between",
                   alignItems:"center", marginBottom:8 }}>
                   <div style={{ color:statusCfg.farbe, fontWeight:700, fontSize:12 }}>
-                    {statusCfg.icon} {statusCfg.label}
+                    {statusCfg.label}
                   </div>
                   <div style={{ background:statusCfg.bg, color:statusCfg.farbe,
-                    borderRadius:10, padding:"1px 7px", fontSize:11,
+                    padding:"1px 7px", fontSize:11,
                     fontWeight:700 }}>{spalte.length}</div>
                 </div>
                 {spalte.map(a => (
                   <div key={a.id} onClick={() => darfBearbeiten && setEditAufgabe(a)}
-                    style={{ background:"var(--surface)", borderRadius:10,
+                    style={{ background:"var(--surface)",
                       padding:"10px 12px", marginBottom:6, cursor:"pointer",
-                      borderLeft:`3px solid ${AUFGABEN_TYPEN[a.typ]?.farbe || "var(--muted)"}`,
-                      boxShadow:"0 1px 4px rgba(0,0,0,0.06)" }}>
+                      borderLeft:`3px solid ${AUFGABEN_TYPEN[a.typ]?.farbe || "var(--muted)"}` }}>
                     <div style={{ color:"var(--text)", fontWeight:600, fontSize:12 }}>
-                      {AUFGABEN_TYPEN[a.typ]?.icon} {a.titel}
+                      {a.titel}
                     </div>
                     {a.zustaendig && (
                       <div style={{ color:"var(--muted)", fontSize:10, marginTop:3 }}>
-                        👤 {a.zustaendig}
+                        {a.zustaendig}
                       </div>
                     )}
                   </div>
@@ -212,6 +205,28 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
           })}
         </div>
       )}
+
+      {/* FAB */}
+      {darfBearbeiten && (
+        <button onClick={() => filter === "maengel" ? setNeuMangel(true) : setNeuAufgabe(true)}
+          style={{ position:"fixed", right:16, bottom:100, width:56, height:56,
+            background: filter === "maengel" ? "var(--red)" : "var(--yellow)",
+            color: filter === "maengel" ? "#fff" : "#0B1120", border:"none",
+            display:"flex", alignItems:"center", justifyContent:"center",
+            cursor:"pointer", boxShadow:"0 6px 20px rgba(11,17,32,0.28)", zIndex:40 }}>
+          <Plus size={26} />
+        </button>
+      )}
+    </div>
+  );
+}
+
+function SektionsTitel({ label }) {
+  return (
+    <div style={{ display:"flex", alignItems:"center", gap:8, margin:"16px 0 8px" }}>
+      <div style={{ color:"var(--muted)", fontSize:11, fontWeight:800,
+        letterSpacing:0.8, textTransform:"uppercase" }}>{label}</div>
+      <div style={{ flex:1, height:1, background:"var(--border)" }} />
     </div>
   );
 }

@@ -62,31 +62,30 @@ export function SchnellErstellung({ onSave, onClose }) {
   return (
     <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
       background:"var(--bg)", zIndex:500, overflowY:"auto",
-      WebkitOverflowScrolling:"touch",
-      fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
+      WebkitOverflowScrolling:"touch" }}>
 
-      <div style={{ background:"var(--surface)", padding:"14px 18px",
-        borderBottom:"3px solid var(--yellow)", position:"sticky", top:0,
+      <div style={{ background:"var(--ink)", color:"#fff", padding:"16px 18px",
+        position:"sticky", top:0,
         zIndex:10, display:"flex", justifyContent:"space-between",
         alignItems:"center" }}>
-        <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:17 }}>
-          ➕ Aufgabe(n) anlegen
+        <div style={{ fontWeight:700, fontSize:17 }}>
+          Aufgabe(n) anlegen
         </div>
         <button onClick={onClose}
-          style={{ background:"var(--surface2)", border:"1px solid var(--border)",
-            color:"var(--text)", borderRadius:8, padding:"6px 14px",
+          style={{ background:"rgba(255,255,255,.08)", border:"none",
+            color:"#fff", padding:"6px 14px",
             cursor:"pointer", fontSize:14, fontFamily:"inherit" }}>✕</button>
       </div>
 
       <div style={{ padding:"18px 16px 100px" }}>
         {/* Modus-Umschalter */}
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6, marginBottom:18 }}>
-          {[["vorlage","📋 Vorlage"],["einzeln","✏️ Einzeln"],["liste","📝 Liste"],["plan","📐 DXF"]].map(([k,l]) => (
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:1, marginBottom:20,
+          background:"var(--border)" }}>
+          {[["vorlage","Vorlage"],["einzeln","Einzeln"],["liste","Liste"],["plan","DXF"]].map(([k,l]) => (
             <button key={k} onClick={() => setModus(k)}
-              style={{ background: modus===k ? "var(--yellow)" : "var(--surface2)",
-                color: modus===k ? "#1a1200" : "var(--muted)",
-                border:`1.5px solid ${modus===k ? "var(--yellow)" : "var(--border)"}`,
-                borderRadius:10, padding:9, fontWeight: modus===k ? 700 : 400,
+              style={{ background: modus===k ? "var(--ink)" : "var(--surface)",
+                color: modus===k ? "var(--yellow)" : "var(--muted)",
+                border:"none", padding:10, fontWeight: modus===k ? 800 : 600,
                 cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>{l}</button>
           ))}
         </div>
@@ -101,9 +100,9 @@ export function SchnellErstellung({ onSave, onClose }) {
             </div>
             {AUFGABEN_VORLAGEN.map((v, i) => (
               <div key={i} onClick={() => ausVorlage(v)}
-                style={{ background:"var(--surface)", borderRadius:12,
+                style={{ background:"var(--surface)",
                   padding:"14px 16px", marginBottom:8, cursor:"pointer",
-                  border:"1.5px solid var(--border)",
+                  border:"1px solid var(--border)",
                   borderLeftWidth:4,
                   borderLeftColor:AUFGABEN_TYPEN[v.typ]?.farbe,
                   display:"flex", alignItems:"center", gap:12 }}>
@@ -166,10 +165,10 @@ export function SchnellErstellung({ onSave, onClose }) {
             <button onClick={einzelnSpeichern} disabled={!titel.trim()}
               style={{ width:"100%", background: titel.trim() ? "var(--yellow)" : "var(--surface2)",
                 color: titel.trim() ? "#1a1200" : "var(--muted)",
-                border:"none", borderRadius:12, padding:14, fontWeight:800,
-                cursor: titel.trim() ? "pointer" : "default", fontSize:15,
+                border:"none", padding:16, fontWeight:800,
+                cursor: titel.trim() ? "pointer" : "default", fontSize:16,
                 fontFamily:"inherit", marginTop:4 }}>
-              💾 Anlegen
+              Anlegen
             </button>
           </div>
         )}
@@ -193,10 +192,10 @@ export function SchnellErstellung({ onSave, onClose }) {
             <button onClick={listeSpeichern} disabled={!listeText.trim()}
               style={{ width:"100%", background: listeText.trim() ? "var(--yellow)" : "var(--surface2)",
                 color: listeText.trim() ? "#1a1200" : "var(--muted)",
-                border:"none", borderRadius:12, padding:14, fontWeight:800,
-                cursor: listeText.trim() ? "pointer" : "default", fontSize:15,
+                border:"none", padding:16, fontWeight:800,
+                cursor: listeText.trim() ? "pointer" : "default", fontSize:16,
                 fontFamily:"inherit" }}>
-              💾 {listeText.split("\n").filter(l=>l.trim()).length || 0} Aufgabe(n) anlegen
+              {listeText.split("\n").filter(l=>l.trim()).length || 0} Aufgabe(n) anlegen
             </button>
           </div>
         )}

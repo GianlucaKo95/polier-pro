@@ -1,4 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Bell, LogOut, Plus, MapPin, Hash, TriangleAlert, LayoutGrid,
+  CircleCheckBig, NotebookPen, Users, Clock, Ellipsis, ChevronRight,
+  Building2 } from "lucide-react";
 import { useTheme } from "./hooks/useTheme.js";
 import { useAuth } from "./hooks/useAuth.js";
 import { DEFAULT_EINHEITSPREISE, DEFAULT_LV_VORLAGEN, ONBOARDING_KEY, ROLLEN, PROJEKTTYPEN } from "./config/konstanten.js";
@@ -542,184 +545,201 @@ export default function PolierApp() {
       );
     }
 
+    const verzugGesamt = projekte.reduce((s,p) => {
+      const eltern = (p.felder||[]).filter(f=>!f.parentId);
+      return s + eltern.filter(f=>f.status!=="done" && f.geplant && new Date(f.geplant)<new Date()).length;
+    }, 0);
+
     return (
       <>
-        <div style={{ background:"var(--bg)", minHeight:"100dvh",
-          fontFamily:"'Segoe UI', system-ui, sans-serif", color:"var(--text)" }}>
+        <div style={{ background:"var(--bg)", minHeight:"100dvh", color:"var(--text)" }}>
 
-          {/* Header */}
-          <div style={{ background:"var(--surface)", padding:"16px 18px 0",
-            borderBottom:"2px solid var(--yellow)",
-            boxShadow:"0 2px 8px rgba(0,0,0,0.06)" }}>
+          {/* Header — dunkler Anker */}
+          <div style={{ background:"var(--ink)", color:"#fff", padding:"20px 18px 0" }}>
             <div style={{ display:"flex", justifyContent:"space-between",
-              alignItems:"flex-start", marginBottom:12 }}>
+              alignItems:"flex-start" }}>
               <div>
-                <div style={{ fontWeight:900, fontSize:20, letterSpacing:-1,
-                  color:"var(--text)", lineHeight:1 }}>
-                  <span style={{ color:"var(--yellow)" }}>★</span> POLARIS
+                <div style={{ fontSize:11, fontWeight:700, letterSpacing:2.4,
+                  textTransform:"uppercase", color:"var(--yellow)" }}>Polaris</div>
+                <div style={{ fontSize:25, fontWeight:800, letterSpacing:-0.8,
+                  marginTop:6, lineHeight:1.1 }}>
+                  Moin{aktiveProfil?.vorname ? `, ${aktiveProfil.vorname}` : ""}
                 </div>
-                <div style={{ fontSize:10, color:"var(--muted)", fontWeight:600,
-                  letterSpacing:2, textTransform:"uppercase", marginTop:2 }}>
-                  Baustellenmanagement
+                <div style={{ fontSize:12.5, color:"var(--ink-text2)", marginTop:2 }}>
+                  {new Date().toLocaleDateString("de-DE", { weekday:"long", day:"2-digit", month:"long" })}
                 </div>
               </div>
               <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-                <RollenBadge rolle={aktiveRolle} />
                 <ThemeToggle dark={theme.dark} toggle={theme.toggle} />
-                <button onClick={abmelden}
-                  style={{ width:36, height:36, borderRadius:10,
-                    background:"var(--surface2)", border:"1.5px solid var(--border2)",
-                    cursor:"pointer", fontSize:14, display:"flex",
-                    alignItems:"center", justifyContent:"center", fontFamily:"inherit" }}
-                  title="Abmelden">🚪</button>
+                <div style={{ width:40, height:40, background:"rgba(255,255,255,.08)",
+                  display:"flex", alignItems:"center", justifyContent:"center", position:"relative" }}>
+                  <Bell size={18} />
+                  {(firmaLadeFehler || projekteLadeFehler) && (
+                    <div style={{ position:"absolute", top:9, right:10, width:7, height:7,
+                      background:"var(--yellow)", borderRadius:"50%" }} />
+                  )}
+                </div>
+                <button onClick={abmelden} title="Abmelden"
+                  style={{ width:40, height:40, background:"rgba(255,255,255,.08)", border:"none",
+                    color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
+                  <LogOut size={17} />
+                </button>
               </div>
             </div>
+
+            <div style={{ display:"flex", gap:8, marginTop:14 }}>
+              <RollenBadge rolle={aktiveRolle} />
+            </div>
+
+            {/* Stat-Streifen */}
+            <div style={{ display:"flex", gap:10, marginTop:16 }}>
+              <div style={{ flex:1, background:"rgba(255,255,255,.07)", padding:"12px 14px",
+                borderLeft:"3px solid var(--yellow)" }}>
+                <div className="num" style={{ fontSize:24, fontWeight:800, lineHeight:1 }}>{projekte.length}</div>
+                <div style={{ fontSize:10.5, color:"var(--ink-text2)", fontWeight:700, marginTop:3 }}>
+                  {projekte.length === 1 ? "Baustelle" : "Baustellen"}
+                </div>
+              </div>
+              <div style={{ flex:1, background:"rgba(255,255,255,.07)", padding:"12px 14px",
+                borderLeft:`3px solid ${verzugGesamt > 0 ? "#EF4444" : "#22C55E"}` }}>
+                <div className="num" style={{ fontSize:24, fontWeight:800, lineHeight:1 }}>{verzugGesamt}</div>
+                <div style={{ fontSize:10.5, color:"var(--ink-text2)", fontWeight:700, marginTop:3 }}>Verzug</div>
+              </div>
+            </div>
+
             {/* Home Tabs */}
-            <div style={{ display:"flex", gap:0 }}>
-              {[["projekte","🏗️","Baustellen"],["firmen","🏢","Unternehmen"]].map(([id,icon,label]) => (
+            <div style={{ display:"flex", gap:22, marginTop:18 }}>
+              {[["projekte","Baustellen"],["firmen","Unternehmen"]].map(([id,label]) => (
                 <button key={id} onClick={() => setHomeTab(id)}
-                  style={{ flex:1, background:"none", border:"none", cursor:"pointer",
-                    padding:"10px 0 12px", fontFamily:"inherit",
+                  style={{ background:"none", border:"none", cursor:"pointer",
+                    padding:"0 0 10px", fontFamily:"inherit", fontSize:13, fontWeight:700,
+                    color: homeTab===id ? "#fff" : "var(--ink-text2)",
                     borderBottom:`3px solid ${homeTab===id ? "var(--yellow)" : "transparent"}` }}>
-                  <div style={{ fontSize:22 }}>{icon}</div>
-                  <div style={{ color: homeTab===id ? "var(--text)" : "var(--muted)",
-                    fontSize:12, marginTop:2,
-                    fontWeight: homeTab===id ? 700 : 400 }}>{label}</div>
+                  {label}
                 </button>
               ))}
             </div>
           </div>
 
-          <div style={{ padding:"16px 14px 100px" }}>
+          <div style={{ padding:"18px 14px 100px" }}>
             {firmaLadeFehler && (
-              <div style={{ background:"var(--rbg)", color:"var(--red)", borderRadius:12,
+              <div style={{ background:"var(--rbg)", color:"var(--red)",
                 padding:"12px 16px", marginBottom:14, fontSize:12,
                 border:"1px solid var(--red)" }}>
-                ⚠️ {firmaLadeFehler}
+                {firmaLadeFehler}
               </div>
             )}
 
             {projekteLadeFehler && (
-              <div style={{ background:"var(--rbg)", color:"var(--red)", borderRadius:12,
+              <div style={{ background:"var(--rbg)", color:"var(--red)",
                 padding:"12px 16px", marginBottom:14, fontSize:12,
                 border:"1px solid var(--red)" }}>
-                ⚠️ {projekteLadeFehler}
+                {projekteLadeFehler}
               </div>
             )}
 
             {homeTab === "projekte" && (
               <>
                 <div style={{ display:"flex", justifyContent:"space-between",
-                  alignItems:"center", marginBottom:14 }}>
-                  <div style={{ color:"var(--text)", fontWeight:700, fontSize:15 }}>
+                  alignItems:"center", marginBottom:12 }}>
+                  <div style={{ color:"var(--text)", fontWeight:800, fontSize:13 }}>
                     Meine Baustellen
                   </div>
-                  <div style={{ background:"var(--surface2)", color:"var(--muted)",
-                    fontSize:12, padding:"4px 10px", borderRadius:20,
-                    border:"1px solid var(--border)" }}>
-                    {projekte.length} {projekte.length === 1 ? "Projekt" : "Projekte"}
+                  <div style={{ display:"flex", alignItems:"center", gap:5, color:"var(--muted)",
+                    fontSize:12, fontWeight:600 }}>
+                    <Ellipsis size={14} />Zuletzt
                   </div>
                 </div>
 
                 {projekte.length === 0 && (
                   <div style={{ textAlign:"center", padding:"40px 20px",
                     color:"var(--muted)", fontSize:14 }}>
-                    <div style={{ fontSize:48, marginBottom:12 }}>🏗️</div>
+                    <Building2 size={44} style={{ marginBottom:12, opacity:0.5 }} />
                     <div style={{ fontWeight:700, color:"var(--text)", marginBottom:8 }}>
                       Noch keine Baustellen
                     </div>
                     <div style={{ marginBottom:20 }}>Leg deine erste Baustelle an um loszulegen.</div>
                     {auth.session?.access_token && !firma?.id ? (
                       <div style={{ color:"var(--muted)", fontSize:13 }}>
-                        ⏳ Firmendaten werden geladen…
+                        Firmendaten werden geladen…
                       </div>
                     ) : (
                       <button onClick={() => setNeuProjekt(true)}
                         style={{ background:"var(--yellow)", color:"#1a1200",
-                          border:"none", borderRadius:12, padding:"14px 28px",
+                          border:"none", padding:"14px 28px",
                           fontWeight:800, fontSize:16, cursor:"pointer",
                           fontFamily:"inherit" }}>
-                        🏗️ Erste Baustelle anlegen
+                        Erste Baustelle anlegen
                       </button>
                     )}
                   </div>
                 )}
 
                 {projekte.map(p => {
-                  const eltern  = p.felder.filter(f=>!f.parentId);
+                  const eltern  = (p.felder||[]).filter(f=>!f.parentId);
                   const done    = eltern.filter(f=>f.status==="done").length;
                   const total   = eltern.length;
                   const pct     = total > 0 ? Math.round(done/total*100) : 0;
                   const delayed = eltern.filter(f=>f.status!=="done" && f.geplant && new Date(f.geplant)<new Date()).length;
-                  const projSubs = subs.filter(s => (p.subIds||[]).includes(s.id));
                   return (
                     <div key={p.id} onClick={() => { setAktivId(p.id); setTab("dashboard"); }}
-                      style={{ background:"var(--surface)", borderRadius:16,
-                        padding:"18px 20px", marginBottom:14,
-                        border:"1.5px solid var(--border)", cursor:"pointer",
-                        borderLeft:`5px solid ${p.farbe}`,
-                        boxShadow:"0 2px 12px rgba(0,0,0,0.06)" }}>
-                      <div style={{ display:"flex", justifyContent:"space-between",
-                        alignItems:"flex-start" }}>
-                        <div style={{ flex:1 }}>
-                          <div style={{ color:"var(--text)", fontWeight:700,
-                            fontSize:15 }}>{p.name}</div>
-                          <div style={{ color:"var(--muted)", fontSize:12,
-                            marginTop:2 }}>📍 {[p.adresse, [p.plz, p.ort].filter(Boolean).join(" ")].filter(Boolean).join(", ")}</div>
-                          <div style={{ display:"flex", gap:8, marginTop:6,
-                            flexWrap:"wrap" }}>
-                            <Chip icon={PROJEKTTYPEN[p.typ]?.icon||"🏗️"} label={PROJEKTTYPEN[p.typ]?.label||p.typ} />
-                            <Chip icon="🔢" label={p.projektnummer} />
-                            <Chip icon="👤" label={p.bauleiter} />
+                      style={{ background:"var(--surface)",
+                        border:"1px solid var(--border)", marginBottom:12, cursor:"pointer" }}>
+                      <div style={{ height:4, background:p.farbe }} />
+                      <div style={{ padding:"16px 18px" }}>
+                        <div style={{ display:"flex", justifyContent:"space-between",
+                          alignItems:"flex-start", gap:10 }}>
+                          <div style={{ flex:1 }}>
+                            <div style={{ color:"var(--text)", fontWeight:700,
+                              fontSize:16.5, letterSpacing:-0.3 }}>{p.name}</div>
+                            <div style={{ display:"flex", alignItems:"center", gap:5,
+                              color:"var(--muted)", fontSize:12, marginTop:4 }}>
+                              <MapPin size={13} />
+                              {[p.adresse, [p.plz, p.ort].filter(Boolean).join(" ")].filter(Boolean).join(", ")}
+                            </div>
                           </div>
+                          {total > 0 && (
+                            <div className="num" style={{ fontSize:22, fontWeight:800, color:"var(--text)", lineHeight:1 }}>
+                              {pct}<span style={{ fontSize:13, color:"var(--muted)" }}>%</span>
+                            </div>
+                          )}
                         </div>
-                        <div style={{ color:"var(--muted)", fontSize:22,
-                          marginLeft:8 }}>›</div>
-                      </div>
-                      {total > 0 && (
-                        <div style={{ marginTop:12 }}>
-                          <div style={{ display:"flex", justifyContent:"space-between",
-                            marginBottom:4 }}>
-                            <div style={{ color:"var(--muted)", fontSize:11 }}>
-                              {done}/{total} {PROJEKTTYPEN[p.typ]?.fortschrittLabel||"fertig"}
-                            </div>
-                            <div style={{ display:"flex", gap:8 }}>
-                              {delayed > 0 && (
-                                <div style={{ color:"var(--red)", fontSize:11 }}>
-                                  ⚠️ {delayed} Verzug
-                                </div>
-                              )}
-                              <div style={{ color: p.farbe, fontSize:11,
-                                fontWeight:700 }}>{pct}%</div>
-                            </div>
-                          </div>
-                          <div style={{ background:"var(--surface2)", borderRadius:4,
-                            height:6, border:"1px solid var(--border)" }}>
-                            <div style={{ background: p.farbe, width:`${pct}%`,
-                              height:"100%", borderRadius:4,
+
+                        {total > 0 && (
+                          <div style={{ height:6, background:"var(--surface2)", marginTop:12 }}>
+                            <div style={{ height:"100%", width:`${pct}%`, background:p.farbe,
                               transition:"width 0.5s" }} />
                           </div>
+                        )}
+
+                        <div style={{ display:"flex", gap:6, marginTop:12, flexWrap:"wrap" }}>
+                          <Chip icon={PROJEKTTYPEN[p.typ]?.icon||"🏗️"} label={PROJEKTTYPEN[p.typ]?.label||p.typ} />
+                          {p.projektnummer && <Chip icon={<Hash size={11} />} label={p.projektnummer} />}
+                          {delayed > 0 && (
+                            <div style={{ display:"flex", alignItems:"center", gap:5,
+                              background:"var(--rbg)", color:"var(--red)", padding:"5px 9px",
+                              fontSize:11, fontWeight:700 }}>
+                              <TriangleAlert size={13} />{delayed} Verzug
+                            </div>
+                          )}
                         </div>
-                      )}
-                      {total === 0 && (
-                        <div style={{ color:"var(--muted)", fontSize:12,
-                          marginTop:8 }}>Noch keine Felder angelegt</div>
-                      )}
+                        {total === 0 && (
+                          <div style={{ color:"var(--muted)", fontSize:12,
+                            marginTop:10 }}>Noch keine Felder angelegt</div>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
 
                 {/* Neue Baustelle */}
                 <div onClick={() => setNeuProjekt(true)}
-                  style={{ border:"2px dashed var(--yellow)", borderRadius:16,
-                    padding:"28px 24px", textAlign:"center", cursor:"pointer",
-                    background:"var(--ybg)",
-                    boxShadow:"0 2px 8px rgba(245,196,0,0.12)" }}>
-                  <div style={{ fontSize:36 }}>➕</div>
-                  <div style={{ color:"var(--ydark)", fontWeight:700,
-                    marginTop:10, fontSize:15 }}>
-                    Neue Baustelle anlegen
-                  </div>
+                  style={{ border:"2px dashed var(--yellow)",
+                    display:"flex", alignItems:"center", justifyContent:"center", gap:8,
+                    padding:"16px", textAlign:"center", cursor:"pointer",
+                    background:"var(--ybg)", color:"var(--ydark)",
+                    fontWeight:700, fontSize:14 }}>
+                  <Plus size={18} />Neue Baustelle
                 </div>
               </>
             )}
@@ -791,39 +811,34 @@ export default function PolierApp() {
     .sort((a,b) => HAUPT_TAB_IDS.indexOf(a.id) - HAUPT_TAB_IDS.indexOf(b.id));
   const mehrTabs  = TABS.filter(t => !HAUPT_TAB_IDS.includes(t.id));
   const aktivInMehr = mehrTabs.some(t => t.id === tab);
+  const HAUPT_TAB_ICONS = { dashboard:LayoutGrid, aufgaben:CircleCheckBig, tagebuch:NotebookPen, kolonnen:Users, stempeln:Clock };
 
   return (
-    <div style={{ background:"var(--bg)", minHeight:"100dvh",
-      fontFamily:"'Segoe UI', system-ui, sans-serif", color:"var(--text)" }}>
+    <div style={{ background:"var(--bg)", minHeight:"100dvh", color:"var(--text)" }}>
 
-      {/* ── TOP BAR ── */}
-      <div style={{ background:"var(--surface)", padding:"13px 16px 0",
-        borderBottom:"1px solid var(--border)", position:"sticky", top:0, zIndex:60,
-        boxShadow:"0 2px 8px rgba(0,0,0,0.08)" }}>
+      {/* ── TOP BAR — dunkler Anker ── */}
+      <div style={{ background:"var(--ink)", padding:"13px 16px 0",
+        position:"sticky", top:0, zIndex:60 }}>
         <div style={{ display:"flex", justifyContent:"space-between",
           alignItems:"center", marginBottom:10 }}>
-          <div>
-            <div style={{ fontWeight:900, fontSize:19, letterSpacing:-1,
-              color:"var(--text)", lineHeight:1 }}>
+          <div style={{ minWidth:0, flexShrink:1, overflow:"hidden" }}>
+            <div style={{ fontWeight:800, fontSize:18, letterSpacing:-0.6,
+              color:"#fff", lineHeight:1, whiteSpace:"nowrap" }}>
               <span style={{ color:"var(--yellow)" }}>★</span> POLARIS
             </div>
-            <div style={{ fontSize:10, color:"var(--muted)", fontWeight:600,
-              letterSpacing:2, textTransform:"uppercase", marginTop:1 }}>
-              Baustellenmanagement
-            </div>
           </div>
-          <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-            <div style={{ width:8, height:8, borderRadius:4,
-              background: sbConnected ? "var(--green)" : "var(--muted)" }} />
+          <div style={{ display:"flex", gap:6, alignItems:"center", flexShrink:0 }}>
+            <div style={{ width:8, height:8, borderRadius:4, flexShrink:0,
+              background: sbConnected ? "#22C55E" : "var(--ink-text2)" }} />
             <RollenBadge rolle={aktiveRolle} />
             <ThemeToggle dark={theme.dark} toggle={theme.toggle} />
             <button onClick={abmelden}
-              style={{ width:36, height:36, borderRadius:10,
-                background:"var(--surface2)", border:"1.5px solid var(--border2)",
-                cursor:"pointer", fontSize:14, display:"flex",
+              style={{ width:34, height:34, flexShrink:0,
+                background:"rgba(255,255,255,.08)", border:"none", color:"#fff",
+                cursor:"pointer", display:"flex",
                 alignItems:"center", justifyContent:"center" }}
               title="Abmelden">
-              🚪
+              <LogOut size={15} />
             </button>
           </div>
         </div>
@@ -847,11 +862,11 @@ export default function PolierApp() {
           <PushBanner erlaubt={push.erlaubt} berechtigung={() => push.berechtigung(auth.session)} />
         )}
         {speicherFehler && (
-          <div style={{ background:"var(--rbg)", color:"var(--red)", borderRadius:12,
+          <div style={{ background:"var(--rbg)", color:"var(--red)",
             padding:"12px 16px", marginBottom:14, fontSize:12,
             border:"1px solid var(--red)", display:"flex",
             justifyContent:"space-between", alignItems:"center", gap:10 }}>
-            <span>⚠️ {speicherFehler}</span>
+            <span>{speicherFehler}</span>
             <button onClick={() => setSpeicherFehler("")}
               style={{ background:"none", border:"none", color:"var(--red)",
                 cursor:"pointer", fontSize:15, fontFamily:"inherit", flexShrink:0 }}>✕</button>
@@ -891,32 +906,35 @@ export default function PolierApp() {
 
       {/* ── BOTTOM NAV ── */}
       <div style={{ position:"fixed", bottom:0, left:0, right:0,
-        background:"var(--surface)", borderTop:"2px solid var(--border)",
-        display:"flex", zIndex:50,
-        boxShadow:"0 -2px 12px rgba(0,0,0,0.10)",
-        paddingBottom:"env(safe-area-inset-bottom)" }}>
-        {hauptTabs.map(t => (
-          <button key={t.id} onClick={() => { setTab(t.id); setZeigeMehr(false); }}
-            style={{ flex:1, padding:"10px 0 12px", background:"none",
-              border:"none", cursor:"pointer", fontFamily:"inherit",
-              borderTop:`3px solid ${tab===t.id ? projekt.farbe : "transparent"}`,
-              transition:"border-color 0.15s" }}>
-            <div style={{ fontSize:20 }}>{t.icon}</div>
-            <div style={{ color: tab===t.id ? projekt.farbe : "var(--muted)",
-              fontSize:9, marginTop:2,
-              fontWeight: tab===t.id ? 800 : 500 }}>{t.label}</div>
-          </button>
-        ))}
+        background:"var(--surface)", borderTop:"1px solid var(--border)",
+        display:"flex", zIndex:50, padding:"8px 6px",
+        paddingBottom:"calc(8px + env(safe-area-inset-bottom))" }}>
+        {hauptTabs.map(t => {
+          const Icon = HAUPT_TAB_ICONS[t.id];
+          const aktiv = tab===t.id;
+          return (
+            <button key={t.id} onClick={() => { setTab(t.id); setZeigeMehr(false); }}
+              style={{ flex:1, minWidth:0, display:"flex", flexDirection:"column", alignItems:"center",
+                gap:4, background:"none", border:"none", cursor:"pointer", fontFamily:"inherit",
+                color: aktiv ? "var(--ink)" : "var(--muted)" }}>
+              <div style={{ background: aktiv ? "var(--yellow)" : "transparent",
+                padding:"7px 12px", display:"flex" }}>
+                {Icon ? <Icon size={20} /> : <span style={{ fontSize:20 }}>{t.icon}</span>}
+              </div>
+              <div style={{ fontSize:10, fontWeight: aktiv ? 700 : 600 }}>{t.label}</div>
+            </button>
+          );
+        })}
         {mehrTabs.length > 0 && (
           <button onClick={() => setZeigeMehr(m => !m)}
-            style={{ flex:1, padding:"10px 0 12px", background:"none",
-              border:"none", cursor:"pointer", fontFamily:"inherit",
-              borderTop:`3px solid ${(aktivInMehr || zeigeMehr) ? projekt.farbe : "transparent"}`,
-              transition:"border-color 0.15s" }}>
-            <div style={{ fontSize:20 }}>⋯</div>
-            <div style={{ color: (aktivInMehr || zeigeMehr) ? projekt.farbe : "var(--muted)",
-              fontSize:9, marginTop:2,
-              fontWeight: (aktivInMehr || zeigeMehr) ? 800 : 500 }}>Mehr</div>
+            style={{ flex:1, minWidth:0, display:"flex", flexDirection:"column", alignItems:"center",
+              gap:4, background:"none", border:"none", cursor:"pointer", fontFamily:"inherit",
+              color: (aktivInMehr || zeigeMehr) ? "var(--ink)" : "var(--muted)" }}>
+            <div style={{ background: (aktivInMehr || zeigeMehr) ? "var(--yellow)" : "transparent",
+              padding:"7px 12px", display:"flex" }}>
+              <Ellipsis size={20} />
+            </div>
+            <div style={{ fontSize:10, fontWeight: (aktivInMehr || zeigeMehr) ? 700 : 600 }}>Mehr</div>
           </button>
         )}
       </div>
@@ -924,23 +942,26 @@ export default function PolierApp() {
       {/* ── MEHR-MENÜ (Bottom Sheet) ── */}
       {zeigeMehr && (
         <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
-          background:"rgba(0,0,0,0.4)", zIndex:60 }}
+          background:"rgba(11,17,32,0.55)", zIndex:60 }}
           onClick={() => setZeigeMehr(false)}>
           <div onClick={e => e.stopPropagation()}
             style={{ position:"absolute", bottom:0, left:0, right:0,
-              background:"var(--surface)", borderRadius:"20px 20px 0 0",
-              padding:"20px 16px", paddingBottom:"calc(20px + env(safe-area-inset-bottom))",
-              boxShadow:"0 -4px 20px rgba(0,0,0,0.2)" }}>
-            <div style={{ width:36, height:4, background:"var(--border)",
-              borderRadius:2, margin:"0 auto 18px" }} />
-            <div style={{ color:"var(--text)", fontWeight:700, fontSize:15,
-              marginBottom:14 }}>Weitere Funktionen</div>
+              background:"var(--surface)",
+              padding:"20px 16px", paddingBottom:"calc(20px + env(safe-area-inset-bottom))" }}>
+            <div style={{ width:40, height:4, background:"rgba(0,0,0,.15)",
+              margin:"0 auto 18px" }} />
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
+              <div style={{ color:"var(--text)", fontWeight:800, fontSize:15 }}>Weitere Funktionen</div>
+              <button onClick={() => setZeigeMehr(false)}
+                style={{ width:30, height:30, background:"var(--surface2)", border:"none",
+                  color:"var(--text2)", cursor:"pointer" }}>✕</button>
+            </div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10 }}>
               {mehrTabs.map(t => (
                 <button key={t.id} onClick={() => { setTab(t.id); setZeigeMehr(false); }}
                   style={{ background: tab===t.id ? "var(--ybg)" : "var(--surface2)",
-                    border:`1.5px solid ${tab===t.id ? "var(--yellow)" : "var(--border)"}`,
-                    borderRadius:14, padding:"14px 8px", cursor:"pointer",
+                    border:`1px solid ${tab===t.id ? "var(--yellow)" : "var(--border)"}`,
+                    padding:"14px 8px", cursor:"pointer",
                     display:"flex", flexDirection:"column", alignItems:"center",
                     gap:6, fontFamily:"inherit" }}>
                   <span style={{ fontSize:22 }}>{t.icon}</span>
