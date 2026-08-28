@@ -65,4 +65,13 @@ body {
 input, textarea, select, button {
   font-family: var(--font-ui);
 }
+/* Wenn iOS/WebKit beim Fokussieren eines Formularfelds die Tastatur öffnet,
+   scrollt es das Feld selbst in den scrollbaren Container hinein — dabei
+   berücksichtigt es keine sticky-positionierten Header darüber und scrollt
+   oft weiter als nötig. scroll-margin-top lässt genug Platz für einen
+   solchen Header, damit Formulare (z.B. AufgabenFormular) nach dem Tippen
+   nicht so weit hochgescrollt bleiben, dass Inhalte oberhalb verdeckt sind. */
+input, textarea, select {
+  scroll-margin-top: calc(70px + env(safe-area-inset-top));
+}
 .num { font-variant-numeric: tabular-nums; }
