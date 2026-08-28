@@ -16,6 +16,15 @@ if ("serviceWorker" in navigator) {
           }
         });
       });
+
+      // Browser prüfen laut Spezifikation nur bei einer Navigation auf eine
+      // neue sw.js — eine als PWA im Hintergrund liegende, nicht komplett
+      // beendete App navigiert aber unter Umständen tagelang nicht neu und
+      // verpasst so jedes Update. Beim Zurückkehren in den Vordergrund
+      // deshalb aktiv nachfragen, ob eine neue Version vorliegt.
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") reg.update();
+      });
     } catch (err) {
       console.warn("[PWA] Service Worker Fehler:", err);
     }
