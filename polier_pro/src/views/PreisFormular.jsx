@@ -14,7 +14,9 @@ export function PreisFormular({ initial, onSave, onClose }) {
     && Number.isFinite(p.preis) && p.preis >= 0;
   return (
     <div>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+        marginBottom:12, paddingTop:"calc(6px + env(safe-area-inset-top))",
+        position:"sticky", top:0, background:"var(--surface)", zIndex:5 }}>
         <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:16,
           display:"flex", alignItems:"center", gap:7 }}>
           {initial?.id ? <><Pencil size={15} /> Preis bearbeiten</> : <><Plus size={15} /> Neuer Einheitspreis</>}
