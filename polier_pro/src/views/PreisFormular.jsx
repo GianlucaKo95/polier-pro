@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Pencil, Plus } from "lucide-react";
 import { Label, inputStyle } from "../components/Label.jsx";
 
 function parsePreis(wert) {
@@ -14,8 +15,9 @@ export function PreisFormular({ initial, onSave, onClose }) {
   return (
     <div>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
-        <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:16 }}>
-          {initial?.id ? "✏️ Preis bearbeiten" : "➕ Neuer Einheitspreis"}
+        <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:16,
+          display:"flex", alignItems:"center", gap:7 }}>
+          {initial?.id ? <><Pencil size={15} /> Preis bearbeiten</> : <><Plus size={15} /> Neuer Einheitspreis</>}
         </div>
         <button onClick={onClose} style={{ background:"none", border:"none",
           color:"var(--muted)", fontSize:24, cursor:"pointer" }}>✕</button>
@@ -50,7 +52,7 @@ export function PreisFormular({ initial, onSave, onClose }) {
           style={{ flex:2, background: gueltig ? "var(--yellow)" : "var(--surface2)",
             color: gueltig ? "#1a1200" : "var(--muted)",
             border:"none", borderRadius:12, padding:13, fontWeight:800,
-            cursor: gueltig ? "pointer" : "default", fontFamily:"inherit" }}>💾 Speichern</button>
+            cursor: gueltig ? "pointer" : "default", fontFamily:"inherit" }}>Speichern</button>
       </div>
     </div>
   );

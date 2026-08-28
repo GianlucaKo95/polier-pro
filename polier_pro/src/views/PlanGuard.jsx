@@ -1,3 +1,5 @@
+import { Lock, Zap } from "lucide-react";
+
 export function PlanGuard({ firma, children, ressource }) {
   if (!firma) return children;
 
@@ -11,9 +13,8 @@ export function PlanGuard({ firma, children, ressource }) {
   return (
     <div style={{ background:"var(--bg)", minHeight:"100dvh",
       display:"flex", flexDirection:"column", alignItems:"center",
-      justifyContent:"center", padding:24,
-      fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
-      <div style={{ fontSize:48, marginBottom:16 }}>🔒</div>
+      justifyContent:"center", padding:24 }}>
+      <div style={{ display:"flex", justifyContent:"center", marginBottom:16, color:"var(--muted)" }}><Lock size={40} /></div>
       <div style={{ fontWeight:800, fontSize:22, color:"var(--text)",
         marginBottom:8, textAlign:"center" }}>
         {trial_abgelaufen ? "Testphase abgelaufen" : "Abo inaktiv"}
@@ -48,8 +49,9 @@ export function PlanGuard({ firma, children, ressource }) {
                 background: p.key === "pro" ? "var(--yellow)" : "var(--surface2)",
                 color: p.key === "pro" ? "#1a1200" : "var(--text)",
                 border:"none", borderRadius:10, padding:12, fontWeight:700,
-                cursor:"pointer", fontFamily:"inherit" }}>
-              {p.key === "pro" ? "⚡ Pro wählen" : "Starter wählen"}
+                cursor:"pointer", fontFamily:"inherit",
+                display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+              {p.key === "pro" ? <><Zap size={14} /> Pro wählen</> : "Starter wählen"}
             </button>
           </div>
         ))}

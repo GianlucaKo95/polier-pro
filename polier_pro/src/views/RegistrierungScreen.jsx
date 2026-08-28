@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CircleX, ArrowRight, PartyPopper, Rocket, Check } from "lucide-react";
 import { supabase, sbClientMitToken } from "../lib/supabase.js";
 import { Label, inputStyle } from "../components/Label.jsx";
 import { PLAN_CONFIG } from "../config/konstanten.js";
@@ -58,8 +59,7 @@ export function RegistrierungScreen({ auth, onZurueck }) {
   return (
     <div style={{ background:"var(--bg)", minHeight:"100dvh",
       display:"flex", flexDirection:"column", alignItems:"center",
-      justifyContent:"center", padding:"24px 20px",
-      fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
+      justifyContent:"center", padding:"24px 20px" }}>
 
       {/* Logo */}
       <div style={{ textAlign:"center", marginBottom:32 }}>
@@ -84,7 +84,7 @@ export function RegistrierungScreen({ auth, onZurueck }) {
               display:"flex", alignItems:"center", justifyContent:"center",
               fontSize:12, fontWeight:700,
               color: i < schritt ? "#fff" : i === schritt ? "#1a1200" : "var(--muted)" }}>
-              {i < schritt ? "✓" : i + 1}
+              {i < schritt ? <Check size={14} /> : i + 1}
             </div>
             <span style={{ fontSize:12, color: i === schritt ? "var(--text)" : "var(--muted)",
               fontWeight: i === schritt ? 700 : 400 }}>{s}</span>
@@ -99,8 +99,9 @@ export function RegistrierungScreen({ auth, onZurueck }) {
         {fehler && (
           <div style={{ background:"var(--rbg)", color:"var(--red)",
             borderRadius:10, padding:"10px 14px", marginBottom:16,
-            fontSize:13, border:"1px solid var(--red)" }}>
-            ❌ {fehler}
+            fontSize:13, border:"1px solid var(--red)",
+            display:"flex", alignItems:"center", gap:6 }}>
+            <CircleX size={14} /> {fehler}
           </div>
         )}
 
@@ -129,8 +130,9 @@ export function RegistrierungScreen({ auth, onZurueck }) {
             <button onClick={kontoAnlegen} disabled={laden}
               style={{ width:"100%", background:"var(--yellow)", color:"#1a1200",
                 border:"none", borderRadius:12, padding:15, fontWeight:800,
-                fontSize:15, cursor:"pointer", fontFamily:"inherit" }}>
-              {laden ? "⏳ Wird angelegt…" : "Konto erstellen →"}
+                fontSize:15, cursor:"pointer", fontFamily:"inherit",
+                display:"flex", alignItems:"center", justifyContent:"center", gap:7 }}>
+              {laden ? "Wird angelegt…" : <>Konto erstellen <ArrowRight size={15} /></>}
             </button>
             <div style={{ textAlign:"center", marginTop:16 }}>
               <span style={{ color:"var(--muted)", fontSize:13 }}>
@@ -194,8 +196,9 @@ export function RegistrierungScreen({ auth, onZurueck }) {
                 color: firmaName.trim() ? "#1a1200" : "var(--muted)",
                 border:"none", borderRadius:12, padding:15, fontWeight:800,
                 fontSize:15, cursor: firmaName.trim() ? "pointer" : "default",
-                fontFamily:"inherit" }}>
-              {laden ? "⏳ Wird eingerichtet…" : "Polaris einrichten 🚀"}
+                fontFamily:"inherit",
+                display:"flex", alignItems:"center", justifyContent:"center", gap:7 }}>
+              {laden ? "Wird eingerichtet…" : <>Polaris einrichten <Rocket size={15} /></>}
             </button>
           </div>
         )}
@@ -203,7 +206,7 @@ export function RegistrierungScreen({ auth, onZurueck }) {
         {/* Schritt 2: Fertig */}
         {schritt === 2 && (
           <div style={{ textAlign:"center" }}>
-            <div style={{ fontSize:56, marginBottom:12 }}>🎉</div>
+            <div style={{ display:"flex", justifyContent:"center", marginBottom:12, color:"var(--green)" }}><PartyPopper size={48} /></div>
             <div style={{ fontWeight:800, fontSize:20, color:"var(--green)",
               marginBottom:8 }}>Willkommen bei Polaris!</div>
             <div style={{ color:"var(--text2)", fontSize:14, lineHeight:1.6,
@@ -214,8 +217,9 @@ export function RegistrierungScreen({ auth, onZurueck }) {
             <button onClick={() => window.location.reload()}
               style={{ width:"100%", background:"var(--yellow)", color:"#1a1200",
                 border:"none", borderRadius:12, padding:15, fontWeight:800,
-                fontSize:15, cursor:"pointer", fontFamily:"inherit" }}>
-              Los geht's →
+                fontSize:15, cursor:"pointer", fontFamily:"inherit",
+                display:"flex", alignItems:"center", justifyContent:"center", gap:7 }}>
+              Los geht's <ArrowRight size={15} />
             </button>
           </div>
         )}

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { Calendar, TriangleAlert } from "lucide-react";
 import { daysBetween } from "../lib/utils.js";
 import { STATUS_LABEL, STATUS_COLOR } from "../config/konstanten.js";
 
@@ -30,7 +31,8 @@ export function GanttView({ felder }) {
 
   return (
     <div>
-      <div style={{ color: "var(--text)", fontWeight:700, marginBottom:12 }}>📅 Betonfeld-Terminplan</div>
+      <div style={{ color: "var(--text)", fontWeight:700, marginBottom:12,
+        display:"flex", alignItems:"center", gap:7 }}><Calendar size={16} /> Betonfeld-Terminplan</div>
 
       {/* Legend */}
       <div style={{ display:"flex", gap:12, marginBottom:12, flexWrap:"wrap" }}>
@@ -98,9 +100,10 @@ export function GanttView({ felder }) {
                       overflow:"hidden",
                       boxShadow: isLate ? `0 0 0 2px ${'var(--red)'}` : "none",
                     }}>
-                      <span style={{ color:"#fff", fontSize:10, fontWeight:700, whiteSpace:"nowrap" }}>
+                      <span style={{ color:"#fff", fontSize:10, fontWeight:700, whiteSpace:"nowrap",
+                        display:"flex", alignItems:"center", gap:3 }}>
                         {f.status === "in_progress" ? "▶ " : ""}{f.name.split("–")[1]?.trim() || f.name}
-                        {isLate ? " ⚠️" : ""}
+                        {isLate ? <TriangleAlert size={10} /> : null}
                       </span>
                     </div>
 
@@ -128,7 +131,8 @@ export function GanttView({ felder }) {
       {/* Verzögerungen */}
       {felder.filter(f => f.status !== "done" && new Date(f.geplant) < heute).length > 0 && (
         <div style={{ background:"#2E1A1A", borderRadius:10, padding:14, marginTop:12 }}>
-          <div style={{ color: "var(--red)", fontWeight:700, marginBottom:8 }}>⚠️ Verzögerungen</div>
+          <div style={{ color: "var(--red)", fontWeight:700, marginBottom:8,
+            display:"flex", alignItems:"center", gap:6 }}><TriangleAlert size={14} /> Verzögerungen</div>
           {felder.filter(f => f.status !== "done" && new Date(f.geplant) < heute).map(f => (
             <div key={f.id} style={{ color:"#FF9999", fontSize:13, marginBottom:4 }}>
               {f.name} – {daysBetween(f.geplant, heute.toISOString().slice(0,10))} Tage Verzug

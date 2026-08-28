@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Eye, EyeOff, CircleX, ArrowRight } from "lucide-react";
 
 export function PasswortSetzenScreen({ auth, type }) {
   const [password,  setPassword]  = useState("");
@@ -11,7 +12,7 @@ export function PasswortSetzenScreen({ auth, type }) {
   return (
     <div style={{ background:"var(--bg)", minHeight:"100dvh", display:"flex",
       flexDirection:"column", alignItems:"center", justifyContent:"center",
-      padding:"24px 20px", fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
+      padding:"24px 20px" }}>
       <div style={{ textAlign:"center", marginBottom:32 }}>
         <div style={{ fontWeight:900, fontSize:28, letterSpacing:-1.5, color:"var(--text)" }}>
           <span style={{ color:"var(--yellow)" }}>★</span> POLARIS
@@ -29,7 +30,8 @@ export function PasswortSetzenScreen({ auth, type }) {
         {auth.fehler && (
           <div style={{ background:"var(--rbg)", color:"var(--red)", borderRadius:10,
             padding:"10px 14px", marginBottom:16, fontSize:13,
-            border:"1px solid var(--red)" }}>❌ {auth.fehler}</div>
+            border:"1px solid var(--red)",
+            display:"flex", alignItems:"center", gap:6 }}><CircleX size={14} /> {auth.fehler}</div>
         )}
 
         <div style={{ marginBottom:14 }}>
@@ -45,8 +47,8 @@ export function PasswortSetzenScreen({ auth, type }) {
             <button onClick={() => setShowPw(p=>!p)}
               style={{ position:"absolute", right:12, top:"50%",
                 transform:"translateY(-50%)", background:"none", border:"none",
-                cursor:"pointer", fontSize:16, color:"var(--muted)" }}>
-              {showPw ? "🙈" : "👁️"}
+                cursor:"pointer", color:"var(--muted)", display:"flex" }}>
+              {showPw ? <EyeOff size={17} /> : <Eye size={17} />}
             </button>
           </div>
         </div>
@@ -72,8 +74,9 @@ export function PasswortSetzenScreen({ auth, type }) {
           style={{ width:"100%", background: valid ? "var(--yellow)" : "var(--surface2)",
             color: valid ? "#1a1200" : "var(--muted)", border:"none",
             borderRadius:12, padding:15, fontWeight:800, fontSize:15,
-            cursor: valid ? "pointer" : "default", fontFamily:"inherit" }}>
-          {auth.loading ? "⏳ Wird gesetzt…" : "Passwort setzen & einloggen →"}
+            cursor: valid ? "pointer" : "default", fontFamily:"inherit",
+            display:"flex", alignItems:"center", justifyContent:"center", gap:7 }}>
+          {auth.loading ? "Wird gesetzt…" : <>Passwort setzen & einloggen <ArrowRight size={15} /></>}
         </button>
       </div>
     </div>

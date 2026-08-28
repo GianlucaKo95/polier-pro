@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { Star, Building2, Wrench, HardHat, PartyPopper, ClipboardList, CloudSun, FileText, Info, Check, ArrowLeft, ArrowRight, Rocket } from "lucide-react";
 import { ONBOARDING_KEY, ALLE_GEWERKE } from "../config/konstanten.js";
 import { Label, inputStyle } from "../components/Label.jsx";
 
@@ -12,11 +13,11 @@ export function OnboardingFlow({ onComplete }) {
   const logoRef = useRef(null);
 
   const SCHRITTE = [
-    { label:"Willkommen", icon:"★" },
-    { label:"Firma",      icon:"🏢" },
-    { label:"Gewerke",    icon:"🔧" },
-    { label:"Team",       icon:"👷" },
-    { label:"Fertig",     icon:"🎉" },
+    { label:"Willkommen", icon:Star },
+    { label:"Firma",      icon:Building2 },
+    { label:"Gewerke",    icon:Wrench },
+    { label:"Team",       icon:HardHat },
+    { label:"Fertig",     icon:PartyPopper },
   ];
 
   function handleLogoWahl(e) {
@@ -53,7 +54,6 @@ export function OnboardingFlow({ onComplete }) {
 
   return (
     <div style={{ background:"var(--bg)", minHeight:"100dvh",
-      fontFamily:"'Segoe UI', system-ui, sans-serif",
       display:"flex", flexDirection:"column" }}>
 
       {/* Header */}
@@ -100,7 +100,7 @@ export function OnboardingFlow({ onComplete }) {
                 fontSize:12, fontWeight:700,
                 color: i <= schritt ? (i < schritt ? "#fff" : "#1a1200") : "var(--muted)",
                 transition:"all 0.3s" }}>
-                {i < schritt ? "✓" : s.icon}
+                {i < schritt ? <Check size={13} /> : <s.icon size={13} />}
               </div>
               <div style={{ fontSize:9, fontWeight: i === schritt ? 700 : 400,
                 color: i === schritt ? "var(--text)" : "var(--muted)" }}>
@@ -134,17 +134,17 @@ export function OnboardingFlow({ onComplete }) {
             <div style={{ display:"flex", flexDirection:"column", gap:10,
               maxWidth:320, margin:"0 auto" }}>
               {[
-                ["🏗️", "Betonfelder & Rasterplanung"],
-                ["👷", "Kolonnen & GPS-Zeiterfassung"],
-                ["📋", "Bautagebuch mit Fotos & KI"],
-                ["🌤️", "Wetterbasierter Betoncheck"],
-                ["📄", "PDF-Export VOB-konform"],
-              ].map(([icon, text]) => (
+                [Building2, "Betonfelder & Rasterplanung"],
+                [HardHat, "Kolonnen & GPS-Zeiterfassung"],
+                [ClipboardList, "Bautagebuch mit Fotos & KI"],
+                [CloudSun, "Wetterbasierter Betoncheck"],
+                [FileText, "PDF-Export VOB-konform"],
+              ].map(([Icon, text]) => (
                 <div key={text} style={{ display:"flex", alignItems:"center",
                   gap:14, background:"var(--surface)", borderRadius:14,
                   padding:"14px 18px", border:"1.5px solid var(--border)",
                   textAlign:"left" }}>
-                  <span style={{ fontSize:24, flexShrink:0 }}>{icon}</span>
+                  <span style={{ flexShrink:0, color:"var(--yellow)", display:"flex" }}><Icon size={22} /></span>
                   <span style={{ color:"var(--text2)", fontSize:14,
                     fontWeight:500 }}>{text}</span>
                 </div>
@@ -157,7 +157,7 @@ export function OnboardingFlow({ onComplete }) {
         {schritt === 1 && (
           <div>
             <div style={{ fontWeight:800, fontSize:22, color:"var(--text)",
-              marginBottom:4 }}>🏢 Dein Unternehmen</div>
+              marginBottom:4, display:"flex", alignItems:"center", gap:9 }}><Building2 size={20} /> Dein Unternehmen</div>
             <div style={{ color:"var(--muted)", fontSize:13, marginBottom:24,
               lineHeight:1.5 }}>
               Diese Daten erscheinen auf PDFs und im Bautagebuch.
@@ -177,7 +177,7 @@ export function OnboardingFlow({ onComplete }) {
                 {firma.logo
                   ? <img src={firma.logo} alt="Logo"
                       style={{ width:"100%", height:"100%", objectFit:"cover" }} />
-                  : <span style={{ fontSize:36 }}>🏢</span>}
+                  : <Building2 size={32} style={{ color:"var(--ydark)" }} />}
               </div>
               <div style={{ color:"var(--muted)", fontSize:11, fontWeight:600 }}>
                 Logo tippen zum Hochladen
@@ -208,7 +208,7 @@ export function OnboardingFlow({ onComplete }) {
         {schritt === 2 && (
           <div>
             <div style={{ fontWeight:800, fontSize:22, color:"var(--text)",
-              marginBottom:4 }}>🔧 Eure Gewerke</div>
+              marginBottom:4, display:"flex", alignItems:"center", gap:9 }}><Wrench size={20} /> Eure Gewerke</div>
             <div style={{ color:"var(--muted)", fontSize:13, marginBottom:20,
               lineHeight:1.5 }}>
               Welche Gewerke führt dein Unternehmen aus?
@@ -234,8 +234,8 @@ export function OnboardingFlow({ onComplete }) {
                       <div style={{ width:20, height:20, borderRadius:10,
                         background:"var(--yellow)", display:"flex",
                         alignItems:"center", justifyContent:"center",
-                        fontSize:11, fontWeight:800, color:"#1a1200",
-                        flexShrink:0 }}>✓</div>
+                        color:"#1a1200",
+                        flexShrink:0 }}><Check size={12} /></div>
                     )}
                   </div>
                 );
@@ -252,7 +252,7 @@ export function OnboardingFlow({ onComplete }) {
         {schritt === 3 && (
           <div>
             <div style={{ fontWeight:800, fontSize:22, color:"var(--text)",
-              marginBottom:4 }}>👷 Erster Polier</div>
+              marginBottom:4, display:"flex", alignItems:"center", gap:9 }}><HardHat size={20} /> Erster Polier</div>
             <div style={{ color:"var(--muted)", fontSize:13, marginBottom:24,
               lineHeight:1.5 }}>
               Wer nutzt die App als erstes? Weitere Nutzer kannst du
@@ -277,7 +277,7 @@ export function OnboardingFlow({ onComplete }) {
             <div style={{ background:"var(--bbg)", borderRadius:12,
               padding:"12px 16px", display:"flex", gap:12, alignItems:"flex-start",
               border:"1px solid var(--blue)" }}>
-              <span style={{ fontSize:18, flexShrink:0 }}>ℹ️</span>
+              <span style={{ flexShrink:0, color:"var(--blue)", display:"flex" }}><Info size={17} /></span>
               <span style={{ color:"var(--blue)", fontSize:12, lineHeight:1.5 }}>
                 Dieser Schritt ist optional. Du kannst Nutzer auch direkt
                 über Supabase Auth anlegen und die Rolle in der App zuweisen.
@@ -289,7 +289,7 @@ export function OnboardingFlow({ onComplete }) {
         {/* ── Schritt 4: Fertig ── */}
         {schritt === 4 && (
           <div style={{ textAlign:"center", paddingTop:24 }}>
-            <div style={{ fontSize:72, marginBottom:16, lineHeight:1 }}>🎉</div>
+            <div style={{ display:"flex", justifyContent:"center", marginBottom:16, color:"var(--yellow)" }}><PartyPopper size={60} /></div>
             <div style={{ fontWeight:900, fontSize:28, color:"var(--green)",
               marginBottom:8 }}>Alles bereit!</div>
             <div style={{ color:"var(--text2)", fontSize:14, lineHeight:1.7,
@@ -315,7 +315,7 @@ export function OnboardingFlow({ onComplete }) {
                   : <div style={{ width:48, height:48, borderRadius:24,
                       background:"var(--ybg)", border:"2px solid var(--yellow)",
                       display:"flex", alignItems:"center",
-                      justifyContent:"center", fontSize:22, flexShrink:0 }}>🏢</div>}
+                      justifyContent:"center", flexShrink:0 }}><Building2 size={20} style={{ color:"var(--ydark)" }} /></div>}
                 <div>
                   <div style={{ color:"var(--text)", fontWeight:800,
                     fontSize:15 }}>{firma.name || "—"}</div>
@@ -342,8 +342,9 @@ export function OnboardingFlow({ onComplete }) {
               {ersterPolier.name && (
                 <div style={{ marginTop:12, padding:"10px 14px",
                   background:"var(--surface2)", borderRadius:10,
-                  color:"var(--text2)", fontSize:12 }}>
-                  👷 {ersterPolier.name}
+                  color:"var(--text2)", fontSize:12,
+                  display:"flex", alignItems:"center", gap:5 }}>
+                  <HardHat size={12} /> {ersterPolier.name}
                   {ersterPolier.telefon && ` · ${ersterPolier.telefon}`}
                 </div>
               )}
@@ -365,8 +366,9 @@ export function OnboardingFlow({ onComplete }) {
               color:"var(--text2)",
               border:"1.5px solid var(--border)", borderRadius:12,
               padding:14, cursor:"pointer", fontSize:14,
-              fontWeight:600, fontFamily:"inherit" }}>
-            ← Zurück
+              fontWeight:600, fontFamily:"inherit",
+              display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+            <ArrowLeft size={14} /> Zurück
           </button>
         )}
         {schritt === 3 && (
@@ -387,15 +389,17 @@ export function OnboardingFlow({ onComplete }) {
               border:"none", borderRadius:12, padding:16,
               fontWeight:800, cursor: weiterOk ? "pointer" : "default",
               fontSize:16, fontFamily:"inherit",
-              transition:"all 0.2s" }}>
-            {schritt === 0 ? "Los geht's →" : "Weiter →"}
+              transition:"all 0.2s",
+              display:"flex", alignItems:"center", justifyContent:"center", gap:7 }}>
+            {schritt === 0 ? "Los geht's" : "Weiter"} <ArrowRight size={16} />
           </button>
         ) : (
           <button onClick={abschliessen}
             style={{ flex:1, background:"var(--green)", color:"#fff",
               border:"none", borderRadius:12, padding:16, fontWeight:800,
-              cursor:"pointer", fontSize:16, fontFamily:"inherit" }}>
-            🚀 Erste Baustelle anlegen
+              cursor:"pointer", fontSize:16, fontFamily:"inherit",
+              display:"flex", alignItems:"center", justifyContent:"center", gap:7 }}>
+            <Rocket size={16} /> Erste Baustelle anlegen
           </button>
         )}
       </div>

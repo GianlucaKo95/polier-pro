@@ -1,3 +1,4 @@
+import { FileText } from "lucide-react";
 import { druckePDF, buildBerichtHTML, buildBetonprotokollHTML } from "../lib/pdf.jsx";
 
 export function PDFExportButton({ bericht, feld, projekt, eigeneFirma, wetter, kolonnen, typ = "bericht" }) {
@@ -14,7 +15,7 @@ export function PDFExportButton({ bericht, feld, projekt, eigeneFirma, wetter, k
       style={{ background: "var(--red)", color:"#fff", border:"none", borderRadius:8,
         padding:"6px 14px", fontWeight:700, cursor:"pointer", fontSize:13,
         display:"flex", alignItems:"center", gap:6 }}>
-      📄 PDF
+      <FileText size={14} /> PDF
     </button>
   );
 }

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Bell, LogOut, Plus, MapPin, Hash, TriangleAlert, LayoutGrid,
   CircleCheckBig, NotebookPen, Users, Clock, Ellipsis, ChevronRight,
-  Building2 } from "lucide-react";
+  Building2, Calendar, Euro, CloudSun, ChartColumn, FileText, Settings,
+  UserCog, RefreshCw } from "lucide-react";
 import { useTheme } from "./hooks/useTheme.js";
 import { useAuth } from "./hooks/useAuth.js";
 import { DEFAULT_EINHEITSPREISE, DEFAULT_LV_VORLAGEN, ONBOARDING_KEY, ROLLEN, PROJEKTTYPEN } from "./config/konstanten.js";
@@ -55,9 +56,8 @@ export class ErrorBoundary extends React.Component {
     return (
       <div style={{ background:"var(--bg, #0B1120)", minHeight:"100dvh",
         display:"flex", flexDirection:"column", alignItems:"center",
-        justifyContent:"center", padding:24, textAlign:"center",
-        fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
-        <div style={{ fontSize:48, marginBottom:16 }}>⚠️</div>
+        justifyContent:"center", padding:24, textAlign:"center" }}>
+        <div style={{ display:"flex", justifyContent:"center", marginBottom:16, color:"#F5C400" }}><TriangleAlert size={40} /></div>
         <div style={{ color:"#fff", fontWeight:800, fontSize:18,
           marginBottom:8 }}>
           Etwas ist schiefgelaufen
@@ -70,8 +70,9 @@ export class ErrorBoundary extends React.Component {
         <button onClick={() => window.location.reload()}
           style={{ background:"#F5C400", color:"#1a1200", border:"none",
             borderRadius:12, padding:"14px 28px", fontWeight:800,
-            fontSize:15, cursor:"pointer", fontFamily:"inherit" }}>
-          🔄 Seite neu laden
+            fontSize:15, cursor:"pointer", fontFamily:"inherit",
+            display:"flex", alignItems:"center", gap:8 }}>
+          <RefreshCw size={15} /> Seite neu laden
         </button>
         {this.state.fehler?.message && (
           <div style={{ color:"#5A6B8C", fontSize:11, marginTop:20,
@@ -317,8 +318,7 @@ export default function PolierApp() {
   // ── Facharbeiter → nur Stempeluhr ──
   if (aktiveRolle === "facharbeiter") {
     return (
-      <div style={{ background:"var(--bg)", minHeight:"100dvh",
-        fontFamily:"'Segoe UI', system-ui, sans-serif", color:"var(--text)" }}>
+      <div style={{ background:"var(--bg)", minHeight:"100dvh", color:"var(--text)" }}>
         <div style={{ background:"var(--surface)", padding:"14px 18px",
           borderBottom:"3px solid var(--yellow)", display:"flex",
           justifyContent:"space-between", alignItems:"center",
@@ -811,7 +811,9 @@ export default function PolierApp() {
     .sort((a,b) => HAUPT_TAB_IDS.indexOf(a.id) - HAUPT_TAB_IDS.indexOf(b.id));
   const mehrTabs  = TABS.filter(t => !HAUPT_TAB_IDS.includes(t.id));
   const aktivInMehr = mehrTabs.some(t => t.id === tab);
-  const HAUPT_TAB_ICONS = { dashboard:LayoutGrid, aufgaben:CircleCheckBig, tagebuch:NotebookPen, kolonnen:Users, stempeln:Clock };
+  const TAB_ICONS = { dashboard:LayoutGrid, aufgaben:CircleCheckBig, tagebuch:NotebookPen,
+    kolonnen:Users, stempeln:Clock, gantt:Calendar, kosten:Euro, wetter:CloudSun,
+    stunden:ChartColumn, angebot:FileText, admin_params:Settings, nutzer:UserCog };
 
   return (
     <div style={{ background:"var(--bg)", minHeight:"100dvh", color:"var(--text)" }}>
@@ -910,7 +912,7 @@ export default function PolierApp() {
         display:"flex", zIndex:50, padding:"8px 6px",
         paddingBottom:"calc(8px + env(safe-area-inset-bottom))" }}>
         {hauptTabs.map(t => {
-          const Icon = HAUPT_TAB_ICONS[t.id];
+          const Icon = TAB_ICONS[t.id];
           const aktiv = tab===t.id;
           return (
             <button key={t.id} onClick={() => { setTab(t.id); setZeigeMehr(false); }}
@@ -957,18 +959,23 @@ export default function PolierApp() {
                   color:"var(--text2)", cursor:"pointer" }}>✕</button>
             </div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10 }}>
-              {mehrTabs.map(t => (
+              {mehrTabs.map(t => {
+                const Icon = TAB_ICONS[t.id];
+                return (
                 <button key={t.id} onClick={() => { setTab(t.id); setZeigeMehr(false); }}
                   style={{ background: tab===t.id ? "var(--ybg)" : "var(--surface2)",
                     border:`1px solid ${tab===t.id ? "var(--yellow)" : "var(--border)"}`,
                     padding:"14px 8px", cursor:"pointer",
                     display:"flex", flexDirection:"column", alignItems:"center",
                     gap:6, fontFamily:"inherit" }}>
-                  <span style={{ fontSize:22 }}>{t.icon}</span>
+                  <span style={{ display:"flex", color: tab===t.id ? "var(--ydark)" : "var(--text2)" }}>
+                    {Icon ? <Icon size={20} /> : <span style={{ fontSize:22 }}>{t.icon}</span>}
+                  </span>
                   <span style={{ color: tab===t.id ? "var(--ydark)" : "var(--text2)",
                     fontSize:11, fontWeight:600, textAlign:"center" }}>{t.label}</span>
                 </button>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

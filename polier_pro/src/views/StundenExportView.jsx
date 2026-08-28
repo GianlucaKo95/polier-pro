@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ChartColumn, Search, Download } from "lucide-react";
 import { sbFetch } from "../lib/supabase.js";
 import { TAETIGKEITEN } from "../config/konstanten.js";
 import { Label, inputStyle } from "../components/Label.jsx";
@@ -71,8 +72,9 @@ export function StundenExportView({ profil, session, projekte, darfAlleSehen = f
 
   return (
     <div>
-      <div style={{ color:"var(--text)", fontWeight:800, fontSize:16, marginBottom:14 }}>
-        📊 Stunden-Export
+      <div style={{ color:"var(--text)", fontWeight:800, fontSize:16, marginBottom:14,
+        display:"flex", alignItems:"center", gap:8 }}>
+        <ChartColumn size={17} /> Stunden-Export
       </div>
 
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
@@ -92,8 +94,8 @@ export function StundenExportView({ profil, session, projekte, darfAlleSehen = f
         style={{ width:"100%", background:"var(--surface2)", color:"var(--text)",
           border:"1.5px solid var(--border)", borderRadius:12, padding:13,
           fontWeight:700, cursor:"pointer", fontSize:14, fontFamily:"inherit",
-          marginBottom:16 }}>
-        {laden ? "⏳ Lädt…" : "🔍 Zeitraum laden"}
+          marginBottom:16, display:"flex", alignItems:"center", justifyContent:"center", gap:7 }}>
+        {laden ? "Lädt…" : <><Search size={14} /> Zeitraum laden</>}
       </button>
 
       {geladen && (
@@ -120,8 +122,8 @@ export function StundenExportView({ profil, session, projekte, darfAlleSehen = f
               style={{ width:"100%", background:"var(--yellow)", color:"#1a1200",
                 border:"none", borderRadius:12, padding:14, fontWeight:800,
                 fontSize:15, cursor:"pointer", fontFamily:"inherit",
-                marginBottom:16 }}>
-              📥 Als CSV exportieren
+                marginBottom:16, display:"flex", alignItems:"center", justifyContent:"center", gap:7 }}>
+              <Download size={15} /> Als CSV exportieren
             </button>
           )}
 

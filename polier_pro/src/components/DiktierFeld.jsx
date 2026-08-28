@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Mic } from "lucide-react";
 import { Label } from "./Label.jsx";
 
 export function DiktierFeld({ label, value, rows = 3, onChange }) {
@@ -85,7 +86,7 @@ export function DiktierFeld({ label, value, rows = 3, onChange }) {
                   animation:"blink 1s infinite" }} />
                 Diktat stoppen
               </>
-            ) : "🎤 Diktieren"}
+            ) : <><Mic size={12} /> Diktieren</>}
           </button>
         )}
       </div>

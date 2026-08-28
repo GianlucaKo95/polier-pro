@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Wrench, MessageCircle } from "lucide-react";
 
 export function MitarbeiterZeilen({ ma, zeitdaten, vonDatum, bisDatum }) {
   const [open, setOpen] = useState(false);
@@ -69,10 +70,12 @@ export function MitarbeiterZeilen({ ma, zeitdaten, vonDatum, bisDatum }) {
                   {new Date(z.date).toLocaleDateString("de-DE", { weekday:"short", day:"2-digit", month:"2-digit" })}
                 </div>
                 {z.activity?.name && (
-                  <div style={{ color: "var(--muted)", fontSize:10 }}>🔧 {z.activity.name}</div>
+                  <div style={{ color: "var(--muted)", fontSize:10,
+                    display:"flex", alignItems:"center", gap:3 }}><Wrench size={10} /> {z.activity.name}</div>
                 )}
                 {z.note && (
-                  <div style={{ color: "var(--muted)", fontSize:10, fontStyle:"italic" }}>💬 {z.note}</div>
+                  <div style={{ color: "var(--muted)", fontSize:10, fontStyle:"italic",
+                    display:"flex", alignItems:"center", gap:3 }}><MessageCircle size={10} /> {z.note}</div>
                 )}
               </div>
               <div style={{ color: "var(--yellow)", fontWeight:700, fontSize:13 }}>

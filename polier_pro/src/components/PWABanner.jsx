@@ -1,3 +1,5 @@
+import { WifiOff, RefreshCw, Download } from "lucide-react";
+
 export function PWABanner({ pwa }) {
   if (!pwa.installierbar && !pwa.updateVerfügbar && !pwa.offline) return null;
   return (
@@ -9,7 +11,7 @@ export function PWABanner({ pwa }) {
         <div style={{ background:"#2E1A1A", borderRadius:12, padding:"10px 14px",
           display:"flex", alignItems:"center", gap:10,
           border:`1px solid ${'var(--red)'}`, boxShadow:"0 4px 20px rgba(0,0,0,0.5)" }}>
-          <span style={{ fontSize:18 }}>📵</span>
+          <span style={{ color:"var(--red)", display:"flex", flexShrink:0 }}><WifiOff size={18} /></span>
           <div style={{ flex:1 }}>
             <div style={{ color: "var(--red)", fontWeight:700, fontSize:13 }}>Offline</div>
             <div style={{ color: "var(--muted)", fontSize:11 }}>Änderungen werden gespeichert und synchronisiert sobald du wieder online bist.</div>
@@ -22,7 +24,7 @@ export function PWABanner({ pwa }) {
         <div style={{ background:"#1A2A1A", borderRadius:12, padding:"10px 14px",
           display:"flex", alignItems:"center", gap:10,
           border:`1px solid ${'var(--green)'}`, boxShadow:"0 4px 20px rgba(0,0,0,0.5)" }}>
-          <span style={{ fontSize:18 }}>🔄</span>
+          <span style={{ color:"var(--green)", display:"flex", flexShrink:0 }}><RefreshCw size={18} /></span>
           <div style={{ flex:1 }}>
             <div style={{ color: "var(--green)", fontWeight:700, fontSize:13 }}>Update verfügbar</div>
             <div style={{ color: "var(--muted)", fontSize:11 }}>Neue Version von Polaris bereit.</div>
@@ -40,7 +42,7 @@ export function PWABanner({ pwa }) {
         <div style={{ background: "var(--surface)", borderRadius:12, padding:"12px 14px",
           display:"flex", alignItems:"center", gap:10,
           border:`1px solid ${'var(--yellow)'}`, boxShadow:"0 4px 20px rgba(0,0,0,0.5)" }}>
-          <span style={{ fontSize:22 }}>⚒️</span>
+          <span style={{ color:"var(--yellow)", display:"flex", flexShrink:0 }}><Download size={20} /></span>
           <div style={{ flex:1 }}>
             <div style={{ color: "var(--text)", fontWeight:700, fontSize:13 }}>Polaris installieren</div>
             <div style={{ color: "var(--muted)", fontSize:11 }}>Zum Homescreen hinzufügen – funktioniert auch offline.</div>
