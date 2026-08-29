@@ -842,9 +842,12 @@ export default function PolierApp() {
       display:"flex", flexDirection:"column", overflow:"hidden",
       background:"var(--bg)", color:"var(--text)" }}>
 
-      {/* ── TOP BAR — dunkler Anker ── */}
+      {/* ── TOP BAR — dunkler Anker ──
+          Kein zusätzlicher Sicherheitsabstand über den Notch/Dynamic-Island-
+          Bereich hinaus — paddingTop ist exakt env(safe-area-inset-top),
+          ohne die früheren zusätzlichen 13px obendrauf. */}
       <div style={{ background:"var(--ink)", padding:"13px 16px 0",
-        paddingTop:"calc(13px + env(safe-area-inset-top))",
+        paddingTop:"env(safe-area-inset-top)",
         flexShrink:0, zIndex:60 }}>
         <div style={{ display:"flex", justifyContent:"space-between",
           alignItems:"center", marginBottom:7 }}>
