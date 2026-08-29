@@ -843,10 +843,10 @@ export default function PolierApp() {
       background:"var(--bg)", color:"var(--text)" }}>
 
       {/* ── TOP BAR — dunkler Anker ──
-          8px zusätzlicher Abstand über den Notch/Dynamic-Island-Bereich
-          hinaus ist ok — die eigentliche Beschwerde betraf die Bottom-Bar. */}
+          Kein zusätzlicher Abstand über den Notch/Dynamic-Island-Bereich
+          hinaus — jeder Pixel Platz zählt auf dem kleinen Bildschirm. */}
       <div style={{ background:"var(--ink)", padding:"13px 16px 0",
-        paddingTop:"calc(8px + env(safe-area-inset-top))",
+        paddingTop:"env(safe-area-inset-top)",
         flexShrink:0, zIndex:60 }}>
         <div style={{ display:"flex", justifyContent:"space-between",
           alignItems:"center", marginBottom:7 }}>
