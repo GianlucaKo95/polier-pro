@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { PlanErkennung } from "./PlanErkennung.jsx";
 import { leereAufgabe } from "../lib/utils.js";
 import { AUFGABEN_VORLAGEN, AUFGABEN_TYPEN } from "../config/konstanten.js";
@@ -66,7 +67,10 @@ export function SchnellErstellung({ onSave, onClose }) {
     onSave(neue);
   }
 
-  return (
+  // Als Portal gerendert — verschachtelt im normalen Baum bricht die
+  // iOS-Standalone-PWA sonst denselben nested-position:fixed-Bug wie
+  // beim Aufgabenformular.
+  return createPortal(
     <div style={{ position:"fixed", top:0, left:0, right:0, height:"100dvh",
       background:"var(--bg)", zIndex:500, overflowY:"auto",
       WebkitOverflowScrolling:"touch" }}>
@@ -208,6 +212,7 @@ export function SchnellErstellung({ onSave, onClose }) {
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

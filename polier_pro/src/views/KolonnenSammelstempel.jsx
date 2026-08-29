@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { HardHat, X, MapPin, Check, CircleCheckBig, TriangleAlert, Play } from "lucide-react";
 import { getGPSPosition, reverseGeocode } from "../lib/geo.js";
 import { sbFetch } from "../lib/supabase.js";
@@ -58,7 +59,11 @@ export function KolonnenSammelstempel({ kolonne, projekte, session, onClose }) {
     setErgebnis({ erfolgreich, fehlgeschlagen, gesamt: ausgewaehlteMitarbeiter.length });
   }
 
-  return (
+  // Als Portal direkt in document.body gerendert — verschachtelt im
+  // normalen Baum bricht die iOS-Standalone-PWA sonst denselben
+  // nested-position:fixed-Stacking-Context-Bug wie beim Aufgabenformular
+  // (Bootstrap-Bar der App liegt trotz korrekter z-Index-Werte darüber).
+  return createPortal(
     <div style={{ position:"fixed", top:0, left:0, right:0, height:"100dvh",
       background:"var(--bg)", zIndex:500, overflowY:"auto",
       WebkitOverflowScrolling:"touch" }}>
@@ -194,6 +199,7 @@ export function KolonnenSammelstempel({ kolonne, projekte, session, onClose }) {
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

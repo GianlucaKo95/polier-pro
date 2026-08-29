@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { Settings, Euro, ClipboardList, Pencil, X, Plus } from "lucide-react";
 import { PreisFormular } from "./PreisFormular.jsx";
 import { VorlageFormular } from "./VorlageFormular.jsx";
@@ -131,8 +132,9 @@ export function AdminParameterView({ einheitspreise, setEinheitspreise, lvVorlag
         </div>
       )}
 
-      {/* Preis-Formular */}
-      {(neuPreis || editPreis) && (
+      {/* Preis-Formular — als Portal gerendert, sonst derselbe
+          nested-position:fixed-Bug wie beim Aufgabenformular */}
+      {(neuPreis || editPreis) && createPortal(
         <div style={{ position:"fixed", top:0, left:0, right:0, height:"100dvh", background:"var(--bg)", zIndex:600, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
           <div style={{ background:"var(--surface)", borderRadius:"20px 20px 0 0",
             padding:16,
@@ -143,11 +145,12 @@ export function AdminParameterView({ einheitspreise, setEinheitspreise, lvVorlag
               onClose={() => { setNeuPreis(null); setEditPreis(null); }}
             />
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Vorlagen-Formular */}
-      {neuVorlage && (
+      {neuVorlage && createPortal(
         <div style={{ position:"fixed", top:0, left:0, right:0, height:"100dvh", background:"var(--bg)", zIndex:600, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
           <div style={{ background:"var(--surface)", borderRadius:"20px 20px 0 0",
             padding:16,
@@ -159,7 +162,8 @@ export function AdminParameterView({ einheitspreise, setEinheitspreise, lvVorlag
               onClose={() => setNeuVorlage(null)}
             />
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

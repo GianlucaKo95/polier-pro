@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Ruler, ArrowLeft, X, TriangleAlert, Check, Save } from "lucide-react";
 import { parseDXFFlaechen } from "../lib/dxf.js";
 import { leereAufgabe } from "../lib/utils.js";
@@ -74,7 +75,10 @@ export function PlanErkennung({ onSave, onClose, onZurueck }) {
 
   const anzahlAusgewaehlt = Object.values(ausgewaehlt).filter(Boolean).length;
 
-  return (
+  // Als Portal gerendert — verschachtelt im normalen Baum bricht die
+  // iOS-Standalone-PWA sonst denselben nested-position:fixed-Bug wie
+  // beim Aufgabenformular.
+  return createPortal(
     <div style={{ position:"fixed", top:0, left:0, right:0, height:"100dvh",
       background:"var(--bg)", zIndex:500, overflowY:"auto",
       WebkitOverflowScrolling:"touch" }}>
@@ -220,6 +224,7 @@ export function PlanErkennung({ onSave, onClose, onZurueck }) {
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

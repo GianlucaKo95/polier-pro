@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { ClipboardList, X, CircleCheckBig, ChevronLeft, ChartColumn, FileText, Settings, Plus } from "lucide-react";
 import { AUFGABEN_TYPEN } from "../config/konstanten.js";
 import { inputStyle, Label } from "../components/Label.jsx";
@@ -182,8 +183,11 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
   }
 
   // ── LV-Vorlage Auswahl als eigener Screen ──
+  // Als Portal gerendert — verschachtelt im normalen Baum bricht die
+  // iOS-Standalone-PWA sonst denselben nested-position:fixed-Bug wie
+  // beim Aufgabenformular.
   if (vonVorlage) {
-    return (
+    return createPortal(
       <div style={{ position:"fixed", top:0, left:0, right:0, height:"100dvh",
         background:"var(--bg)", zIndex:700, overflowY:"auto",
         WebkitOverflowScrolling:"touch" }}>
@@ -218,13 +222,14 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
             </div>
           ))}
         </div>
-      </div>
+      </div>,
+      document.body
     );
   }
 
   // ── Aufgaben-Import als eigener Screen ──
   if (vonAufgabe) {
-    return (
+    return createPortal(
       <div style={{ position:"fixed", top:0, left:0, right:0, height:"100dvh",
         background:"var(--bg)", zIndex:700, overflowY:"auto",
         WebkitOverflowScrolling:"touch" }}>
@@ -263,7 +268,8 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
             </div>
           ))}
         </div>
-      </div>
+      </div>,
+      document.body
     );
   }
 
