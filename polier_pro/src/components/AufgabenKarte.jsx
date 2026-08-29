@@ -4,7 +4,7 @@ import { AUFGABEN_TYPEN, AUFGABEN_STATUS, AUFGABEN_PRIO } from "../config/konsta
 
 const LOESCH_BREITE = 76;
 
-export function AufgabenKarte({ aufgabe, onClick, kolonnen, onDelete }) {
+export function AufgabenKarte({ aufgabe, onClick, kolonnen, onDelete, onToggleErledigt }) {
   const typ    = AUFGABEN_TYPEN[aufgabe.typ]    || AUFGABEN_TYPEN.allgemein;
   const status = AUFGABEN_STATUS[aufgabe.status] || AUFGABEN_STATUS.offen;
   const prio   = AUFGABEN_PRIO[aufgabe.prioritaet] || AUFGABEN_PRIO.mittel;
@@ -65,11 +65,16 @@ export function AufgabenKarte({ aufgabe, onClick, kolonnen, onDelete }) {
           opacity: erledigt ? 0.62 : 1,
           transform:`translateX(${offset}px)`,
           transition: ziehen ? "none" : "transform 0.2s ease" }}>
-      <div style={{ width:22, height:22, flex:"none", marginTop:1,
-        border:`2px solid ${erledigt ? "var(--green)" : "rgba(0,0,0,.18)"}`,
-        background: erledigt ? "var(--green)" : "transparent",
-        display:"flex", alignItems:"center", justifyContent:"center", color:"#fff" }}>
-        {erledigt && <span style={{ fontSize:13, fontWeight:900 }}>✓</span>}
+      <div onClick={onToggleErledigt ? (e) => { e.stopPropagation(); onToggleErledigt(aufgabe); } : undefined}
+        style={{ flex:"none", margin:-8, padding:8,
+          display:"flex", alignItems:"center", justifyContent:"center",
+          cursor: onToggleErledigt ? "pointer" : "default" }}>
+        <div style={{ width:22, height:22, marginTop:1,
+          border:`2px solid ${erledigt ? "var(--green)" : "rgba(0,0,0,.18)"}`,
+          background: erledigt ? "var(--green)" : "transparent",
+          display:"flex", alignItems:"center", justifyContent:"center", color:"#fff" }}>
+          {erledigt && <span style={{ fontSize:13, fontWeight:900 }}>✓</span>}
+        </div>
       </div>
       <div style={{ flex:1, minWidth:0 }}>
         <div style={{ display:"flex", justifyContent:"space-between", gap:10 }}>

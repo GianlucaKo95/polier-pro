@@ -41,6 +41,11 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
     setAufgaben(prev => prev.filter(x => x.id !== a.id));
   }
 
+  function handleToggleErledigt(a) {
+    const neuerStatus = a.status === "abgeschlossen" ? "offen" : "abgeschlossen";
+    setAufgaben(prev => prev.map(x => x.id === a.id ? { ...x, status: neuerStatus } : x));
+  }
+
   if (neuAufgabe) {
     return (
       <SchnellErstellung
@@ -146,7 +151,8 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
               {ueberfaelligListe.map(a => (
                 <AufgabenKarte key={a.id} aufgabe={a} kolonnen={kolonnen}
                   onClick={() => darfBearbeiten && setEditAufgabe(a)}
-                  onDelete={darfBearbeiten ? handleDelete : undefined} />
+                  onDelete={darfBearbeiten ? handleDelete : undefined}
+                  onToggleErledigt={darfBearbeiten ? handleToggleErledigt : undefined} />
               ))}
             </>
           )}
@@ -157,7 +163,8 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
               {offenListe.map(a => (
                 <AufgabenKarte key={a.id} aufgabe={a} kolonnen={kolonnen}
                   onClick={() => darfBearbeiten && setEditAufgabe(a)}
-                  onDelete={darfBearbeiten ? handleDelete : undefined} />
+                  onDelete={darfBearbeiten ? handleDelete : undefined}
+                  onToggleErledigt={darfBearbeiten ? handleToggleErledigt : undefined} />
               ))}
             </>
           )}
@@ -168,7 +175,8 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
               {erledigtListe.map(a => (
                 <AufgabenKarte key={a.id} aufgabe={a} kolonnen={kolonnen}
                   onClick={() => darfBearbeiten && setEditAufgabe(a)}
-                  onDelete={darfBearbeiten ? handleDelete : undefined} />
+                  onDelete={darfBearbeiten ? handleDelete : undefined}
+                  onToggleErledigt={darfBearbeiten ? handleToggleErledigt : undefined} />
               ))}
             </>
           )}
