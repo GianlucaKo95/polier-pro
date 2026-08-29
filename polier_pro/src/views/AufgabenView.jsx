@@ -37,6 +37,10 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
     setNeuAufgabe(false);
   }
 
+  function handleDelete(a) {
+    setAufgaben(prev => prev.filter(x => x.id !== a.id));
+  }
+
   if (neuAufgabe) {
     return (
       <SchnellErstellung
@@ -141,7 +145,8 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
               <SektionsTitel label="Überfällig" />
               {ueberfaelligListe.map(a => (
                 <AufgabenKarte key={a.id} aufgabe={a} kolonnen={kolonnen}
-                  onClick={() => darfBearbeiten && setEditAufgabe(a)} />
+                  onClick={() => darfBearbeiten && setEditAufgabe(a)}
+                  onDelete={darfBearbeiten ? handleDelete : undefined} />
               ))}
             </>
           )}
@@ -151,7 +156,8 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
               <SektionsTitel label="Offen" />
               {offenListe.map(a => (
                 <AufgabenKarte key={a.id} aufgabe={a} kolonnen={kolonnen}
-                  onClick={() => darfBearbeiten && setEditAufgabe(a)} />
+                  onClick={() => darfBearbeiten && setEditAufgabe(a)}
+                  onDelete={darfBearbeiten ? handleDelete : undefined} />
               ))}
             </>
           )}
@@ -161,7 +167,8 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
               <SektionsTitel label="Erledigt" />
               {erledigtListe.map(a => (
                 <AufgabenKarte key={a.id} aufgabe={a} kolonnen={kolonnen}
-                  onClick={() => darfBearbeiten && setEditAufgabe(a)} />
+                  onClick={() => darfBearbeiten && setEditAufgabe(a)}
+                  onDelete={darfBearbeiten ? handleDelete : undefined} />
               ))}
             </>
           )}
