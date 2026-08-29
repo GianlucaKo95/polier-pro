@@ -879,8 +879,8 @@ export default function PolierApp() {
         />
       </div>
 
-      {/* ── PROJEKT INFO STRIP ── */}
-      <ProjektInfoStrip projekt={projekt} aufgaben={felder} />
+      {/* ── PROJEKT INFO STRIP — nur auf dem Dashboard, stört sonst nur ── */}
+      {tab === "dashboard" && <ProjektInfoStrip projekt={projekt} aufgaben={felder} />}
 
       {/* ── CONTENT — einziger scrollender Bereich ── */}
       <PlanGuard firma={firma} ressource="app">
