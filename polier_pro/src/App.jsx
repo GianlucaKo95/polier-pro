@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { version as APP_VERSION } from "../package.json";
 import { Bell, LogOut, Plus, MapPin, Hash, TriangleAlert, LayoutGrid,
   CircleCheckBig, NotebookPen, Users, Clock, Ellipsis, ChevronRight,
   Building2, Calendar, Euro, CloudSun, ChartColumn, FileText, Settings,
@@ -1026,6 +1027,15 @@ export default function PolierApp() {
       )}
 
       <PWABanner pwa={pwa} />
+
+      {/* Diagnose-Wasserzeichen — zeigt schwarz auf weiß, welcher Build
+          gerade tatsächlich läuft, statt am Padding raten zu müssen.
+          Bewusst auf JEDEM Screen sichtbar (Root-Shell, nicht pro Tab). */}
+      <div style={{ position:"fixed", bottom:2, right:4, zIndex:9999,
+        fontSize:9, fontWeight:600, color:"rgba(122,132,153,0.55)",
+        fontFamily:"monospace", pointerEvents:"none" }}>
+        v{APP_VERSION}
+      </div>
     </div>
   );
 }
