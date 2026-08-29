@@ -419,15 +419,21 @@ export default function PolierApp() {
 
     setSpeicherFehler("");
     let fehler = false;
+    const gespeichert = [];
     for (const a of neu) {
       const istNeu = !alteIds.has(a.id) || typeof a.id !== "number" || a.id > 1e12;
-      const ok = await sbAufgabeSpeichern(a, aktivId, auth.session, istNeu);
-      if (!ok) fehler = true;
+      const ergebnis = await sbAufgabeSpeichern(a, aktivId, auth.session, istNeu);
+      if (!ergebnis) { fehler = true; gespeichert.push(a); continue; }
+      // Nach einem Insert die client-seitige Date.now()-ID durch die echte
+      // Server-ID ersetzen — sonst hält sie jede Folge-Bearbeitung weiter
+      // für "neu" (id > 1e12) und erzeugt bei jedem Speichern einen neuen
+      // Datensatz statt eines Updates (genau der Kolonnen-Vervielfachungs-Bug).
+      gespeichert.push(istNeu ? { ...a, id: ergebnis.id } : a);
     }
     for (const alteId of alteIds) {
       if (!neueIds.has(alteId)) await sbAufgabeLoeschen(alteId, auth.session);
     }
-    setAktProjektAufgaben(neu);
+    setAktProjektAufgaben(gespeichert);
     // Die lokale Ansicht wird trotzdem aktualisiert (kein Datenverlust in der
     // UI), aber der Nutzer erfährt, dass die Änderung nicht auf dem Server
     // angekommen ist — vorher wurde ein fehlgeschlagenes Speichern still als
@@ -459,16 +465,23 @@ export default function PolierApp() {
 
     setSpeicherFehler("");
     let fehler = false;
+    const gespeichert = [];
     for (const k of neu) {
       const istNeu = !alteIds.has(k.id) || typeof k.id !== "number" || k.id > 1e12;
-      const ok = await sbKolonneSpeichern(k, aktivId, auth.session, istNeu);
-      if (!ok) fehler = true;
+      const ergebnis = await sbKolonneSpeichern(k, aktivId, auth.session, istNeu);
+      if (!ergebnis) { fehler = true; gespeichert.push(k); continue; }
+      // Nach einem Insert die client-seitige Date.now()-ID durch die echte
+      // Server-ID ersetzen — sonst hält sie jede Folge-Bearbeitung (z.B.
+      // "Mitarbeiter hinzufügen") weiter für "neu" (id > 1e12) und erzeugt
+      // bei jedem Speichern einen weiteren Datensatz statt eines Updates.
+      // Das war der Grund für die Kolonnen-Vervielfachung im UI.
+      gespeichert.push(istNeu ? { ...k, id: ergebnis.id } : k);
     }
     if (fehler) setSpeicherFehler("Eine Kolonne konnte nicht gespeichert werden — bitte Verbindung prüfen und erneut versuchen.");
     for (const alteId of alteIds) {
       if (!neueIds.has(alteId)) await sbKolonneLoeschen(alteId, auth.session);
     }
-    setAktProjektKolonnen(neu);
+    setAktProjektKolonnen(gespeichert);
   }
 
   async function handleSaveProjekt(p) {

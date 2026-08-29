@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MapPin, HardHat, X } from "lucide-react";
+import { MapPin, HardHat, X, Trash2 } from "lucide-react";
 import { MitarbeiterZeilen } from "./MitarbeiterZeilen.jsx";
 
 export function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, erfasstVerbunden, setKolonnen, darfBearbeiten = true }) {
@@ -7,6 +7,11 @@ export function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, erfasstVerbunde
   const [neuerName, setNeuerName] = useState("");
   const mas = k.mitarbeiter || [];
   const totalMann = mas.length;
+
+  function kolonneLoeschen() {
+    if (!setKolonnen) return;
+    setKolonnen(prev => prev.filter(kol => kol.id !== k.id));
+  }
 
   function mitarbeiterHinzufuegen() {
     if (!neuerName.trim() || !setKolonnen) return;
@@ -154,6 +159,17 @@ export function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, erfasstVerbunde
                 + Hinzufügen
               </button>
             </div>
+          )}
+
+          {/* Ganze Kolonne löschen */}
+          {darfBearbeiten && setKolonnen && (
+            <button onClick={kolonneLoeschen}
+              style={{ width:"100%", background:"var(--rbg)", color:"var(--red)",
+                border:"1px solid var(--red)", borderRadius:8, padding:"7px 0",
+                cursor:"pointer", fontSize:12, fontWeight:700, fontFamily:"inherit",
+                marginTop:8, display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+              <Trash2 size={13} /> Kolonne löschen
+            </button>
           )}
 
           {/* Kolonnen-Summe */}
