@@ -843,11 +843,10 @@ export default function PolierApp() {
       background:"var(--bg)", color:"var(--text)" }}>
 
       {/* ── TOP BAR — dunkler Anker ──
-          Kein zusätzlicher Sicherheitsabstand über den Notch/Dynamic-Island-
-          Bereich hinaus — paddingTop ist exakt env(safe-area-inset-top),
-          ohne die früheren zusätzlichen 13px obendrauf. */}
+          8px zusätzlicher Abstand über den Notch/Dynamic-Island-Bereich
+          hinaus ist ok — die eigentliche Beschwerde betraf die Bottom-Bar. */}
       <div style={{ background:"var(--ink)", padding:"13px 16px 0",
-        paddingTop:"env(safe-area-inset-top)",
+        paddingTop:"calc(8px + env(safe-area-inset-top))",
         flexShrink:0, zIndex:60 }}>
         <div style={{ display:"flex", justifyContent:"space-between",
           alignItems:"center", marginBottom:7 }}>
@@ -935,11 +934,13 @@ export default function PolierApp() {
       </div>
       </PlanGuard>
 
-      {/* ── BOTTOM NAV — Flex-Geschwister statt position:fixed, siehe Kommentar oben ── */}
+      {/* ── BOTTOM NAV — Flex-Geschwister statt position:fixed, siehe Kommentar oben ──
+          Kein zusätzlicher Sicherheitsabstand über den Home-Indicator-Bereich
+          hinaus — paddingBottom ist exakt env(safe-area-inset-bottom). */}
       <div style={{ flexShrink:0,
         background:"var(--surface)", borderTop:"1px solid var(--border)",
         display:"flex", padding:"6px 6px",
-        paddingBottom:"calc(8px + env(safe-area-inset-bottom))" }}>
+        paddingBottom:"env(safe-area-inset-bottom)" }}>
         {hauptTabs.map(t => {
           const Icon = TAB_ICONS[t.id];
           const aktiv = tab===t.id;
