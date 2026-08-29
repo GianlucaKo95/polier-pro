@@ -419,15 +419,21 @@ export default function PolierApp() {
 
     setSpeicherFehler("");
     let fehler = false;
+    const gespeichert = [];
     for (const a of neu) {
       const istNeu = !alteIds.has(a.id) || typeof a.id !== "number" || a.id > 1e12;
-      const ok = await sbAufgabeSpeichern(a, aktivId, auth.session, istNeu);
-      if (!ok) fehler = true;
+      const ergebnis = await sbAufgabeSpeichern(a, aktivId, auth.session, istNeu);
+      if (!ergebnis) { fehler = true; gespeichert.push(a); continue; }
+      // Nach einem Insert die client-seitige Date.now()-ID durch die echte
+      // Server-ID ersetzen — sonst hält sie jede Folge-Bearbeitung weiter
+      // für "neu" (id > 1e12) und erzeugt bei jedem Speichern einen neuen
+      // Datensatz statt eines Updates (genau der Kolonnen-Vervielfachungs-Bug).
+      gespeichert.push(istNeu ? { ...a, id: ergebnis.id } : a);
     }
     for (const alteId of alteIds) {
       if (!neueIds.has(alteId)) await sbAufgabeLoeschen(alteId, auth.session);
     }
-    setAktProjektAufgaben(neu);
+    setAktProjektAufgaben(gespeichert);
     // Die lokale Ansicht wird trotzdem aktualisiert (kein Datenverlust in der
     // UI), aber der Nutzer erfährt, dass die Änderung nicht auf dem Server
     // angekommen ist — vorher wurde ein fehlgeschlagenes Speichern still als
@@ -459,16 +465,23 @@ export default function PolierApp() {
 
     setSpeicherFehler("");
     let fehler = false;
+    const gespeichert = [];
     for (const k of neu) {
       const istNeu = !alteIds.has(k.id) || typeof k.id !== "number" || k.id > 1e12;
-      const ok = await sbKolonneSpeichern(k, aktivId, auth.session, istNeu);
-      if (!ok) fehler = true;
+      const ergebnis = await sbKolonneSpeichern(k, aktivId, auth.session, istNeu);
+      if (!ergebnis) { fehler = true; gespeichert.push(k); continue; }
+      // Nach einem Insert die client-seitige Date.now()-ID durch die echte
+      // Server-ID ersetzen — sonst hält sie jede Folge-Bearbeitung (z.B.
+      // "Mitarbeiter hinzufügen") weiter für "neu" (id > 1e12) und erzeugt
+      // bei jedem Speichern einen weiteren Datensatz statt eines Updates.
+      // Das war der Grund für die Kolonnen-Vervielfachung im UI.
+      gespeichert.push(istNeu ? { ...k, id: ergebnis.id } : k);
     }
     if (fehler) setSpeicherFehler("Eine Kolonne konnte nicht gespeichert werden — bitte Verbindung prüfen und erneut versuchen.");
     for (const alteId of alteIds) {
       if (!neueIds.has(alteId)) await sbKolonneLoeschen(alteId, auth.session);
     }
-    setAktProjektKolonnen(neu);
+    setAktProjektKolonnen(gespeichert);
   }
 
   async function handleSaveProjekt(p) {
@@ -842,9 +855,11 @@ export default function PolierApp() {
       display:"flex", flexDirection:"column", overflow:"hidden",
       background:"var(--bg)", color:"var(--text)" }}>
 
-      {/* ── TOP BAR — dunkler Anker ── */}
+      {/* ── TOP BAR — dunkler Anker ──
+          Kein zusätzlicher Abstand über den Notch/Dynamic-Island-Bereich
+          hinaus — jeder Pixel Platz zählt auf dem kleinen Bildschirm. */}
       <div style={{ background:"var(--ink)", padding:"13px 16px 0",
-        paddingTop:"calc(13px + env(safe-area-inset-top))",
+        paddingTop:"env(safe-area-inset-top)",
         flexShrink:0, zIndex:60 }}>
         <div style={{ display:"flex", justifyContent:"space-between",
           alignItems:"center", marginBottom:7 }}>
@@ -932,11 +947,13 @@ export default function PolierApp() {
       </div>
       </PlanGuard>
 
-      {/* ── BOTTOM NAV — Flex-Geschwister statt position:fixed, siehe Kommentar oben ── */}
+      {/* ── BOTTOM NAV — Flex-Geschwister statt position:fixed, siehe Kommentar oben ──
+          Kein zusätzlicher Sicherheitsabstand über den Home-Indicator-Bereich
+          hinaus — paddingBottom ist exakt env(safe-area-inset-bottom). */}
       <div style={{ flexShrink:0,
         background:"var(--surface)", borderTop:"1px solid var(--border)",
         display:"flex", padding:"6px 6px",
-        paddingBottom:"calc(8px + env(safe-area-inset-bottom))" }}>
+        paddingBottom:"env(safe-area-inset-bottom)" }}>
         {hauptTabs.map(t => {
           const Icon = TAB_ICONS[t.id];
           const aktiv = tab===t.id;
