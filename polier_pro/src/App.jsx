@@ -948,8 +948,9 @@ export default function PolierApp() {
       </PlanGuard>
 
       {/* ── BOTTOM NAV — Flex-Geschwister statt position:fixed, siehe Kommentar oben ──
-          Kein zusätzlicher Sicherheitsabstand über den Home-Indicator-Bereich
-          hinaus — paddingBottom ist exakt env(safe-area-inset-bottom). */}
+          Der Home-Indicator-Sicherheitsabstand bleibt (Labels/Buttons sollen
+          nicht unter der Wisch-Geste liegen), aber ohne jeden zusätzlichen
+          Puffer obendrauf — exakt env(safe-area-inset-bottom). */}
       <div style={{ flexShrink:0,
         background:"var(--surface)", borderTop:"1px solid var(--border)",
         display:"flex", padding:"6px 6px",
