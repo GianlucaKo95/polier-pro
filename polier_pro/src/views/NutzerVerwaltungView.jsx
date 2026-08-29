@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Users, Plus, TriangleAlert, X, Pencil, HardHat, Phone, CircleCheckBig, Ban, User, Calendar, Copy, ArrowUpRight, Mail } from "lucide-react";
 import { sbFetch } from "../lib/supabase.js";
 import { ROLLEN } from "../config/konstanten.js";
@@ -379,8 +380,9 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
         </div>
       )}
 
-      {/* Einladungs-Generator Modal */}
-      {zeigeEinladen && (
+      {/* Einladungs-Generator Modal — als Portal gerendert, sonst derselbe
+          nested-position:fixed-Bug wie beim Aufgabenformular */}
+      {zeigeEinladen && createPortal(
         <div style={{ position:"fixed", top:0, left:0, right:0, height:"100dvh",
           background:"var(--bg)", zIndex:500, overflowY:"auto",
           WebkitOverflowScrolling:"touch" }}>
@@ -404,7 +406,8 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
               kolonnen={kolonnen}
             />
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

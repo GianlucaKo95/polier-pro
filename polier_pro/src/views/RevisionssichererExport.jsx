@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { PenLine, X, Check, FileText, CircleCheckBig } from "lucide-react";
 import { UnterschriftPad } from "../components/UnterschriftPad.jsx";
 import { escapeHtml, sha256Hex } from "../lib/utils.js";
@@ -170,7 +171,11 @@ ${offeneMaengel.length > 0 ? `<div class="section">
         <PenLine size={14} /> Unterschreiben & Export
       </button>
 
-      {offen && (
+      {/* Als Portal gerendert — wird u.a. innerhalb der Bautagebuch-
+          Detailansicht verwendet, die selbst schon position:fixed ist;
+          ohne Portal verschachtelt sich hier derselbe nested-fixed-Bug
+          wie beim Aufgabenformular. */}
+      {offen && createPortal(
         <div style={{ position:"fixed", top:0, left:0, right:0, height:"100dvh", background:"var(--bg)", zIndex:600, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
           <div style={{ background:"var(--surface)", borderRadius:"20px 20px 0 0",
             padding:16,
@@ -249,7 +254,8 @@ ${offeneMaengel.length > 0 ? `<div class="section">
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

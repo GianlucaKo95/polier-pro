@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Mic, Camera, PenLine, CloudSun, CloudRain, Users } from "lucide-react";
 import { supabase } from "../lib/supabase.js";
 import { KITagesabschlussButton } from "./KITagesabschlussButton.jsx";
@@ -242,7 +243,11 @@ export function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eig
       ))}
 
       {/* ── Detail-Ansicht ── */}
-      {detail && (
+      {/* Als Portal gerendert — verschachtelt im normalen Baum bricht die
+          iOS-Standalone-PWA sonst denselben nested-position:fixed-Bug wie
+          beim Aufgabenformular (App-Bootstrap-Bar liegt trotz korrektem
+          z-Index darüber). */}
+      {detail && createPortal(
         <div style={{ position:"fixed", top:0, left:0, right:0, height:"100dvh", background:"var(--bg)", zIndex:300,
           overflowY:"auto" }}>
           <div style={{ background: "var(--surface)", minHeight:"100dvh", maxWidth:520, margin:"0 auto", padding:14,
@@ -310,11 +315,12 @@ export function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eig
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ── Neuer Bericht Modal ── */}
-      {open && (
+      {open && createPortal(
         <div style={{ position:"fixed", top:0, left:0, right:0, height:"100dvh", background:"var(--bg)", zIndex:200, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
           <div style={{ background: "var(--surface)", borderRadius:"16px 16px 0 0", padding:16,
             width:"100%", maxWidth:520 }}>
@@ -425,7 +431,8 @@ export function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eig
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

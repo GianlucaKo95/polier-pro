@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Bot, X, CircleX, Square, Mic, Sparkles, ClipboardList, CircleCheckBig, TriangleAlert, Wrench, CloudRain, ArrowLeft } from "lucide-react";
 import { kiTagesabschluss } from "../lib/ai.js";
 import { AUFGABEN_TYPEN, AUFGABEN_PRIO } from "../config/konstanten.js";
@@ -61,7 +62,10 @@ export function KITagesabschlussButton({ projekt, kolonnen, wetter, onErgebnis }
         <Bot size={16} /> KI-Tagesabschluss
       </button>
 
-      {offen && (
+      {/* Als Portal gerendert — verschachtelt im normalen Baum bricht die
+          iOS-Standalone-PWA sonst denselben nested-position:fixed-Bug wie
+          beim Aufgabenformular. */}
+      {offen && createPortal(
         <div style={{ position:"fixed", top:0, left:0, right:0, height:"100dvh", background:"var(--bg)", zIndex:600, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
           <div style={{ background:"var(--surface)", borderRadius:"20px 20px 0 0",
             padding:16,
@@ -227,7 +231,8 @@ export function KITagesabschlussButton({ projekt, kolonnen, wetter, onErgebnis }
               </>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

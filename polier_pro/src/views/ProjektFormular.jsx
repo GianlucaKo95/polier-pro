@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { Pencil, Plus, X, Check, TriangleAlert } from "lucide-react";
 import { leerProjekt } from "../lib/utils.js";
 import { Label, inputStyle } from "../components/Label.jsx";
@@ -29,8 +30,10 @@ export function ProjektFormular({ initial, onSave, onClose, subs = [], speicherF
     }));
   }
 
-  // Fullscreen statt Modal — vermeidet iOS position:fixed Probleme
-  return (
+  // Als Portal gerendert — Fullscreen allein reicht nicht: verschachtelt
+  // im normalen Baum bricht die iOS-Standalone-PWA denselben
+  // nested-position:fixed-Bug wie beim Aufgabenformular.
+  return createPortal(
     <div style={{ position:"fixed", top:0, left:0, right:0, height:"100dvh",
       background:"var(--bg)", zIndex:500, overflowY:"auto",
       WebkitOverflowScrolling:"touch" }}>
@@ -205,6 +208,7 @@ export function ProjektFormular({ initial, onSave, onClose, subs = [], speicherF
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

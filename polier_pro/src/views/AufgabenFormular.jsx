@@ -75,7 +75,7 @@ export function AufgabenFormular({ initial, kolonnen, onSave, onClose }) {
             cursor:"pointer", fontSize:14, fontFamily:"inherit", display:"flex" }}>✕</button>
       </div>
 
-      <div style={{ padding:"18px 16px 100px" }}>
+      <div style={{ padding:"18px 16px 16px" }}>
 
         {/* Typ */}
         <div style={{ marginBottom:10 }}>
@@ -275,21 +275,26 @@ export function AufgabenFormular({ initial, kolonnen, onSave, onClose }) {
             </div>
           )}
         </div>
+      </div>
 
-        <div style={{ display:"flex", gap:10 }}>
-          <button onClick={onClose}
-            style={{ flex:1, background:"var(--surface2)", color:"var(--muted)",
-              border:"1.5px solid var(--border)", padding:16,
-              cursor:"pointer", fontFamily:"inherit", fontWeight:600 }}>Abbrechen</button>
-          <button onClick={() => valid && onSave(a)} disabled={!valid}
-            style={{ flex:2, background: valid ? "var(--yellow)" : "var(--surface2)",
-              color: valid ? "#1a1200" : "var(--muted)",
-              border:"none", padding:16, fontWeight:800,
-              cursor: valid ? "pointer" : "default", fontSize:16,
-              fontFamily:"inherit" }}>
-            Speichern
-          </button>
-        </div>
+      {/* Sticky statt im normalen Fluss am Formularende: bleibt immer
+         erreichbar, ohne bis ganz nach unten scrollen zu müssen, und
+         verschwindet nicht mehr hinter der Home-Indicator-Leiste. */}
+      <div style={{ position:"sticky", bottom:0, display:"flex", gap:10,
+        background:"var(--bg)", borderTop:"1px solid var(--border)",
+        padding:"12px 16px", paddingBottom:"calc(12px + env(safe-area-inset-bottom))" }}>
+        <button onClick={onClose}
+          style={{ flex:1, background:"var(--surface2)", color:"var(--muted)",
+            border:"1.5px solid var(--border)", padding:16,
+            cursor:"pointer", fontFamily:"inherit", fontWeight:600 }}>Abbrechen</button>
+        <button onClick={() => valid && onSave(a)} disabled={!valid}
+          style={{ flex:2, background: valid ? "var(--yellow)" : "var(--surface2)",
+            color: valid ? "#1a1200" : "var(--muted)",
+            border:"none", padding:16, fontWeight:800,
+            cursor: valid ? "pointer" : "default", fontSize:16,
+            fontFamily:"inherit" }}>
+          Speichern
+        </button>
       </div>
     </div>,
     document.body
