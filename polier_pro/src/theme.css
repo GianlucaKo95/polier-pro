@@ -53,8 +53,19 @@
   --obg:     #2a1200;
 }
 * { box-sizing: border-box; }
+/* Die App-Shell in App.jsx ist selbst position:fixed und regelt Scrollen
+   intern über ihren eigenen Content-Bereich — html/body dürfen deshalb NIE
+   scrollen. Ohne das hier bleibt das Dokument selbst scrollbar, und iOS
+   erlaubt seinen nativen "Rubber-Band"-Overscroll: die ganze Seite lässt
+   sich mit dem Finger nach unten ziehen und federt zurück, was kurzzeitig
+   den Hintergrund unterhalb der Bottom-Nav freilegt — sichtbar als der
+   Leerraum, den man mit dem Finger "aufziehen" konnte. */
 html, body {
   height: 100%;
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  overscroll-behavior: none;
 }
 body {
   background: var(--bg) !important;
