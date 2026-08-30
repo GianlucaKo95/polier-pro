@@ -55,14 +55,22 @@
 * { box-sizing: border-box; }
 /* Die App-Shell in App.jsx ist selbst position:fixed und regelt Scrollen
    intern über ihren eigenen Content-Bereich — html/body dürfen deshalb NIE
-   scrollen. Ohne das hier bleibt das Dokument selbst scrollbar, und iOS
-   erlaubt seinen nativen "Rubber-Band"-Overscroll: die ganze Seite lässt
-   sich mit dem Finger nach unten ziehen und federt zurück, was kurzzeitig
-   den Hintergrund unterhalb der Bottom-Nav freilegt — sichtbar als der
-   Leerraum, den man mit dem Finger "aufziehen" konnte. */
+   scrollen. Ohne position:fixed hier bleibt das Dokument selbst scrollbar,
+   und iOS erlaubt seinen nativen "Rubber-Band"-Overscroll: die ganze Seite
+   lässt sich mit dem Finger nach unten ziehen und federt zurück, was
+   kurzzeitig den Hintergrund unterhalb der Bottom-Nav freilegt.
+   WICHTIG: kein overflow:hidden hier! height:100% auf html/body löst sich
+   in der installierten iOS-PWA nachweislich gegen eine zu kurze Viewport-
+   Höhe auf (dasselbe Problem, das schon 100dvh und eine JS-gemessene Höhe
+   betraf) — mit overflow:hidden hätte das den eigenen, zu kurzen Rahmen
+   von body/html geclippt und damit ALLES darin geclippt, inklusive der
+   Root-Shell, obwohl die selbst korrekt mit bottom:0 positioniert ist.
+   position:fixed allein reicht schon, um body/html nicht scrollbar zu
+   machen (die Shell selbst ist position:fixed und trägt daher nicht zum
+   normalen Fluss/Overflow von body bei) — overflow:hidden war hier nur
+   redundant und zugleich schädlich. */
 html, body {
   height: 100%;
-  overflow: hidden;
   position: fixed;
   width: 100%;
   overscroll-behavior: none;
