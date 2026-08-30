@@ -188,7 +188,7 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
   // beim Aufgabenformular.
   if (vonVorlage) {
     return createPortal(
-      <div style={{ position:"fixed", top:0, left:0, right:0, height:"var(--app-height, 100dvh)",
+      <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
         background:"var(--bg)", zIndex:700, overflowY:"auto",
         WebkitOverflowScrolling:"touch" }}>
         <div style={{ background:"var(--surface)", padding:"10px 18px",
@@ -230,7 +230,7 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
   // ── Aufgaben-Import als eigener Screen ──
   if (vonAufgabe) {
     return createPortal(
-      <div style={{ position:"fixed", top:0, left:0, right:0, height:"var(--app-height, 100dvh)",
+      <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
         background:"var(--bg)", zIndex:700, overflowY:"auto",
         WebkitOverflowScrolling:"touch" }}>
         <div style={{ background:"var(--surface)", padding:"10px 18px",

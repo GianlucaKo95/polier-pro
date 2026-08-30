@@ -34,7 +34,7 @@ export function ProjektFormular({ initial, onSave, onClose, subs = [], speicherF
   // im normalen Baum bricht die iOS-Standalone-PWA denselben
   // nested-position:fixed-Bug wie beim Aufgabenformular.
   return createPortal(
-    <div style={{ position:"fixed", top:0, left:0, right:0, height:"var(--app-height, 100dvh)",
+    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
       background:"var(--bg)", zIndex:500, overflowY:"auto",
       WebkitOverflowScrolling:"touch" }}>
 

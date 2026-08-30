@@ -846,18 +846,22 @@ export default function PolierApp() {
     // WebKit nachweislich nicht zuverlässig am Rand kleben. Mit dieser Struktur
     // bleiben Top-Bar und Bottom-Nav als reguläre Flex-Geschwister strukturell
     // immer sichtbar, unabhängig vom Scroll-Verhalten.
-    // height:"100dvh" statt nur bottom:0: in iOS-Standalone-PWAs berechnet
-    // WebKit die Höhe von position:fixed-Elementen mit bottom:0 teils gegen
-    // die "große" (statische) statt die aktuelle dynamische Viewport-Höhe —
-    // das lässt unten eine leere graue Lücke zum echten Bildschirmrand.
-    // Aber auch 100dvh selbst hat sich in genau diesem Kontext wiederholt
-    // als unzuverlässig erwiesen (dieselbe Lücke, live nachgewiesen über
-    // das Versions-Wasserzeichen, das im Leerraum unterhalb der Bottom-Nav
-    // landete statt direkt am echten Bildschirmrand). --app-height wird in
-    // index.html per JS aus window.innerHeight/visualViewport gesetzt, noch
-    // bevor React mountet — zuverlässiger als jede reine CSS-Einheit hier.
-    <div style={{ position:"fixed", top:0, left:0, right:0,
-      height:"var(--app-height, 100dvh)",
+    // top:0/bottom:0 statt einer festen Höhe (100dvh oder eine per JS aus
+    // window.innerHeight/visualViewport gemessene --app-height): beide
+    // haben sich in der installierten iOS-PWA wiederholt als ungenau
+    // erwiesen — die Shell blieb um ca. die Höhe von
+    // env(safe-area-inset-bottom) zu kurz, darunter schimmerte der graue
+    // body-Hintergrund statt des weißen Bottom-Nav-Hintergrunds durch
+    // (live nachgewiesen über das Versions-Wasserzeichen). bottom:0 war
+    // ursprünglich deshalb verworfen worden, weil WebKit es früher gegen
+    // die "große" statische statt die aktuelle Viewport-Höhe berechnete —
+    // das trat aber nur auf, solange body/html selbst noch scrollen und
+    // damit Safaris ein-/ausblendende Toolbar-Höhe ins Spiel bringen
+    // konnten. Jetzt, wo html/body per overflow:hidden;position:fixed
+    // fest verriegelt sind (siehe theme.css), gibt es diese dynamische
+    // Toolbar-Höhe in der Standalone-PWA gar nicht mehr — bottom:0 löst
+    // sich zuverlässig gegen die tatsächliche aktuelle Viewport-Höhe auf.
+    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
       display:"flex", flexDirection:"column", overflow:"hidden",
       background:"var(--bg)", color:"var(--text)" }}>
 
@@ -994,7 +998,7 @@ export default function PolierApp() {
 
       {/* ── MEHR-MENÜ (Bottom Sheet) ── */}
       {zeigeMehr && (
-        <div style={{ position:"fixed", top:0, left:0, right:0, height:"var(--app-height, 100dvh)",
+        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
           background:"rgba(11,17,32,0.55)", zIndex:60 }}
           onClick={() => setZeigeMehr(false)}>
           <div onClick={e => e.stopPropagation()}

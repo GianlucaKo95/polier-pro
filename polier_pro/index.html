@@ -13,27 +13,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,600&display=swap" rel="stylesheet" />
   <title>Polaris</title>
-  <script>
-    // 100dvh hat sich in der installierten iOS-Standalone-PWA wiederholt als
-    // unzuverlässig erwiesen — berechnet teils gegen eine andere Viewport-
-    // Höhe als tatsächlich sichtbar, lässt eine leere Lücke zum echten
-    // unteren Bildschirmrand. window.innerHeight (bzw. visualViewport, wo
-    // vorhanden) spiegelt die wirklich sichtbare Höhe zuverlässiger — als
-    // CSS-Variable gesetzt, noch bevor React überhaupt mountet, damit es
-    // keinen Frame mit falscher Höhe gibt.
-    (function () {
-      function setAppHeight() {
-        var h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
-        document.documentElement.style.setProperty("--app-height", h + "px");
-      }
-      setAppHeight();
-      window.addEventListener("resize", setAppHeight);
-      window.addEventListener("orientationchange", setAppHeight);
-      if (window.visualViewport) {
-        window.visualViewport.addEventListener("resize", setAppHeight);
-      }
-    })();
-  </script>
 </head>
 <body>
   <div id="root"></div>
