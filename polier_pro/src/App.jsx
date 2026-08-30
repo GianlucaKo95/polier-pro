@@ -850,9 +850,14 @@ export default function PolierApp() {
     // WebKit die Höhe von position:fixed-Elementen mit bottom:0 teils gegen
     // die "große" (statische) statt die aktuelle dynamische Viewport-Höhe —
     // das lässt unten eine leere graue Lücke zum echten Bildschirmrand.
-    // 100dvh referenziert explizit die dynamische Viewport-Höhe.
+    // Aber auch 100dvh selbst hat sich in genau diesem Kontext wiederholt
+    // als unzuverlässig erwiesen (dieselbe Lücke, live nachgewiesen über
+    // das Versions-Wasserzeichen, das im Leerraum unterhalb der Bottom-Nav
+    // landete statt direkt am echten Bildschirmrand). --app-height wird in
+    // index.html per JS aus window.innerHeight/visualViewport gesetzt, noch
+    // bevor React mountet — zuverlässiger als jede reine CSS-Einheit hier.
     <div style={{ position:"fixed", top:0, left:0, right:0,
-      height:"100dvh",
+      height:"var(--app-height, 100dvh)",
       display:"flex", flexDirection:"column", overflow:"hidden",
       background:"var(--bg)", color:"var(--text)" }}>
 
@@ -988,7 +993,7 @@ export default function PolierApp() {
 
       {/* ── MEHR-MENÜ (Bottom Sheet) ── */}
       {zeigeMehr && (
-        <div style={{ position:"fixed", top:0, left:0, right:0, height:"100dvh",
+        <div style={{ position:"fixed", top:0, left:0, right:0, height:"var(--app-height, 100dvh)",
           background:"rgba(11,17,32,0.55)", zIndex:60 }}
           onClick={() => setZeigeMehr(false)}>
           <div onClick={e => e.stopPropagation()}

@@ -64,7 +64,7 @@ export function KolonnenSammelstempel({ kolonne, projekte, session, onClose }) {
   // nested-position:fixed-Stacking-Context-Bug wie beim Aufgabenformular
   // (Bootstrap-Bar der App liegt trotz korrekter z-Index-Werte darüber).
   return createPortal(
-    <div style={{ position:"fixed", top:0, left:0, right:0, height:"100dvh",
+    <div style={{ position:"fixed", top:0, left:0, right:0, height:"var(--app-height, 100dvh)",
       background:"var(--bg)", zIndex:500, overflowY:"auto",
       WebkitOverflowScrolling:"touch" }}>
 

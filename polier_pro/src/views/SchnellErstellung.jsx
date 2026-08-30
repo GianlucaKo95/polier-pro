@@ -71,7 +71,7 @@ export function SchnellErstellung({ onSave, onClose }) {
   // iOS-Standalone-PWA sonst denselben nested-position:fixed-Bug wie
   // beim Aufgabenformular.
   return createPortal(
-    <div style={{ position:"fixed", top:0, left:0, right:0, height:"100dvh",
+    <div style={{ position:"fixed", top:0, left:0, right:0, height:"var(--app-height, 100dvh)",
       background:"var(--bg)", zIndex:500, overflowY:"auto",
       WebkitOverflowScrolling:"touch" }}>
 
