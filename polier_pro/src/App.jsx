@@ -906,7 +906,8 @@ export default function PolierApp() {
       {/* ── CONTENT — einziger scrollender Bereich ── */}
       <PlanGuard firma={firma} ressource="app">
       <div style={{ padding:"16px 14px 20px", background:"var(--bg)",
-        flex:"1 1 0", minHeight:0, overflowY:"auto", WebkitOverflowScrolling:"touch" }}>
+        flex:"1 1 0", minHeight:0, overflowY:"auto", WebkitOverflowScrolling:"touch",
+        overscrollBehaviorY:"contain" }}>
         {tab === "dashboard" && (
           <PushBanner erlaubt={push.erlaubt} berechtigung={() => push.berechtigung(auth.session)} />
         )}
