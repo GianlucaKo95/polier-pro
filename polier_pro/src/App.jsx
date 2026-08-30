@@ -111,6 +111,40 @@ export default function PolierApp() {
   const push = usePushNotifications(projekte, eigeneFirma);
   const offline = useOfflineSync(pwa.online === false ? false : true, sbConnected);
 
+  // Temporäre Diagnose für den Grau-Streifen unter der Bottom-Nav: bisherige
+  // Fixes (bottom:0-Anker, overflow:hidden entfernt) haben sichtbar nichts
+  // geändert — bevor eine dritte Theorie verfolgt wird, hier reale Zahlen
+  // messen statt weiter zu raten. Über das Sonde-Element wird der tatsächlich
+  // aufgelöste Pixelwert von env(safe-area-inset-bottom) ausgelesen (env()
+  // selbst liefert getComputedStyle keinen direkten Wert, daher der Umweg
+  // über ein Element, dessen paddingBottom darauf gesetzt ist).
+  const [diag, setDiag] = useState(null);
+  useEffect(() => {
+    const sonde = document.createElement("div");
+    sonde.style.cssText = "position:fixed;bottom:0;height:0;padding-bottom:env(safe-area-inset-bottom);visibility:hidden;pointer-events:none;";
+    document.body.appendChild(sonde);
+    const messen = () => {
+      const safeBottom = parseFloat(getComputedStyle(sonde).paddingBottom) || 0;
+      setDiag({
+        innerH: window.innerHeight,
+        vvH: window.visualViewport ? Math.round(window.visualViewport.height) : null,
+        outerH: window.outerHeight,
+        safeBottom,
+        standalone: typeof navigator.standalone === "boolean" ? navigator.standalone : null,
+        displayMode: window.matchMedia("(display-mode: standalone)").matches,
+        dpr: window.devicePixelRatio,
+      });
+    };
+    messen();
+    window.addEventListener("resize", messen);
+    window.visualViewport?.addEventListener("resize", messen);
+    return () => {
+      window.removeEventListener("resize", messen);
+      window.visualViewport?.removeEventListener("resize", messen);
+      sonde.remove();
+    };
+  }, []);
+
   // Onboarding: gilt als abgeschlossen wenn entweder localStorage es sagt
   // ODER der eingeloggte Nutzer in Supabase bereits einer Firma zugeordnet ist.
   // localStorage allein reicht nicht — bei neuem Gerät/Browser/gelöschtem Cache
@@ -1043,8 +1077,15 @@ export default function PolierApp() {
           Bewusst auf JEDEM Screen sichtbar (Root-Shell, nicht pro Tab). */}
       <div style={{ position:"fixed", bottom:2, right:4, zIndex:9999,
         fontSize:9, fontWeight:600, color:"rgba(122,132,153,0.55)",
-        fontFamily:"monospace", pointerEvents:"none" }}>
+        fontFamily:"monospace", pointerEvents:"none", textAlign:"right" }}>
         v{APP_VERSION}
+        {diag && (
+          <div style={{ fontSize:8, lineHeight:1.5 }}>
+            <div>innerH:{diag.innerH} vvH:{diag.vvH ?? "–"} outerH:{diag.outerH}</div>
+            <div>safeBottom:{diag.safeBottom} dpr:{diag.dpr}</div>
+            <div>standalone:{String(diag.standalone)} displayMode:{String(diag.displayMode)}</div>
+          </div>
+        )}
       </div>
     </div>
   );
