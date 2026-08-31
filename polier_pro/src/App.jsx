@@ -891,30 +891,19 @@ export default function PolierApp() {
     stunden:ChartColumn, angebot:FileText, admin_params:Settings, nutzer:UserCog };
 
   return (
-    // position:fixed + flex-column macht den Root zur eigenen Scroll-Wurzel: nur
-    // der CONTENT-Bereich unten scrollt (overflowY:"auto"), das Dokument (body)
-    // selbst bleibt unscrollbar. Vorher scrollte body komplett (Top-Bar war nur
-    // "sticky", Bottom-Nav nur "fixed" relativ zum Viewport) — in iOS-Standalone-
-    // PWAs bleiben position:fixed-Elemente während eines body-weiten Scrolls in
-    // WebKit nachweislich nicht zuverlässig am Rand kleben. Mit dieser Struktur
-    // bleiben Top-Bar und Bottom-Nav als reguläre Flex-Geschwister strukturell
-    // immer sichtbar, unabhängig vom Scroll-Verhalten.
-    // top:0/bottom:0 statt einer festen Höhe (100dvh oder eine per JS aus
-    // window.innerHeight/visualViewport gemessene --app-height): beide
-    // haben sich in der installierten iOS-PWA wiederholt als ungenau
-    // erwiesen — die Shell blieb um ca. die Höhe von
-    // env(safe-area-inset-bottom) zu kurz, darunter schimmerte der graue
-    // body-Hintergrund statt des weißen Bottom-Nav-Hintergrunds durch
-    // (live nachgewiesen über das Versions-Wasserzeichen). bottom:0 war
-    // ursprünglich deshalb verworfen worden, weil WebKit es früher gegen
-    // die "große" statische statt die aktuelle Viewport-Höhe berechnete —
-    // das trat aber nur auf, solange body/html selbst noch scrollen und
-    // damit Safaris ein-/ausblendende Toolbar-Höhe ins Spiel bringen
-    // konnten. Jetzt, wo html/body per overflow:hidden;position:fixed
-    // fest verriegelt sind (siehe theme.css), gibt es diese dynamische
-    // Toolbar-Höhe in der Standalone-PWA gar nicht mehr — bottom:0 löst
-    // sich zuverlässig gegen die tatsächliche aktuelle Viewport-Höhe auf.
-    <div ref={setShellNode} style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
+    // GEFUNDEN (v1.0.88, Abgleich mit einer nachweislich funktionierenden
+    // Referenz-PWA): position:fixed auf der Root-Shell UND auf html/body
+    // (siehe theme.css) war die ganze Zeit die eigentliche Ursache der
+    // 852-vs-793px-Lücke, nicht irgendeine falsche Höhenangabe an der
+    // Shell selbst — fünf Fixes an genau dieser Shell (100dvh, JS-
+    // gemessene Höhe, position:fixed/bottom:0, top/bottom:0 auf html/body,
+    // manifest display:fullscreen) haben deshalb nichts gebracht. Die
+    // Referenz-PWA nutzt für ihre Vollbild-Screens ganz normal
+    // height:"100dvh" auf einem NICHT position:fixed Element — und html/
+    // body sind bei ihr ebenfalls nicht position:fixed (siehe theme.css).
+    // Scroll-Eindämmung kommt jetzt allein über overscroll-behavior
+    // (html/body) plus das eigene overflow:"hidden" hier.
+    <div ref={setShellNode} style={{ height:"100dvh", width:"100%",
       display:"flex", flexDirection:"column", overflow:"hidden",
       background:"var(--bg)", color:"var(--text)" }}>
 
