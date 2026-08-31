@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
-import { version as APP_VERSION } from "../package.json";
+import React, { useState, useEffect } from "react";
 import { Bell, LogOut, Plus, MapPin, Hash, TriangleAlert, LayoutGrid,
   CircleCheckBig, NotebookPen, Users, Clock, Ellipsis, ChevronRight,
   Building2, Calendar, Euro, CloudSun, ChartColumn, FileText, Settings,
@@ -110,59 +109,6 @@ export default function PolierApp() {
   const pwa  = usePWA();
   const push = usePushNotifications(projekte, eigeneFirma);
   const offline = useOfflineSync(pwa.online === false ? false : true, sbConnected);
-
-  // Temporäre Diagnose für den Grau-Streifen unter der Bottom-Nav: bisherige
-  // Fixes (bottom:0-Anker, overflow:hidden entfernt) haben sichtbar nichts
-  // geändert — bevor eine dritte Theorie verfolgt wird, hier reale Zahlen
-  // messen statt weiter zu raten. Über das Sonde-Element wird der tatsächlich
-  // aufgelöste Pixelwert von env(safe-area-inset-bottom) ausgelesen (env()
-  // selbst liefert getComputedStyle keinen direkten Wert, daher der Umweg
-  // über ein Element, dessen paddingBottom darauf gesetzt ist).
-  // shellBottom/navBottom kamen in der letzten Runde leer zurück: die App
-  // hat vor der eigentlichen Shell mehrere bedingte Rückgaben (Login,
-  // Onboarding, Profil-Auswahl usw.) — der alte useRef+useEffect([])-Ansatz
-  // maß einmalig beim allerersten Mount, oft bevor die Shell überhaupt im
-  // DOM stand, und lief danach nie wieder. Callback-Refs (per useState statt
-  // useRef) lösen das: sie feuern jedes Mal, wenn das jeweilige Element
-  // tatsächlich attached/detached wird, egal welcher bedingte Zweig gerade
-  // aktiv ist.
-  const [diag, setDiag] = useState(null);
-  const [shellNode, setShellNode] = useState(null);
-  const [navNode, setNavNode] = useState(null);
-  useEffect(() => {
-    const sonde = document.createElement("div");
-    sonde.style.cssText = "position:fixed;bottom:0;height:0;padding-bottom:env(safe-area-inset-bottom);visibility:hidden;pointer-events:none;";
-    document.body.appendChild(sonde);
-    const messen = () => {
-      const safeBottom = parseFloat(getComputedStyle(sonde).paddingBottom) || 0;
-      const shellRect = shellNode?.getBoundingClientRect();
-      const navRect = navNode?.getBoundingClientRect();
-      const bodyRect = document.body.getBoundingClientRect();
-      const htmlRect = document.documentElement.getBoundingClientRect();
-      setDiag({
-        innerH: window.innerHeight,
-        vvH: window.visualViewport ? Math.round(window.visualViewport.height) : null,
-        outerH: window.outerHeight,
-        screenH: window.screen?.height,
-        availH: window.screen?.availHeight,
-        safeBottom,
-        shellBottom: shellRect ? Math.round(shellRect.bottom) : null,
-        navBottom: navRect ? Math.round(navRect.bottom) : null,
-        bodyBottom: Math.round(bodyRect.bottom),
-        htmlBottom: Math.round(htmlRect.bottom),
-        standalone: typeof navigator.standalone === "boolean" ? navigator.standalone : null,
-        dpr: window.devicePixelRatio,
-      });
-    };
-    messen();
-    window.addEventListener("resize", messen);
-    window.visualViewport?.addEventListener("resize", messen);
-    return () => {
-      window.removeEventListener("resize", messen);
-      window.visualViewport?.removeEventListener("resize", messen);
-      sonde.remove();
-    };
-  }, [shellNode, navNode]);
 
   // Onboarding: gilt als abgeschlossen wenn entweder localStorage es sagt
   // ODER der eingeloggte Nutzer in Supabase bereits einer Firma zugeordnet ist.
@@ -903,7 +849,7 @@ export default function PolierApp() {
     // body sind bei ihr ebenfalls nicht position:fixed (siehe theme.css).
     // Scroll-Eindämmung kommt jetzt allein über overscroll-behavior
     // (html/body) plus das eigene overflow:"hidden" hier.
-    <div ref={setShellNode} style={{ height:"100dvh", width:"100%",
+    <div style={{ height:"100dvh", width:"100%",
       display:"flex", flexDirection:"column", overflow:"hidden",
       background:"var(--bg)", color:"var(--text)" }}>
 
@@ -1004,7 +950,7 @@ export default function PolierApp() {
           Der Home-Indicator-Sicherheitsabstand bleibt (Labels/Buttons sollen
           nicht unter der Wisch-Geste liegen), aber so knapp wie möglich —
           14px weniger als der volle Sicherheitsabstand, nie unter 4px. */}
-      <div ref={setNavNode} style={{ flexShrink:0,
+      <div style={{ flexShrink:0,
         background:"var(--surface)", borderTop:"1px solid var(--border)",
         display:"flex", padding:"6px 6px",
         paddingBottom:"max(4px, calc(env(safe-area-inset-bottom) - 14px))" }}>
@@ -1079,24 +1025,6 @@ export default function PolierApp() {
       )}
 
       <PWABanner pwa={pwa} />
-
-      {/* Diagnose-Wasserzeichen — zeigt schwarz auf weiß, welcher Build
-          gerade tatsächlich läuft, statt am Padding raten zu müssen.
-          Bewusst auf JEDEM Screen sichtbar (Root-Shell, nicht pro Tab). */}
-      <div style={{ position:"fixed", bottom:2, right:4, zIndex:9999,
-        fontSize:9, fontWeight:600, color:"rgba(122,132,153,0.55)",
-        fontFamily:"monospace", pointerEvents:"none", textAlign:"right" }}>
-        v{APP_VERSION}
-        {diag && (
-          <div style={{ fontSize:8, lineHeight:1.5 }}>
-            <div>innerH:{diag.innerH} vvH:{diag.vvH ?? "–"} outerH:{diag.outerH}</div>
-            <div>screenH:{diag.screenH} availH:{diag.availH}</div>
-            <div>shellBottom:{diag.shellBottom} navBottom:{diag.navBottom}</div>
-            <div>bodyBottom:{diag.bodyBottom} htmlBottom:{diag.htmlBottom}</div>
-            <div>safeBottom:{diag.safeBottom} dpr:{diag.dpr} standalone:{String(diag.standalone)}</div>
-          </div>
-        )}
-      </div>
     </div>
   );
 }
