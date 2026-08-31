@@ -53,45 +53,30 @@
   --obg:     #2a1200;
 }
 * { box-sizing: border-box; }
-/* Die App-Shell in App.jsx ist selbst position:fixed und regelt Scrollen
-   intern über ihren eigenen Content-Bereich — html/body dürfen deshalb NIE
-   scrollen. Ohne position:fixed hier bleibt das Dokument selbst scrollbar,
-   und iOS erlaubt seinen nativen "Rubber-Band"-Overscroll: die ganze Seite
-   lässt sich mit dem Finger nach unten ziehen und federt zurück, was
-   kurzzeitig den Hintergrund unterhalb der Bottom-Nav freilegt.
-   WICHTIG: kein overflow:hidden hier! height:100% auf html/body löst sich
-   in der installierten iOS-PWA nachweislich gegen eine zu kurze Viewport-
-   Höhe auf (dasselbe Problem, das schon 100dvh und eine JS-gemessene Höhe
-   betraf) — mit overflow:hidden hätte das den eigenen, zu kurzen Rahmen
-   von body/html geclippt und damit ALLES darin geclippt, inklusive der
-   Root-Shell, obwohl die selbst korrekt mit bottom:0 positioniert ist.
-   position:fixed allein reicht schon, um body/html nicht scrollbar zu
-   machen (die Shell selbst ist position:fixed und trägt daher nicht zum
-   normalen Fluss/Overflow von body bei) — overflow:hidden war hier nur
-   redundant und zugleich schädlich.
-   top/left/right/bottom:0 statt height:100%/width:100%: die Theorie war,
-   dass body als position:fixed-Elternteil der Root-Shell (verschachteltes
-   position:fixed, wie bei den Vollbild-Modals, die deshalb per createPortal
-   direkt in body gerendert werden) seine eigene, zu kurze Box an die Shell
-   weiterreicht. WIDERLEGT (v1.0.87-Messung): bodyBottom (785, kurz wegen
-   des UA-Default-margins, siehe margin:0 unten) und shellBottom (793)
-   unterscheiden sich klar — die Shell hängt NICHT an body's Box, sondern
-   an derselben ~793px-Referenz wie innerHeight/visualViewport.height,
-   unabhängig von jeder hier getesteten Technik (100dvh, JS-gemessene
-   Höhe, position:fixed/bottom:0, jetzt top/bottom:0 auf html/body). Bleibt
-   trotzdem so (robuster als height:100%, siehe Kommentar oben zu den
-   Prozent-Auflösungs-Bugs), ist aber nicht die Ursache der 852-vs-793-
-   Lücke. */
-html, body {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+/* GEFUNDEN (v1.0.88, Abgleich mit einer nachweislich funktionierenden
+   Referenz-PWA): der wahre Übeltäter der ganzen 852-vs-793-Saga war
+   position:fixed auf html/body selbst. Fünf verschiedene Fixes an der
+   Root-Shell (100dvh, JS-gemessene Höhe, position:fixed/bottom:0,
+   top/bottom:0 auf html/body, manifest display:fullscreen) haben nichts
+   gebracht, weil sie alle das falsche Element behandelt haben — html/body
+   waren die ganze Zeit position:fixed (seit dem ursprünglichen Rubber-
+   Band-Fix), und das lässt WebKit für JEDES verschachtelte position:fixed-
+   oder dvh-Element in der installierten iOS-Standalone-PWA einen
+   verkürzten Viewport (~793 statt echten ~852px) berechnen — unabhängig
+   davon, wie die Root-Shell selbst positioniert ist.
+   Die Referenz-PWA verhindert Rubber-Band-Overscroll OHNE position:fixed,
+   nur über overscroll-behavior — genau dieser Ansatz jetzt hier
+   übernommen. margin:0 bleibt (echter, unabhängig davon sinnvoller Fix
+   aus v1.0.88 für den UA-Default-Margin auf body). */
+html {
+  height: 100%;
   margin: 0;
   overscroll-behavior: none;
 }
 body {
+  height: 100%;
+  margin: 0;
+  overscroll-behavior-y: contain;
   background: var(--bg) !important;
   color: var(--text) !important;
   font-family: var(--font-ui);
