@@ -69,25 +69,26 @@
    machen (die Shell selbst ist position:fixed und trägt daher nicht zum
    normalen Fluss/Overflow von body bei) — overflow:hidden war hier nur
    redundant und zugleich schädlich.
-   top/left/right/bottom:0 statt height:100%/width:100%: gemessene Werte
-   (v1.0.86) zeigen shellBottom/navBottom exakt auf innerHeight statt dem
-   echten screen.height, obwohl die Root-Shell selbst korrekt top:0/bottom:0
-   nutzt — der Verdacht ist ein WebKit-Bug mit VERSCHACHTELTEM
-   position:fixed (body ist selbst position:fixed, die Root-Shell ist ein
-   position:fixed-Kind davon; genau diese Konstellation hat in dieser
-   Codebase bereits bei alle Vollbild-Modals dazu geführt, dass sie sich
-   gegen die Box des fixed-Elternteils statt gegen den echten Viewport
-   auflösen — deshalb werden Modals per createPortal direkt in body
-   gerendert). height:100% auf body könnte hier genau dieselbe verkürzte
-   Bezugsgröße wie innerHeight liefern und das als Box an die Root-Shell
-   weiterreichen. top/left/right/bottom:0 statt height/width vermeidet
-   die Prozent-Auflösung komplett. */
+   top/left/right/bottom:0 statt height:100%/width:100%: die Theorie war,
+   dass body als position:fixed-Elternteil der Root-Shell (verschachteltes
+   position:fixed, wie bei den Vollbild-Modals, die deshalb per createPortal
+   direkt in body gerendert werden) seine eigene, zu kurze Box an die Shell
+   weiterreicht. WIDERLEGT (v1.0.87-Messung): bodyBottom (785, kurz wegen
+   des UA-Default-margins, siehe margin:0 unten) und shellBottom (793)
+   unterscheiden sich klar — die Shell hängt NICHT an body's Box, sondern
+   an derselben ~793px-Referenz wie innerHeight/visualViewport.height,
+   unabhängig von jeder hier getesteten Technik (100dvh, JS-gemessene
+   Höhe, position:fixed/bottom:0, jetzt top/bottom:0 auf html/body). Bleibt
+   trotzdem so (robuster als height:100%, siehe Kommentar oben zu den
+   Prozent-Auflösungs-Bugs), ist aber nicht die Ursache der 852-vs-793-
+   Lücke. */
 html, body {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
+  margin: 0;
   overscroll-behavior: none;
 }
 body {
