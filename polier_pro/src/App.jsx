@@ -119,19 +119,26 @@ export default function PolierApp() {
   // selbst liefert getComputedStyle keinen direkten Wert, daher der Umweg
   // über ein Element, dessen paddingBottom darauf gesetzt ist).
   const [diag, setDiag] = useState(null);
+  const shellRef = useRef(null);
+  const navRef = useRef(null);
   useEffect(() => {
     const sonde = document.createElement("div");
     sonde.style.cssText = "position:fixed;bottom:0;height:0;padding-bottom:env(safe-area-inset-bottom);visibility:hidden;pointer-events:none;";
     document.body.appendChild(sonde);
     const messen = () => {
       const safeBottom = parseFloat(getComputedStyle(sonde).paddingBottom) || 0;
+      const shellRect = shellRef.current?.getBoundingClientRect();
+      const navRect = navRef.current?.getBoundingClientRect();
       setDiag({
         innerH: window.innerHeight,
         vvH: window.visualViewport ? Math.round(window.visualViewport.height) : null,
         outerH: window.outerHeight,
+        screenH: window.screen?.height,
+        availH: window.screen?.availHeight,
         safeBottom,
+        shellBottom: shellRect ? Math.round(shellRect.bottom) : null,
+        navBottom: navRect ? Math.round(navRect.bottom) : null,
         standalone: typeof navigator.standalone === "boolean" ? navigator.standalone : null,
-        displayMode: window.matchMedia("(display-mode: standalone)").matches,
         dpr: window.devicePixelRatio,
       });
     };
@@ -895,7 +902,7 @@ export default function PolierApp() {
     // fest verriegelt sind (siehe theme.css), gibt es diese dynamische
     // Toolbar-Höhe in der Standalone-PWA gar nicht mehr — bottom:0 löst
     // sich zuverlässig gegen die tatsächliche aktuelle Viewport-Höhe auf.
-    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
+    <div ref={shellRef} style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
       display:"flex", flexDirection:"column", overflow:"hidden",
       background:"var(--bg)", color:"var(--text)" }}>
 
@@ -996,7 +1003,7 @@ export default function PolierApp() {
           Der Home-Indicator-Sicherheitsabstand bleibt (Labels/Buttons sollen
           nicht unter der Wisch-Geste liegen), aber ohne jeden zusätzlichen
           Puffer obendrauf — exakt env(safe-area-inset-bottom). */}
-      <div style={{ flexShrink:0,
+      <div ref={navRef} style={{ flexShrink:0,
         background:"var(--surface)", borderTop:"1px solid var(--border)",
         display:"flex", padding:"6px 6px",
         paddingBottom:"env(safe-area-inset-bottom)" }}>
@@ -1082,8 +1089,9 @@ export default function PolierApp() {
         {diag && (
           <div style={{ fontSize:8, lineHeight:1.5 }}>
             <div>innerH:{diag.innerH} vvH:{diag.vvH ?? "–"} outerH:{diag.outerH}</div>
-            <div>safeBottom:{diag.safeBottom} dpr:{diag.dpr}</div>
-            <div>standalone:{String(diag.standalone)} displayMode:{String(diag.displayMode)}</div>
+            <div>screenH:{diag.screenH} availH:{diag.availH}</div>
+            <div>shellBottom:{diag.shellBottom} navBottom:{diag.navBottom}</div>
+            <div>safeBottom:{diag.safeBottom} dpr:{diag.dpr} standalone:{String(diag.standalone)}</div>
           </div>
         )}
       </div>
