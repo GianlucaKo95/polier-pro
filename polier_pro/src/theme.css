@@ -68,11 +68,26 @@
    position:fixed allein reicht schon, um body/html nicht scrollbar zu
    machen (die Shell selbst ist position:fixed und trägt daher nicht zum
    normalen Fluss/Overflow von body bei) — overflow:hidden war hier nur
-   redundant und zugleich schädlich. */
+   redundant und zugleich schädlich.
+   top/left/right/bottom:0 statt height:100%/width:100%: gemessene Werte
+   (v1.0.86) zeigen shellBottom/navBottom exakt auf innerHeight statt dem
+   echten screen.height, obwohl die Root-Shell selbst korrekt top:0/bottom:0
+   nutzt — der Verdacht ist ein WebKit-Bug mit VERSCHACHTELTEM
+   position:fixed (body ist selbst position:fixed, die Root-Shell ist ein
+   position:fixed-Kind davon; genau diese Konstellation hat in dieser
+   Codebase bereits bei alle Vollbild-Modals dazu geführt, dass sie sich
+   gegen die Box des fixed-Elternteils statt gegen den echten Viewport
+   auflösen — deshalb werden Modals per createPortal direkt in body
+   gerendert). height:100% auf body könnte hier genau dieselbe verkürzte
+   Bezugsgröße wie innerHeight liefern und das als Box an die Root-Shell
+   weiterreichen. top/left/right/bottom:0 statt height/width vermeidet
+   die Prozent-Auflösung komplett. */
 html, body {
-  height: 100%;
   position: fixed;
-  width: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   overscroll-behavior: none;
 }
 body {
