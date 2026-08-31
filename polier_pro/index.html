@@ -13,6 +13,23 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,600&display=swap" rel="stylesheet" />
   <title>Polaris</title>
+  <script>
+    // window.screen.height war in jeder Messung (über sehr viele Runden
+    // hinweg, in gutem UND kaputtem Zustand) immer korrekt — anders als
+    // innerHeight/visualViewport.height/100dvh, die sich in der
+    // installierten iOS-Standalone-PWA je nach Start (Neuinstallation vs.
+    // vollständig geschlossen & neu geöffnet) inkonsistent verhalten haben.
+    // Deshalb hier VOR dem React-Mount einmalig screen.height als eigene
+    // CSS-Variable setzen und die App-Shell darauf statt auf dvh stützen.
+    (function () {
+      function setzeTrueVh() {
+        var h = window.screen && window.screen.height;
+        if (h) document.documentElement.style.setProperty("--true-vh", h + "px");
+      }
+      setzeTrueVh();
+      window.addEventListener("orientationchange", setzeTrueVh);
+    })();
+  </script>
 </head>
 <body>
   <div id="root"></div>

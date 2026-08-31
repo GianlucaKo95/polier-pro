@@ -837,19 +837,19 @@ export default function PolierApp() {
     stunden:ChartColumn, angebot:FileText, admin_params:Settings, nutzer:UserCog };
 
   return (
-    // GEFUNDEN (v1.0.88, Abgleich mit einer nachweislich funktionierenden
-    // Referenz-PWA): position:fixed auf der Root-Shell UND auf html/body
-    // (siehe theme.css) war die ganze Zeit die eigentliche Ursache der
-    // 852-vs-793px-Lücke, nicht irgendeine falsche Höhenangabe an der
-    // Shell selbst — fünf Fixes an genau dieser Shell (100dvh, JS-
-    // gemessene Höhe, position:fixed/bottom:0, top/bottom:0 auf html/body,
-    // manifest display:fullscreen) haben deshalb nichts gebracht. Die
-    // Referenz-PWA nutzt für ihre Vollbild-Screens ganz normal
-    // height:"100dvh" auf einem NICHT position:fixed Element — und html/
-    // body sind bei ihr ebenfalls nicht position:fixed (siehe theme.css).
-    // Scroll-Eindämmung kommt jetzt allein über overscroll-behavior
-    // (html/body) plus das eigene overflow:"hidden" hier.
-    <div style={{ height:"100dvh", width:"100%",
+    // position:fixed auf html/body war ein echter Bug (siehe theme.css),
+    // aber 100dvh allein reicht nicht: bestätigt reproduzierbar bricht
+    // 100dvh auf diesem Gerät wieder auf die kurze Höhe ein, sobald die
+    // PWA vollständig geschlossen und neu geöffnet wird (nicht bei
+    // Neuinstallation, nicht bei bloßem App-Wechsel — nur bei "vollständig
+    // beendet, dann neu gestartet"). window.screen.height war in jeder
+    // Messung, egal ob guter oder kaputter Zustand, immer korrekt — siehe
+    // die Sonde in index.html, die --true-vh vor dem React-Mount setzt.
+    // var(--true-vh, 100dvh) nutzt das, mit 100dvh nur als Fallback falls
+    // die Variable aus irgendeinem Grund fehlt.
+    // Scroll-Eindämmung kommt allein über overscroll-behavior (html/body,
+    // siehe theme.css) plus das eigene overflow:"hidden" hier.
+    <div style={{ height:"var(--true-vh, 100dvh)", width:"100%",
       display:"flex", flexDirection:"column", overflow:"hidden",
       background:"var(--bg)", color:"var(--text)" }}>
 
