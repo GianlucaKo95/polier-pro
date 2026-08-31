@@ -137,6 +137,8 @@ export default function PolierApp() {
       const safeBottom = parseFloat(getComputedStyle(sonde).paddingBottom) || 0;
       const shellRect = shellNode?.getBoundingClientRect();
       const navRect = navNode?.getBoundingClientRect();
+      const bodyRect = document.body.getBoundingClientRect();
+      const htmlRect = document.documentElement.getBoundingClientRect();
       setDiag({
         innerH: window.innerHeight,
         vvH: window.visualViewport ? Math.round(window.visualViewport.height) : null,
@@ -146,6 +148,8 @@ export default function PolierApp() {
         safeBottom,
         shellBottom: shellRect ? Math.round(shellRect.bottom) : null,
         navBottom: navRect ? Math.round(navRect.bottom) : null,
+        bodyBottom: Math.round(bodyRect.bottom),
+        htmlBottom: Math.round(htmlRect.bottom),
         standalone: typeof navigator.standalone === "boolean" ? navigator.standalone : null,
         dpr: window.devicePixelRatio,
       });
@@ -1099,6 +1103,7 @@ export default function PolierApp() {
             <div>innerH:{diag.innerH} vvH:{diag.vvH ?? "–"} outerH:{diag.outerH}</div>
             <div>screenH:{diag.screenH} availH:{diag.availH}</div>
             <div>shellBottom:{diag.shellBottom} navBottom:{diag.navBottom}</div>
+            <div>bodyBottom:{diag.bodyBottom} htmlBottom:{diag.htmlBottom}</div>
             <div>safeBottom:{diag.safeBottom} dpr:{diag.dpr} standalone:{String(diag.standalone)}</div>
           </div>
         )}
