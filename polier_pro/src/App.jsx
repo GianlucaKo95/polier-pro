@@ -118,17 +118,25 @@ export default function PolierApp() {
   // aufgelöste Pixelwert von env(safe-area-inset-bottom) ausgelesen (env()
   // selbst liefert getComputedStyle keinen direkten Wert, daher der Umweg
   // über ein Element, dessen paddingBottom darauf gesetzt ist).
+  // shellBottom/navBottom kamen in der letzten Runde leer zurück: die App
+  // hat vor der eigentlichen Shell mehrere bedingte Rückgaben (Login,
+  // Onboarding, Profil-Auswahl usw.) — der alte useRef+useEffect([])-Ansatz
+  // maß einmalig beim allerersten Mount, oft bevor die Shell überhaupt im
+  // DOM stand, und lief danach nie wieder. Callback-Refs (per useState statt
+  // useRef) lösen das: sie feuern jedes Mal, wenn das jeweilige Element
+  // tatsächlich attached/detached wird, egal welcher bedingte Zweig gerade
+  // aktiv ist.
   const [diag, setDiag] = useState(null);
-  const shellRef = useRef(null);
-  const navRef = useRef(null);
+  const [shellNode, setShellNode] = useState(null);
+  const [navNode, setNavNode] = useState(null);
   useEffect(() => {
     const sonde = document.createElement("div");
     sonde.style.cssText = "position:fixed;bottom:0;height:0;padding-bottom:env(safe-area-inset-bottom);visibility:hidden;pointer-events:none;";
     document.body.appendChild(sonde);
     const messen = () => {
       const safeBottom = parseFloat(getComputedStyle(sonde).paddingBottom) || 0;
-      const shellRect = shellRef.current?.getBoundingClientRect();
-      const navRect = navRef.current?.getBoundingClientRect();
+      const shellRect = shellNode?.getBoundingClientRect();
+      const navRect = navNode?.getBoundingClientRect();
       setDiag({
         innerH: window.innerHeight,
         vvH: window.visualViewport ? Math.round(window.visualViewport.height) : null,
@@ -150,7 +158,7 @@ export default function PolierApp() {
       window.visualViewport?.removeEventListener("resize", messen);
       sonde.remove();
     };
-  }, []);
+  }, [shellNode, navNode]);
 
   // Onboarding: gilt als abgeschlossen wenn entweder localStorage es sagt
   // ODER der eingeloggte Nutzer in Supabase bereits einer Firma zugeordnet ist.
@@ -902,7 +910,7 @@ export default function PolierApp() {
     // fest verriegelt sind (siehe theme.css), gibt es diese dynamische
     // Toolbar-Höhe in der Standalone-PWA gar nicht mehr — bottom:0 löst
     // sich zuverlässig gegen die tatsächliche aktuelle Viewport-Höhe auf.
-    <div ref={shellRef} style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
+    <div ref={setShellNode} style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
       display:"flex", flexDirection:"column", overflow:"hidden",
       background:"var(--bg)", color:"var(--text)" }}>
 
@@ -1003,7 +1011,7 @@ export default function PolierApp() {
           Der Home-Indicator-Sicherheitsabstand bleibt (Labels/Buttons sollen
           nicht unter der Wisch-Geste liegen), aber ohne jeden zusätzlichen
           Puffer obendrauf — exakt env(safe-area-inset-bottom). */}
-      <div ref={navRef} style={{ flexShrink:0,
+      <div ref={setNavNode} style={{ flexShrink:0,
         background:"var(--surface)", borderTop:"1px solid var(--border)",
         display:"flex", padding:"6px 6px",
         paddingBottom:"env(safe-area-inset-bottom)" }}>
