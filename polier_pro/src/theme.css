@@ -82,6 +82,14 @@ body {
   font-family: var(--font-ui);
   transition: background 0.25s, color 0.25s;
 }
+/* Fehlte bisher — die Referenz-PWA setzt height:100dvh nicht nur auf ihre
+   Vollbild-Screens, sondern zusätzlich auf #root selbst. Nachgezogen,
+   statt bei einem Rückfall auf einen anderen Höhen-Mechanismus
+   auszuweichen. */
+#root {
+  height: 100%;
+  height: 100dvh;
+}
 input, textarea, select, button {
   font-family: var(--font-ui);
 }

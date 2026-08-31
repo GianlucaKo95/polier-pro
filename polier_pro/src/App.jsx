@@ -837,19 +837,15 @@ export default function PolierApp() {
     stunden:ChartColumn, angebot:FileText, admin_params:Settings, nutzer:UserCog };
 
   return (
-    // position:fixed auf html/body war ein echter Bug (siehe theme.css),
-    // aber 100dvh allein reicht nicht: bestätigt reproduzierbar bricht
-    // 100dvh auf diesem Gerät wieder auf die kurze Höhe ein, sobald die
-    // PWA vollständig geschlossen und neu geöffnet wird (nicht bei
-    // Neuinstallation, nicht bei bloßem App-Wechsel — nur bei "vollständig
-    // beendet, dann neu gestartet"). window.screen.height war in jeder
-    // Messung, egal ob guter oder kaputter Zustand, immer korrekt — siehe
-    // die Sonde in index.html, die --true-vh vor dem React-Mount setzt.
-    // var(--true-vh, 100dvh) nutzt das, mit 100dvh nur als Fallback falls
-    // die Variable aus irgendeinem Grund fehlt.
+    // position:fixed auf html/body war der Bug (siehe theme.css) — aber
+    // eine weitere Lücke zur Referenz-PWA blieb: die hat zusätzlich
+    // #root { height:100dvh } in ihrem globalen CSS, wir hatten height
+    // bisher nur auf diesem Shell-Div selbst gesetzt, nie auf #root
+    // (siehe theme.css). Jetzt exakt nachgezogen, statt auf einen anderen
+    // Mechanismus (window.screen.height) auszuweichen.
     // Scroll-Eindämmung kommt allein über overscroll-behavior (html/body,
     // siehe theme.css) plus das eigene overflow:"hidden" hier.
-    <div style={{ height:"var(--true-vh, 100dvh)", width:"100%",
+    <div style={{ height:"100dvh", width:"100%",
       display:"flex", flexDirection:"column", overflow:"hidden",
       background:"var(--bg)", color:"var(--text)" }}>
 
