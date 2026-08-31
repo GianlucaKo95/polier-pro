@@ -76,18 +76,7 @@ html, body {
   overscroll-behavior: none;
 }
 body {
-  /* var(--surface) statt var(--bg): Messungen (v1.0.84) haben bewiesen, dass
-     position:fixed/bottom:0 und auch 100dvh sich in der installierten
-     iOS-Standalone-PWA gegen eine kürzere Viewport-Höhe auflösen als der
-     tatsächliche Bildschirm (shellBottom/navBottom lagen exakt auf
-     innerHeight/visualViewport.height, ~59px UNTER outerHeight/screen.height)
-     — dieser Reststreifen ist für unsere Root-Shell schlicht unerreichbar,
-     unabhängig von der gewählten CSS-Positionierung. body scheint dort durch,
-     darum jetzt dieselbe Farbe wie die Bottom-Nav (var(--surface)) statt des
-     App-Hintergrunds — der Streifen bleibt real, fällt aber optisch nicht
-     mehr auf, weil er nahtlos in die weiße Nav übergeht statt grau
-     abzustechen. */
-  background: var(--surface) !important;
+  background: var(--bg) !important;
   color: var(--text) !important;
   font-family: var(--font-ui);
   transition: background 0.25s, color 0.25s;

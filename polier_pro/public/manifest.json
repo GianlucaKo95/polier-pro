@@ -3,7 +3,7 @@
   "short_name": "Polier Pro",
   "description": "Baustellenmanagement für Poliere im Hoch- und Tiefbau",
   "start_url": "/",
-  "display": "standalone",
+  "display": "fullscreen",
   "orientation": "portrait-primary",
   "background_color": "#1C2027",
   "theme_color": "#F5C400",
