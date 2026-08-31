@@ -1002,12 +1002,12 @@ export default function PolierApp() {
 
       {/* ── BOTTOM NAV — Flex-Geschwister statt position:fixed, siehe Kommentar oben ──
           Der Home-Indicator-Sicherheitsabstand bleibt (Labels/Buttons sollen
-          nicht unter der Wisch-Geste liegen), aber ohne jeden zusätzlichen
-          Puffer obendrauf — exakt env(safe-area-inset-bottom). */}
+          nicht unter der Wisch-Geste liegen), aber so knapp wie möglich —
+          14px weniger als der volle Sicherheitsabstand, nie unter 4px. */}
       <div ref={setNavNode} style={{ flexShrink:0,
         background:"var(--surface)", borderTop:"1px solid var(--border)",
         display:"flex", padding:"6px 6px",
-        paddingBottom:"env(safe-area-inset-bottom)" }}>
+        paddingBottom:"max(4px, calc(env(safe-area-inset-bottom) - 14px))" }}>
         {hauptTabs.map(t => {
           const Icon = TAB_ICONS[t.id];
           const aktiv = tab===t.id;
