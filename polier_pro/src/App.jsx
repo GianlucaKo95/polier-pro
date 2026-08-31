@@ -837,18 +837,14 @@ export default function PolierApp() {
     stunden:ChartColumn, angebot:FileText, admin_params:Settings, nutzer:UserCog };
 
   return (
-    // GEFUNDEN (v1.0.88, Abgleich mit einer nachweislich funktionierenden
-    // Referenz-PWA): position:fixed auf der Root-Shell UND auf html/body
-    // (siehe theme.css) war die ganze Zeit die eigentliche Ursache der
-    // 852-vs-793px-Lücke, nicht irgendeine falsche Höhenangabe an der
-    // Shell selbst — fünf Fixes an genau dieser Shell (100dvh, JS-
-    // gemessene Höhe, position:fixed/bottom:0, top/bottom:0 auf html/body,
-    // manifest display:fullscreen) haben deshalb nichts gebracht. Die
-    // Referenz-PWA nutzt für ihre Vollbild-Screens ganz normal
-    // height:"100dvh" auf einem NICHT position:fixed Element — und html/
-    // body sind bei ihr ebenfalls nicht position:fixed (siehe theme.css).
-    // Scroll-Eindämmung kommt jetzt allein über overscroll-behavior
-    // (html/body) plus das eigene overflow:"hidden" hier.
+    // position:fixed auf html/body war der Bug (siehe theme.css) — aber
+    // eine weitere Lücke zur Referenz-PWA blieb: die hat zusätzlich
+    // #root { height:100dvh } in ihrem globalen CSS, wir hatten height
+    // bisher nur auf diesem Shell-Div selbst gesetzt, nie auf #root
+    // (siehe theme.css). Jetzt exakt nachgezogen, statt auf einen anderen
+    // Mechanismus (window.screen.height) auszuweichen.
+    // Scroll-Eindämmung kommt allein über overscroll-behavior (html/body,
+    // siehe theme.css) plus das eigene overflow:"hidden" hier.
     <div style={{ height:"100dvh", width:"100%",
       display:"flex", flexDirection:"column", overflow:"hidden",
       background:"var(--bg)", color:"var(--text)" }}>
