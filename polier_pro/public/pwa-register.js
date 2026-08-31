@@ -9,9 +9,26 @@ if ("serviceWorker" in navigator) {
   // echtes Neuladen holt den neuen. Ohne diesen Reload blieb jedes Update
   // unsichtbar, bis iOS die PWA irgendwann zufällig komplett neu lud
   // (auch ein "harter" Neustart der App reicht dafür nicht zuverlässig).
+  //
+  // ABER: controllerchange feuert auch beim ganz normalen (Wieder-)Claim
+  // einer bereits registrierten PWA, nicht nur bei einem echten Update —
+  // z.B. wenn iOS den Service-Worker-Status der installierten PWA
+  // zwischen zwei App-Starts verworfen hat. Live reproduziert: nach
+  // vollständigem Schließen+Neuöffnen der PWA bricht die Höhenberechnung
+  // (100dvh) wiederholt genau in diesem Fenster ein — auch mit exakt der
+  // Layout-Struktur einer nachweislich funktionierenden Referenz-PWA
+  // (die keinen erzwungenen Reload bei controllerchange hat). Ein durch
+  // diesen Reload verursachter zusätzlicher, unsichtbarer Ladezyklus
+  // mitten im App-Start ist der naheliegendste verbleibende Auslöser.
+  // Deshalb: nur reloaden, wenn seit dem Skript-Start bereits einige
+  // Sekunden vergangen sind — das filtert den controllerchange direkt
+  // beim App-Start heraus (kein Reload nötig) und behält den Reload nur
+  // für echte, später im laufenden Betrieb erkannte Updates.
+  const ladezeit = Date.now();
   let neuGeladen = false;
   navigator.serviceWorker.addEventListener("controllerchange", () => {
     if (neuGeladen) return;
+    if (Date.now() - ladezeit < 4000) return;
     neuGeladen = true;
     window.location.reload();
   });
