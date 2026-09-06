@@ -889,7 +889,8 @@ export default function PolierApp() {
       </div>
 
       {/* ── PROJEKT INFO STRIP — nur auf dem Dashboard, stört sonst nur ── */}
-      {tab === "dashboard" && <ProjektInfoStrip projekt={projekt} aufgaben={felder} />}
+      {tab === "dashboard" && <ProjektInfoStrip projekt={projekt} aufgaben={felder}
+        onEdit={rolleConfig?.kannBearbeiten !== false ? () => setEditProjekt(true) : undefined} />}
 
       {/* ── CONTENT — einziger scrollender Bereich ── */}
       <PlanGuard firma={firma} ressource="app">
