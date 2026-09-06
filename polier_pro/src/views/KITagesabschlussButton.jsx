@@ -4,7 +4,7 @@ import { Bot, X, CircleX, Square, Mic, Sparkles, ClipboardList, CircleCheckBig, 
 import { kiTagesabschluss } from "../lib/ai.js";
 import { AUFGABEN_TYPEN, AUFGABEN_PRIO } from "../config/konstanten.js";
 
-export function KITagesabschlussButton({ projekt, kolonnen, wetter, onErgebnis }) {
+export function KITagesabschlussButton({ projekt, kolonnen, wetter, onErgebnis, session }) {
   const [offen,    setOffen]    = useState(false);
   const [diktat,   setDiktat]   = useState("");
   const [laden,    setLaden]    = useState(false);
@@ -35,7 +35,7 @@ export function KITagesabschlussButton({ projekt, kolonnen, wetter, onErgebnis }
     setLaden(true);
     setFehler("");
     try {
-      const result = await kiTagesabschluss(diktat, projekt, kolonnen, wetter);
+      const result = await kiTagesabschluss(diktat, projekt, kolonnen, wetter, session);
       if (!result) { setFehler("KI-Antwort konnte nicht ausgewertet werden."); return; }
       setErgebnis(result);
     } catch (e) {

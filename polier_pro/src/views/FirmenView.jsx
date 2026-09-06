@@ -12,6 +12,11 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
   const [tmpFirma, setTmpFirma] = useState(owneFirma);
   const [speichern, setSpeichern] = useState(false);
   const [speicherFehler, setSpeicherFehler] = useState("");
+  // Der KI-Key wird bewusst NIE aus der Datenbank geladen/vorausgefüllt
+  // (siehe App.jsx: die firmen-Abfrage lässt anthropic_api_key explizit
+  // aus) — das Feld ist reines "write-only": leer lassen behält den
+  // bestehenden Key, ein neuer Wert überschreibt ihn.
+  const [neuerKiKey, setNeuerKiKey] = useState("");
 
   async function firmaSpeichern() {
     setEigeneFirma(tmpFirma);
@@ -23,7 +28,7 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
       setSpeichern(true); setSpeicherFehler("");
       try {
         const client = sbClientMitToken(session);
-        const { error } = await client.from("firmen").update({
+        const payload = {
           name:              tmpFirma.name || "",
           adresse:           tmpFirma.strasse || "",
           plz:               tmpFirma.plz || "",
@@ -34,7 +39,9 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
           logo_url:          tmpFirma.logo || null,
           geschaeftsfuehrer: tmpFirma.geschaeftsfuehrer || "",
           gewerke:           tmpFirma.gewerke || [],
-        }).eq("id", firmaId);
+        };
+        if (neuerKiKey.trim()) payload.anthropic_api_key = neuerKiKey.trim();
+        const { error } = await client.from("firmen").update(payload).eq("id", firmaId);
         if (error) {
           setSpeicherFehler("Änderungen konnten nicht auf dem Server gespeichert werden.");
         }
@@ -44,6 +51,7 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
       setSpeichern(false);
     }
 
+    setNeuerKiKey("");
     setScreen("home");
   }
 
@@ -170,6 +178,22 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
                 placeholder={ph} style={inputStyle()} />
             </div>
           ))}
+
+          {/* KI-Anbindung — write-only: der bestehende Key wird nie geladen/
+              angezeigt, nur ein neu eingegebener Wert wird beim Speichern
+              übernommen. Wird serverseitig für alle KI-Funktionen (z.B.
+              KI-Tagesabschluss) genutzt, erreicht den Browser sonst nie. */}
+          <div style={{ marginBottom:14 }}>
+            <Label>Anthropic API-Key (für KI-Funktionen)</Label>
+            <input type="password" value={neuerKiKey}
+              onChange={e => setNeuerKiKey(e.target.value)}
+              placeholder="sk-ant-… (leer lassen = unverändert)"
+              autoComplete="off" style={inputStyle()} />
+            <div style={{ color:"var(--muted)", fontSize:11, marginTop:4 }}>
+              Wird nur zum Speichern übertragen, aus Sicherheitsgründen nie wieder angezeigt.
+              Ohne eigenen Key funktionieren KI-Funktionen wie der KI-Tagesabschluss nicht.
+            </div>
+          </div>
 
           {/* Gewerke */}
           <div style={{ marginBottom:14 }}>

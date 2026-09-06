@@ -145,7 +145,12 @@ export default function PolierApp() {
     if (auth.profil?.firma_id && auth.session?.access_token) {
       setFirmaLadeFehler("");
       const client = sbClientMitToken(auth.session);
-      client.from("firmen").select("*").eq("id", auth.profil.firma_id)
+      // Explizite Spaltenliste statt select("*") — anthropic_api_key bewusst
+      // ausgeschlossen, damit der KI-Key nie in den Client-State (firma/
+      // eigeneFirma) gelangt. Er wird ausschließlich serverseitig in der
+      // ki-proxy Edge Function gelesen (siehe supabase/functions/ki-proxy).
+      client.from("firmen").select("id, name, adresse, plz, ort, telefon, email, steuernummer, logo_url, geschaeftsfuehrer, gewerke")
+        .eq("id", auth.profil.firma_id)
         .then(({ data: d, error, status }) => {
           if (error) {
             setFirmaLadeFehler(`Firma konnte nicht geladen werden (HTTP ${status}): ${error.message?.slice(0,200) || ""}`);
