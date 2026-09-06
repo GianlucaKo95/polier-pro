@@ -7,6 +7,17 @@ export function DiktierFeld({ label, value, rows = 3, onChange }) {
   const [unterstuetzt, setUnterstuetzt] = useState(true);
   const [interim,    setInterim]    = useState(""); // Live-Vorschau während Diktat
   const erkennerRef = useRef(null);
+  // value UND onChange per Ref statt als Effekt-Dependency: ein Effekt, der
+  // bei jeder Änderung von value neu läuft, erzeugte bei laufendem Diktat
+  // nach dem ersten erkannten Wort eine KOMPLETT NEUE SpeechRecognition-
+  // Instanz (die alte lief im Hintergrund weiter, wurde aber vom
+  // Stop-Button nicht mehr erreicht — "Stopp" tat dann nichts mehr). Die
+  // Erkenner-Instanz muss über die gesamte Diktat-Dauer stabil bleiben,
+  // die Refs halten trotzdem den aktuellen Wert für die Closure in
+  // onresult bereit.
+  const valueRef = useRef(value);
+  const onChangeRef = useRef(onChange);
+  useEffect(() => { valueRef.current = value; onChangeRef.current = onChange; });
 
   useEffect(() => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -27,7 +38,8 @@ export function DiktierFeld({ label, value, rows = 3, onChange }) {
       }
       if (finalText) {
         // Finalen Text anhängen (mit Leerzeichen wenn schon was da ist)
-        onChange((value + (value && !value.endsWith(" ") ? " " : "") + finalText).trimStart());
+        const bisher = valueRef.current;
+        onChangeRef.current((bisher + (bisher && !bisher.endsWith(" ") ? " " : "") + finalText).trimStart());
       }
       setInterim(interimText);
     };
@@ -38,7 +50,7 @@ export function DiktierFeld({ label, value, rows = 3, onChange }) {
 
     er.onend = () => {
       // Wenn noch aktiv (z.B. kurze Pause), automatisch neu starten
-      if (erkennerRef.current?._shouldRestart) {
+      if (er._shouldRestart) {
         try { er.start(); } catch {}
       } else {
         setAktiv(false);
@@ -48,7 +60,7 @@ export function DiktierFeld({ label, value, rows = 3, onChange }) {
 
     erkennerRef.current = er;
     return () => { try { er.stop(); } catch {} };
-  }, [value]); // value als Dep damit Closure aktuell bleibt
+  }, []);
 
   function toggleDiktat() {
     const er = erkennerRef.current;
