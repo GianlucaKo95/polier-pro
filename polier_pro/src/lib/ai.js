@@ -1,4 +1,6 @@
-export async function generiereBerichtKI(diktat, projekt, kolonnen, wetter) {
+import { SUPABASE_URL } from "./supabase.js";
+
+export async function generiereBerichtKI(diktat, projekt, kolonnen, wetter, session) {
   const kolonnenInfo = (kolonnen || []).map(k =>
     `${k.name}: ${k.mitarbeiter?.length || 0} Mann, Einsatz: ${k.einsatz}`
   ).join("\n");
@@ -27,7 +29,7 @@ Erstelle daraus einen vollständigen, professionellen Bautagesbericht. Antworte 
   "fazit": "Kurzes Fazit zum Tagesfortschritt"
 }`;
 
-  const data = await rufeClaudeAuf(prompt, 1000);
+  const data = await rufeClaudeAuf(prompt, 1000, session);
   const text = data.content?.find(b => b.type === "text")?.text || "{}";
   try {
     return JSON.parse(text.replace(/```json|```/g, "").trim());
@@ -36,23 +38,32 @@ Erstelle daraus einen vollständigen, professionellen Bautagesbericht. Antworte 
   }
 }
 
-async function rufeClaudeAuf(prompt, maxTokens) {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+// Ruft NIE Anthropic direkt aus dem Browser auf — ein API-Key im
+// Frontend-Code wäre für jeden Nutzer der installierten App über die
+// Entwicklertools auslesbar. Stattdessen die ki-proxy Edge Function:
+// die liest den Anthropic-Key der jeweiligen Firma serverseitig aus der
+// Datenbank (siehe supabase/functions/ki-proxy) und ruft Anthropic damit
+// auf — der Key selbst erreicht den Client nie.
+async function rufeClaudeAuf(prompt, maxTokens, session) {
+  if (!session?.access_token) {
+    throw new Error("Keine gültige Sitzung für KI-Anfrage.");
+  }
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/ki-proxy`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-6",
-      max_tokens: maxTokens,
-      messages: [{ role: "user", content: prompt }],
-    }),
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({ prompt, maxTokens }),
   });
   if (!res.ok) {
-    throw new Error(`KI-Anfrage fehlgeschlagen (${res.status})`);
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body?.error || `KI-Anfrage fehlgeschlagen (${res.status})`);
   }
   return res.json();
 }
 
-export async function kiTagesabschluss(diktat, projekt, kolonnen, wetter) {
+export async function kiTagesabschluss(diktat, projekt, kolonnen, wetter, session) {
   const heute = new Date().toLocaleDateString("de-DE");
   const wetterInfo = wetter
     ? `${wetter.temp}°C, Wind ${wetter.wind}km/h, Niederschlag ${wetter.rain}mm`
@@ -94,7 +105,7 @@ Antworte NUR mit diesem JSON (kein Markdown, keine Erklärungen):
   "wetter_warnung": "Warnung wenn morgen kritisches Wetter für geplante Arbeiten (oder leerer String)"
 }`;
 
-  const data = await rufeClaudeAuf(prompt, 1500);
+  const data = await rufeClaudeAuf(prompt, 1500, session);
   const text = data.content?.find(b=>b.type==="text")?.text || "{}";
   try {
     return JSON.parse(text.trim());

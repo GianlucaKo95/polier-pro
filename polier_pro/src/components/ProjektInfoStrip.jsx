@@ -1,7 +1,7 @@
-import { User } from "lucide-react";
+import { User, Pencil } from "lucide-react";
 import { PROJEKTTYPEN } from "../config/konstanten.js";
 
-export function ProjektInfoStrip({ projekt, aufgaben = [] }) {
+export function ProjektInfoStrip({ projekt, aufgaben = [], onEdit }) {
   if (!projekt) return null;
   const relevante = aufgaben.filter(a => a.typ === "beton");
   const done   = relevante.filter(a => a.status === "abgeschlossen").length;
@@ -20,12 +20,21 @@ export function ProjektInfoStrip({ projekt, aufgaben = [] }) {
           <User size={11} /> {projekt.bauleiter}
         </div>
       </div>
-      <div style={{ display:"flex", alignItems:"center", gap:7 }}>
-        <div style={{ width:64, height:5, background:"var(--border2)", borderRadius:3, overflow:"hidden" }}>
-          <div style={{ height:"100%", width:`${pct}%`, background:projekt.farbe, borderRadius:3,
-            transition:"width 0.4s" }} />
+      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+          <div style={{ width:64, height:5, background:"var(--border2)", borderRadius:3, overflow:"hidden" }}>
+            <div style={{ height:"100%", width:`${pct}%`, background:projekt.farbe, borderRadius:3,
+              transition:"width 0.4s" }} />
+          </div>
+          <span style={{ fontSize:11, fontWeight:800, color:"var(--text)" }}>{pct}%</span>
         </div>
-        <span style={{ fontSize:11, fontWeight:800, color:"var(--text)" }}>{pct}%</span>
+        {onEdit && (
+          <button onClick={onEdit} title="Baustelle bearbeiten"
+            style={{ background:"none", border:"none", color:"var(--muted)",
+              cursor:"pointer", display:"flex", padding:4, flexShrink:0 }}>
+            <Pencil size={13} />
+          </button>
+        )}
       </div>
     </div>
   );
