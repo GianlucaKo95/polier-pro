@@ -3,9 +3,8 @@ import { PROJEKTTYPEN } from "../config/konstanten.js";
 
 export function ProjektInfoStrip({ projekt, aufgaben = [], onEdit }) {
   if (!projekt) return null;
-  const relevante = aufgaben.filter(a => a.typ === "beton");
-  const done   = relevante.filter(a => a.status === "abgeschlossen").length;
-  const total  = relevante.length;
+  const done   = aufgaben.filter(a => a.status === "abgeschlossen").length;
+  const total  = aufgaben.length;
   const pct    = total > 0 ? Math.round(done/total*100) : 0;
   return (
     <div style={{ background:"var(--surface2)", borderBottom:"1px solid var(--border)",
