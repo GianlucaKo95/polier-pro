@@ -24,7 +24,7 @@ function alsZeitEintrag(b) {
   };
 }
 
-export function KolonnenView({ kolonnen, projekt, setKolonnen, darfBearbeiten = true, profil, session }) {
+export function KolonnenView({ kolonnen, projekt, setKolonnen, darfBearbeiten = true, kannKolonneLoeschen = false, profil, session }) {
   const [zeitdaten,   setZeitdaten]   = useState([]);
   const [ladeStatus,  setLadeStatus]  = useState("idle"); // idle | loading | ok | error
   const [datenquelle, setDatenquelle] = useState(null);   // "eigen" | "123erfasst"
@@ -86,11 +86,17 @@ export function KolonnenView({ kolonnen, projekt, setKolonnen, darfBearbeiten = 
 
   function kolonneAnlegen() {
     if (!kName.trim() || !setKolonnen) return;
+    const vorarbeiterName = kVorarbeiter.trim();
     const neu = {
       id: Date.now(),
       name: kName.trim(),
-      vorarbeiter: kVorarbeiter.trim(),
-      mitarbeiter: [],
+      vorarbeiter: vorarbeiterName,
+      // Der Vorarbeiter, nach dem die Kolonne meist benannt ist, gehört
+      // ihr auch als Mitarbeiter an — sonst müsste er zusätzlich manuell
+      // in der Mitarbeiterliste angelegt werden.
+      mitarbeiter: vorarbeiterName
+        ? [{ id: Date.now(), name: vorarbeiterName, rolle: "Vorarbeiter" }]
+        : [],
     };
     setKolonnen(prev => [...prev, neu]);
     setKName(""); setKVorarbeiter(""); setNeueKolonne(false);
@@ -162,6 +168,7 @@ export function KolonnenView({ kolonnen, projekt, setKolonnen, darfBearbeiten = 
           zeitenGeladen={ladeStatus === "ok"}
           setKolonnen={setKolonnen}
           darfBearbeiten={darfBearbeiten}
+          kannKolonneLoeschen={kannKolonneLoeschen}
         />
       ))}
 

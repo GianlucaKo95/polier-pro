@@ -3,7 +3,7 @@ import { MapPin, HardHat } from "lucide-react";
 import { MitarbeiterZeilen } from "./MitarbeiterZeilen.jsx";
 import { SwipeToDelete } from "./SwipeToDelete.jsx";
 
-export function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, zeitenGeladen, setKolonnen, darfBearbeiten = true }) {
+export function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, zeitenGeladen, setKolonnen, darfBearbeiten = true, kannKolonneLoeschen = false }) {
   const [expanded, setExpanded] = useState(false);
   const [neuerName, setNeuerName] = useState("");
   const mas = k.mitarbeiter || [];
@@ -51,7 +51,7 @@ export function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, zeitenGeladen, 
   return (
     <div style={{ marginBottom:9 }}>
       {/* Kolonne Header — nach links wischen legt den Löschen-Button frei */}
-      <SwipeToDelete onDelete={darfBearbeiten && setKolonnen ? kolonneLoeschen : undefined}>
+      <SwipeToDelete onDelete={kannKolonneLoeschen && setKolonnen ? kolonneLoeschen : undefined}>
       <div style={{ background: "var(--surface)", borderRadius: expanded ? "12px 12px 0 0" : 12,
         padding:"10px 16px", border:`1px solid ${'var(--border)'}`,
         borderBottom: expanded ? "none" : undefined }}>

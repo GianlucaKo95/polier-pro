@@ -927,7 +927,10 @@ export default function PolierApp() {
             }} />}
         {tab === "gantt"     && <GanttView felder={felder} />}
         {tab === "wetter"    && <WeatherView ort={projekt?.ort} plz={projekt?.plz} projektId={projekt?.id} />}
-        {tab === "kolonnen"  && <KolonnenView kolonnen={kolonnen} projekt={projekt} setKolonnen={setKolonnen} darfBearbeiten={rolleConfig?.kannBearbeiten !== false} />}
+        {tab === "kolonnen"  && <KolonnenView kolonnen={kolonnen} projekt={projekt} setKolonnen={setKolonnen}
+            darfBearbeiten={rolleConfig?.kannBearbeiten !== false}
+            kannKolonneLoeschen={rolleConfig?.kannKolonneLoeschen === true}
+            profil={aktiveProfil} session={auth.session} />}
         {tab === "tagebuch"  && <TagesbuchView
             berichte={berichte} setBerichte={setBerichte} sbConnected={sbConnected}
             projekt={projekt} eigeneFirma={eigeneFirma} kolonnen={kolonnen}
