@@ -326,6 +326,7 @@ export const AUFGABEN_TYPEN = {
 export const AUFGABEN_STATUS = {
   offen:         { label:"Offen",       icon:"○",  farbe:"#64748B", bg:"var(--surface2)" },
   in_arbeit:     { label:"In Arbeit",   icon:"◑",  farbe:"#F5C400", bg:"var(--ybg)" },
+  zur_pruefung:  { label:"Zur Prüfung", icon:"◐",  farbe:"#1D4ED8", bg:"var(--bbg)" },
   abgeschlossen: { label:"Fertig",      icon:"●",  farbe:"#15803D", bg:"var(--gbg)" },
   blockiert:     { label:"Blockiert",   icon:"✕",  farbe:"#DC2626", bg:"var(--rbg)" },
 };

@@ -167,6 +167,27 @@ export async function sbAufgabeLoeschen(id, session) {
   } catch { return false; }
 }
 
+// Facharbeiter dürfen Aufgaben nicht direkt abschließen — diese beiden RPCs
+// laufen serverseitig als SECURITY DEFINER und prüfen Rolle + Firma selbst,
+// ganz ohne UPDATE-Grant auf die aufgaben-Tabelle für diese Rolle.
+export async function sbAufgabeVorschlagen(id, session) {
+  if (!session?.access_token) return false;
+  try {
+    const client = sbClientMitToken(session);
+    const { error } = await client.rpc("aufgabe_vorschlagen_erledigt", { p_aufgabe_id: id });
+    return !error;
+  } catch { return false; }
+}
+
+export async function sbAufgabeVorschlagEntscheiden(id, akzeptiert, session) {
+  if (!session?.access_token) return false;
+  try {
+    const client = sbClientMitToken(session);
+    const { error } = await client.rpc("aufgabe_vorschlag_entscheiden", { p_aufgabe_id: id, p_akzeptiert: akzeptiert });
+    return !error;
+  } catch { return false; }
+}
+
 export async function sbKolonneSpeichern(k, projektId, session, istNeu) {
   if (!session?.access_token || !projektId) return null;
   const payload = {

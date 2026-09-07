@@ -9,7 +9,7 @@ import { DEFAULT_EINHEITSPREISE, DEFAULT_LV_VORLAGEN, ONBOARDING_KEY, ROLLEN, PR
 import { usePWA } from "./hooks/usePWA.js";
 import { usePushNotifications } from "./hooks/usePushNotifications.js";
 import { useOfflineSync } from "./hooks/useOfflineSync.js";
-import { sbClientMitToken, SUPABASE_URL, sbAufgabeSpeichern, sbAufgabeLoeschen, sbBerichtSpeichern, sbKolonneSpeichern, sbKolonneLoeschen } from "./lib/supabase.js";
+import { sbClientMitToken, SUPABASE_URL, sbAufgabeSpeichern, sbAufgabeLoeschen, sbAufgabeVorschlagen, sbAufgabeVorschlagEntscheiden, sbBerichtSpeichern, sbKolonneSpeichern, sbKolonneLoeschen } from "./lib/supabase.js";
 import { PasswortSetzenScreen } from "./views/PasswortSetzenScreen.jsx";
 import { EinladungScreen } from "./views/EinladungScreen.jsx";
 import { RegistrierungScreen } from "./views/RegistrierungScreen.jsx";
@@ -455,6 +455,29 @@ export default function PolierApp() {
     // angekommen ist — vorher wurde ein fehlgeschlagenes Speichern still als
     // Erfolg behandelt.
     if (fehler) setSpeicherFehler("Eine Aufgabe konnte nicht gespeichert werden — bitte Verbindung prüfen und erneut versuchen.");
+  }
+
+  // Facharbeiter schlagen eine Aufgabe nur als erledigt vor (Status
+  // "zur_pruefung"); Vorarbeiter/Polier/Administrator bestätigen oder lehnen
+  // ab. Läuft über eigene RPCs statt sbAufgabeSpeichern — ein Facharbeiter
+  // hat kein UPDATE-Recht auf die aufgaben-Tabelle, und ein normaler
+  // Full-Row-Save würde an der RLS scheitern.
+  async function aufgabeVorschlagen(a) {
+    setSpeicherFehler("");
+    const ok = await sbAufgabeVorschlagen(a.id, auth.session);
+    if (!ok) { setSpeicherFehler("Vorschlag konnte nicht gespeichert werden — bitte Verbindung prüfen."); return; }
+    setAktProjektAufgaben(prev => prev.map(x => x.id === a.id
+      ? { ...x, status:"zur_pruefung", vorschlag_von: auth.session?.user?.id, vorschlag_am: new Date().toISOString() }
+      : x));
+  }
+
+  async function aufgabeEntscheiden(a, akzeptiert) {
+    setSpeicherFehler("");
+    const ok = await sbAufgabeVorschlagEntscheiden(a.id, akzeptiert, auth.session);
+    if (!ok) { setSpeicherFehler("Entscheidung konnte nicht gespeichert werden — bitte Verbindung prüfen."); return; }
+    setAktProjektAufgaben(prev => prev.map(x => x.id === a.id
+      ? { ...x, status: akzeptiert ? "abgeschlossen" : "offen", vorschlag_von:null, vorschlag_am:null }
+      : x));
   }
 
   // ── Berichte: laden + speichern direkt gegen Supabase ──
@@ -947,7 +970,8 @@ export default function PolierApp() {
             aufgaben={felder} setAufgaben={setFelder}
             session={auth.session}
           />}
-        {tab === "aufgaben"      && <AufgabenView aufgaben={felder} setAufgaben={setFelder} kolonnen={kolonnen} sbConnected={sbConnected} darfBearbeiten={rolleConfig?.kannBearbeiten !== false} initialFilter={aufgabenFilter} />}
+        {tab === "aufgaben"      && <AufgabenView aufgaben={felder} setAufgaben={setFelder} kolonnen={kolonnen} sbConnected={sbConnected} darfBearbeiten={rolleConfig?.kannBearbeiten !== false} initialFilter={aufgabenFilter}
+            kannVorschlagen={aktiveRolle === "facharbeiter"} onVorschlagen={aufgabeVorschlagen} onEntscheiden={aufgabeEntscheiden} />}
         {tab === "kosten"        && <KostenView projekt={projekt} aufgaben={felder} kolonnen={kolonnen} zeitbuchungen={zeitbuchungen} />}
         {tab === "stempeln"      && <StempeluhrView profil={aktiveProfil}
             projekte={aktiveProfil?.kolonne_id

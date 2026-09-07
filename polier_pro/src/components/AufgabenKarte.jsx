@@ -2,14 +2,21 @@ import { Calendar, CalendarX, User, Ruler, Camera, TriangleAlert } from "lucide-
 import { AUFGABEN_TYPEN, AUFGABEN_STATUS, AUFGABEN_PRIO } from "../config/konstanten.js";
 import { SwipeToDelete } from "./SwipeToDelete.jsx";
 
-export function AufgabenKarte({ aufgabe, onClick, kolonnen, onDelete, onToggleErledigt }) {
+export function AufgabenKarte({ aufgabe, onClick, kolonnen, onDelete, onToggleErledigt, onVorschlagen, onEntscheiden }) {
   const typ    = AUFGABEN_TYPEN[aufgabe.typ]    || AUFGABEN_TYPEN.allgemein;
   const status = AUFGABEN_STATUS[aufgabe.status] || AUFGABEN_STATUS.offen;
   const prio   = AUFGABEN_PRIO[aufgabe.prioritaet] || AUFGABEN_PRIO.mittel;
   const erledigt = aufgabe.status === "abgeschlossen";
+  const wartetAufBestaetigung = aufgabe.status === "zur_pruefung";
   const ueberfaellig = aufgabe.faellig_am &&
     new Date(aufgabe.faellig_am) < new Date() &&
-    !erledigt;
+    !erledigt && !wartetAufBestaetigung;
+
+  // Facharbeiter dürfen eine offene Aufgabe nur zur Bestätigung vorschlagen
+  // (kein direktes "erledigt"); wer voll bearbeiten darf, schaltet wie bisher direkt um.
+  const checkboxKlick = onToggleErledigt
+    ? () => onToggleErledigt(aufgabe)
+    : (onVorschlagen && !erledigt && !wartetAufBestaetigung ? () => onVorschlagen(aufgabe) : undefined);
 
   return (
     <SwipeToDelete style={{ marginBottom:6 }}
@@ -20,17 +27,33 @@ export function AufgabenKarte({ aufgabe, onClick, kolonnen, onDelete, onToggleEr
         border:"1px solid var(--border)",
         borderLeft:`4px solid ${ueberfaellig ? "var(--red)" : typ.farbe}`,
         opacity: erledigt ? 0.62 : 1 }}>
-      <div onClick={onToggleErledigt ? (e) => { e.stopPropagation(); onToggleErledigt(aufgabe); } : undefined}
-        style={{ flex:"none", margin:-8, padding:8,
-          display:"flex", alignItems:"center", justifyContent:"center",
-          cursor: onToggleErledigt ? "pointer" : "default" }}>
-        <div style={{ width:22, height:22, marginTop:1,
-          border:`2px solid ${erledigt ? "var(--green)" : "rgba(0,0,0,.18)"}`,
-          background: erledigt ? "var(--green)" : "transparent",
-          display:"flex", alignItems:"center", justifyContent:"center", color:"#fff" }}>
-          {erledigt && <span style={{ fontSize:13, fontWeight:900 }}>✓</span>}
+      {wartetAufBestaetigung && onEntscheiden ? (
+        <div onClick={e => e.stopPropagation()}
+          style={{ flex:"none", display:"flex", flexDirection:"column", gap:4 }}>
+          <button onClick={() => onEntscheiden(aufgabe, true)} title="Bestätigen"
+            style={{ width:26, height:26, border:"none", borderRadius:6, background:"var(--green)",
+              color:"#fff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center",
+              fontWeight:900, fontSize:13, fontFamily:"inherit" }}>✓</button>
+          <button onClick={() => onEntscheiden(aufgabe, false)} title="Ablehnen, zurück auf Offen"
+            style={{ width:26, height:26, border:"none", borderRadius:6, background:"var(--red)",
+              color:"#fff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center",
+              fontWeight:900, fontSize:13, fontFamily:"inherit" }}>✕</button>
         </div>
-      </div>
+      ) : (
+        <div onClick={checkboxKlick ? (e) => { e.stopPropagation(); checkboxKlick(); } : undefined}
+          title={!onToggleErledigt && onVorschlagen && !erledigt && !wartetAufBestaetigung ? "Als erledigt vorschlagen" : undefined}
+          style={{ flex:"none", margin:-8, padding:8,
+            display:"flex", alignItems:"center", justifyContent:"center",
+            cursor: checkboxKlick ? "pointer" : "default" }}>
+          <div style={{ width:22, height:22, marginTop:1,
+            border:`2px solid ${erledigt ? "var(--green)" : wartetAufBestaetigung ? "var(--blue)" : "rgba(0,0,0,.18)"}`,
+            background: erledigt ? "var(--green)" : wartetAufBestaetigung ? "var(--blue)" : "transparent",
+            display:"flex", alignItems:"center", justifyContent:"center", color:"#fff" }}>
+            {erledigt && <span style={{ fontSize:13, fontWeight:900 }}>✓</span>}
+            {wartetAufBestaetigung && !onEntscheiden && <span style={{ fontSize:12, fontWeight:900 }}>?</span>}
+          </div>
+        </div>
+      )}
       <div style={{ flex:1, minWidth:0 }}>
         <div style={{ display:"flex", justifyContent:"space-between", gap:10 }}>
           <div style={{ color:"var(--text)", fontWeight:700, fontSize:14.5, lineHeight:1.25,
