@@ -184,10 +184,10 @@ export function MeinProfilView({ profil, session }) {
           <div style={{ marginTop:10 }}>
             <div style={{ display:"flex", gap:8 }}>
               <input value={pinNeu} onChange={e=>setPinNeu(e.target.value.replace(/\D/g,"").slice(0,4))}
-                placeholder="Neue PIN" inputMode="numeric" maxLength={4}
+                placeholder="Neue PIN" type="password" inputMode="numeric" maxLength={4}
                 style={{ flex:1, textAlign:"center", letterSpacing:6, ...inputStyle() }} />
               <input value={pinNeu2} onChange={e=>setPinNeu2(e.target.value.replace(/\D/g,"").slice(0,4))}
-                placeholder="Wiederholen" inputMode="numeric" maxLength={4}
+                placeholder="Wiederholen" type="password" inputMode="numeric" maxLength={4}
                 onKeyDown={e => e.key==="Enter" && pinSpeichern()}
                 style={{ flex:1, textAlign:"center", letterSpacing:6, ...inputStyle() }} />
             </div>

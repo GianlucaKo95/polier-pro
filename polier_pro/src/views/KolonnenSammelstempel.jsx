@@ -270,7 +270,7 @@ export function KolonnenSammelstempel({ kolonne, projekte, session, onClose }) {
               Bitte eigene PIN eingeben, um sich selbst einzustempeln
             </div>
             <input value={pinEingabe} onChange={e=>setPinEingabe(e.target.value.replace(/\D/g,"").slice(0,4))}
-              inputMode="numeric" maxLength={4} autoFocus disabled={buchtGerade}
+              type="password" inputMode="numeric" maxLength={4} autoFocus disabled={buchtGerade}
               onKeyDown={e => e.key==="Enter" && pinBestaetigen()}
               style={{ width:140, textAlign:"center", fontSize:28, fontWeight:800,
                 letterSpacing:12, padding:"12px 0", borderRadius:12,

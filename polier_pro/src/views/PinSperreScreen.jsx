@@ -44,7 +44,7 @@ export function PinSperreScreen({ profil, onEntsperrt, onAbmelden }) {
       <input value={eingabe}
         onChange={e => { setEingabe(e.target.value.replace(/\D/g,"").slice(0,4)); setFehler(""); }}
         onKeyDown={e => e.key === "Enter" && pruefen()}
-        inputMode="numeric" maxLength={4} autoFocus disabled={prueft}
+        type="password" inputMode="numeric" maxLength={4} autoFocus disabled={prueft}
         style={{ width:150, textAlign:"center", fontSize:30, fontWeight:800,
           letterSpacing:14, padding:"12px 0", borderRadius:12,
           border:`2px solid ${fehler ? "var(--red)" : "rgba(255,255,255,.2)"}`,

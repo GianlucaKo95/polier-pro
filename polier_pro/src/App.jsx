@@ -375,42 +375,6 @@ export default function PolierApp() {
   }
 
   // ── Facharbeiter → nur Stempeluhr ──
-  if (aktiveRolle === "facharbeiter") {
-    return (
-      <div style={{ background:"var(--bg)", minHeight:"100dvh", color:"var(--text)" }}>
-        <div style={{ background:"var(--surface)", padding:"10px 18px",
-          borderBottom:"3px solid var(--yellow)", display:"flex",
-          justifyContent:"space-between", alignItems:"center",
-          boxShadow:"0 2px 8px rgba(0,0,0,0.08)" }}>
-          <div>
-            <div style={{ fontWeight:900, fontSize:18, letterSpacing:-1 }}>
-              <span style={{ color:"var(--yellow)" }}>★</span> POLARIS
-            </div>
-            <RollenBadge rolle={aktiveRolle} />
-          </div>
-          <div style={{ display:"flex", gap:8 }}>
-            <ThemeToggle dark={theme.dark} toggle={theme.toggle} />
-            <button onClick={abmelden}
-              style={{ background:"var(--surface2)", color:"var(--muted)",
-                border:"1px solid var(--border)", borderRadius:8,
-                padding:"6px 12px", cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>
-              Abmelden
-            </button>
-          </div>
-        </div>
-        <div style={{ padding:"14px 16px" }}>
-          <StempeluhrView profil={aktiveProfil}
-            projekte={aktiveProfil?.kolonne_id
-              ? projekte.filter(p => (p.kolonnen||[]).some(k => k.id === aktiveProfil.kolonne_id)).length > 0
-                ? projekte.filter(p => (p.kolonnen||[]).some(k => k.id === aktiveProfil.kolonne_id))
-                : projekte
-              : projekte}
-            session={auth.session} />
-        </div>
-      </div>
-    );
-  }
-
   async function handleOnboardingComplete(firmaDaten, ersterPolier) {
     setEigeneFirma(prev => ({ ...prev, ...firmaDaten }));
 
@@ -864,7 +828,7 @@ export default function PolierApp() {
   // Rollenbasierte Tabs
   const ALLE_TABS = [
     { id:"dashboard",     icon:"📊",  label:"Übersicht",   rollen:["administrator","bauleiter","polier","vorarbeiter"] },
-    { id:"aufgaben",      icon:"✅",  label:"Aufgaben",    rollen:["administrator","bauleiter","polier","vorarbeiter"] },
+    { id:"aufgaben",      icon:"✅",  label:"Aufgaben",    rollen:["administrator","bauleiter","polier","vorarbeiter","facharbeiter"] },
     { id:"gantt",         icon:"📅",  label:"Zeitplan",    rollen:["administrator","bauleiter","polier"] },
     { id:"kosten",        icon:"💰",  label:"Kosten",      rollen:["administrator"] },
     { id:"wetter",        icon:"🌤️", label:"Wetter",      rollen:["administrator","bauleiter","polier","vorarbeiter"] },
@@ -875,7 +839,7 @@ export default function PolierApp() {
     { id:"angebot",       icon:"📄",  label:"Angebot",     rollen:["administrator"] },
     { id:"admin_params",  icon:"⚙️",  label:"Parameter",   rollen:["administrator"] },
     { id:"nutzer",        icon:"👥",  label:"Nutzer",      rollen:["administrator"] },
-    { id:"profil",        icon:"👤",  label:"Mein Profil", rollen:["administrator","bauleiter","polier","vorarbeiter","facharbeiter"] },
+    { id:"profil",        icon:"👤",  label:"Mein Profil", rollen:["bauleiter","polier","vorarbeiter","facharbeiter"] },
   ];
   const TABS = ALLE_TABS.filter(t => !aktiveRolle || t.rollen.includes(aktiveRolle));
 

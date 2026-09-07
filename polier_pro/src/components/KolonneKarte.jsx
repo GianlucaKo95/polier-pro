@@ -150,7 +150,7 @@ export function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, zeitenGeladen, 
                     border:"1px solid var(--border)", borderRadius:8,
                     padding:"7px 10px", fontSize:12, fontFamily:"inherit" }} />
                 <input value={neuePin} onChange={e=>setNeuePin(e.target.value.replace(/\D/g,"").slice(0,4))}
-                  placeholder="PIN" inputMode="numeric" maxLength={4}
+                  placeholder="PIN" type="password" inputMode="numeric" maxLength={4}
                   onKeyDown={e => e.key==="Enter" && mitarbeiterHinzufuegen()}
                   style={{ width:64, background:"var(--surface)", color:"var(--text)",
                     border:"1px solid var(--border)", borderRadius:8,
