@@ -7,7 +7,8 @@ import { FilterBtn } from "../components/FilterBtn.jsx";
 import { AufgabenKarte } from "../components/AufgabenKarte.jsx";
 import { AUFGABEN_STATUS, AUFGABEN_TYPEN } from "../config/konstanten.js";
 
-export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, darfBearbeiten = true, initialFilter = "alle" }) {
+export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, darfBearbeiten = true, initialFilter = "alle",
+  kannVorschlagen = false, onVorschlagen, onEntscheiden }) {
   const [ansicht,     setAnsicht]     = useState("liste");  // liste | kanban
   const [filter,      setFilter]      = useState(initialFilter);
   const [neuAufgabe,  setNeuAufgabe]  = useState(false);
@@ -85,8 +86,9 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
     abgeschlossen: aufgaben.filter(a=>a.status==="abgeschlossen").length,
   };
 
-  const ueberfaelligListe = gefiltert.filter(a => a.status !== "abgeschlossen" && a.faellig_am && new Date(a.faellig_am) < new Date());
-  const offenListe        = gefiltert.filter(a => a.status !== "abgeschlossen" && !ueberfaelligListe.includes(a));
+  const zurPruefungListe  = gefiltert.filter(a => a.status === "zur_pruefung");
+  const ueberfaelligListe = gefiltert.filter(a => a.status !== "abgeschlossen" && a.status !== "zur_pruefung" && a.faellig_am && new Date(a.faellig_am) < new Date());
+  const offenListe        = gefiltert.filter(a => a.status !== "abgeschlossen" && a.status !== "zur_pruefung" && !ueberfaelligListe.includes(a));
   const erledigtListe     = gefiltert.filter(a => a.status === "abgeschlossen");
 
   return (
@@ -145,6 +147,18 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
             </div>
           )}
 
+          {zurPruefungListe.length > 0 && (
+            <>
+              <SektionsTitel label="Zur Prüfung" />
+              {zurPruefungListe.map(a => (
+                <AufgabenKarte key={a.id} aufgabe={a} kolonnen={kolonnen}
+                  onClick={() => darfBearbeiten && setEditAufgabe(a)}
+                  onDelete={darfBearbeiten ? handleDelete : undefined}
+                  onEntscheiden={darfBearbeiten ? onEntscheiden : undefined} />
+              ))}
+            </>
+          )}
+
           {ueberfaelligListe.length > 0 && (
             <>
               <SektionsTitel label="Überfällig" />
@@ -152,7 +166,8 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
                 <AufgabenKarte key={a.id} aufgabe={a} kolonnen={kolonnen}
                   onClick={() => darfBearbeiten && setEditAufgabe(a)}
                   onDelete={darfBearbeiten ? handleDelete : undefined}
-                  onToggleErledigt={darfBearbeiten ? handleToggleErledigt : undefined} />
+                  onToggleErledigt={darfBearbeiten ? handleToggleErledigt : undefined}
+                  onVorschlagen={kannVorschlagen ? onVorschlagen : undefined} />
               ))}
             </>
           )}
@@ -164,7 +179,8 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
                 <AufgabenKarte key={a.id} aufgabe={a} kolonnen={kolonnen}
                   onClick={() => darfBearbeiten && setEditAufgabe(a)}
                   onDelete={darfBearbeiten ? handleDelete : undefined}
-                  onToggleErledigt={darfBearbeiten ? handleToggleErledigt : undefined} />
+                  onToggleErledigt={darfBearbeiten ? handleToggleErledigt : undefined}
+                  onVorschlagen={kannVorschlagen ? onVorschlagen : undefined} />
               ))}
             </>
           )}
