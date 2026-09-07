@@ -106,7 +106,6 @@ export default function PolierApp() {
   const [tab,           setTab]         = useState("dashboard");
   const [aufgabenFilter,setAufgabenFilter] = useState("alle"); // für Dashboard-Sprungziele
   const [zeigeMehr,     setZeigeMehr]    = useState(false);
-  const [fachTab,       setFachTab]      = useState("stempeln"); // Facharbeiter-Ansicht: stempeln | aufgaben
   const [mehrDragY,     setMehrDragY]    = useState(0);
   const [mehrDragging,  setMehrDragging] = useState(false);
   const mehrDragStartY  = useRef(null);
@@ -376,64 +375,6 @@ export default function PolierApp() {
   }
 
   // ── Facharbeiter → nur Stempeluhr ──
-  if (aktiveRolle === "facharbeiter") {
-    return (
-      <div style={{ background:"var(--bg)", minHeight:"100dvh", color:"var(--text)" }}>
-        <div style={{ background:"var(--surface)", padding:"10px 18px",
-          borderBottom:"3px solid var(--yellow)", display:"flex",
-          justifyContent:"space-between", alignItems:"center",
-          boxShadow:"0 2px 8px rgba(0,0,0,0.08)" }}>
-          <div>
-            <div style={{ fontWeight:900, fontSize:18, letterSpacing:-1 }}>
-              <span style={{ color:"var(--yellow)" }}>★</span> POLARIS
-            </div>
-            <RollenBadge rolle={aktiveRolle} />
-          </div>
-          <div style={{ display:"flex", gap:8 }}>
-            <ThemeToggle dark={theme.dark} toggle={theme.toggle} />
-            <button onClick={abmelden}
-              style={{ background:"var(--surface2)", color:"var(--muted)",
-                border:"1px solid var(--border)", borderRadius:8,
-                padding:"6px 12px", cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>
-              Abmelden
-            </button>
-          </div>
-        </div>
-
-        {/* Nur Stempeln + Aufgaben lesen — Facharbeiter dürfen Aufgaben
-            weder bearbeiten noch löschen, nur sehen was ansteht. */}
-        <div style={{ display:"flex", gap:6, padding:"10px 16px 0" }}>
-          {[["stempeln","Stempeln"], ["aufgaben","Aufgaben"]].map(([k,l]) => (
-            <button key={k} onClick={() => setFachTab(k)}
-              style={{ flex:1, background: fachTab===k ? "var(--yellow)" : "var(--surface)",
-                color: fachTab===k ? "#1a1200" : "var(--muted)",
-                border:`1.5px solid ${fachTab===k ? "var(--yellow)" : "var(--border)"}`,
-                borderRadius:10, padding:9, fontWeight: fachTab===k ? 700 : 400,
-                cursor:"pointer", fontSize:13, fontFamily:"inherit" }}>
-              {l}
-            </button>
-          ))}
-        </div>
-
-        <div style={{ padding:"14px 16px" }}>
-          {fachTab === "stempeln" && (
-            <StempeluhrView profil={aktiveProfil}
-              projekte={aktiveProfil?.kolonne_id
-                ? projekte.filter(p => (p.kolonnen||[]).some(k => k.id === aktiveProfil.kolonne_id)).length > 0
-                  ? projekte.filter(p => (p.kolonnen||[]).some(k => k.id === aktiveProfil.kolonne_id))
-                  : projekte
-                : projekte}
-              session={auth.session} />
-          )}
-          {fachTab === "aufgaben" && (
-            <AufgabenView aufgaben={felder} setAufgaben={setFelder} kolonnen={kolonnen}
-              sbConnected={sbConnected} darfBearbeiten={false} />
-          )}
-        </div>
-      </div>
-    );
-  }
-
   async function handleOnboardingComplete(firmaDaten, ersterPolier) {
     setEigeneFirma(prev => ({ ...prev, ...firmaDaten }));
 
