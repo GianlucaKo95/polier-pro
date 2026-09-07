@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { MapPin, HardHat, X, Trash2 } from "lucide-react";
+import { MapPin, HardHat } from "lucide-react";
 import { MitarbeiterZeilen } from "./MitarbeiterZeilen.jsx";
+import { SwipeToDelete } from "./SwipeToDelete.jsx";
 
 export function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, zeitenGeladen, setKolonnen, darfBearbeiten = true }) {
   const [expanded, setExpanded] = useState(false);
@@ -49,7 +50,8 @@ export function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, zeitenGeladen, 
 
   return (
     <div style={{ marginBottom:9 }}>
-      {/* Kolonne Header */}
+      {/* Kolonne Header — nach links wischen legt den Löschen-Button frei */}
+      <SwipeToDelete onDelete={darfBearbeiten && setKolonnen ? kolonneLoeschen : undefined}>
       <div style={{ background: "var(--surface)", borderRadius: expanded ? "12px 12px 0 0" : 12,
         padding:"10px 16px", border:`1px solid ${'var(--border)'}`,
         borderBottom: expanded ? "none" : undefined }}>
@@ -114,31 +116,22 @@ export function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, zeitenGeladen, 
           </button>
         </div>
       </div>
+      </SwipeToDelete>
 
       {/* Aufgeklappte MA-Liste */}
       {expanded && (
         <div style={{ background: "var(--surface2)", borderRadius:"0 0 12px 12px",
           border:`1px solid ${'var(--border)'}`, borderTop:"none", padding:"7px 12px" }}>
           {mas.map(ma => (
-            <div key={ma.id} style={{ display:"flex", alignItems:"center", gap:8 }}>
-              <div style={{ flex:1 }}>
-                <MitarbeiterZeilen
-                  ma={ma}
-                  zeitdaten={zeitdaten}
-                  vonDatum={vonDatum}
-                  bisDatum={bisDatum}
-                />
-              </div>
-              {darfBearbeiten && setKolonnen && (
-                <button onClick={() => mitarbeiterEntfernen(ma.id)}
-                  style={{ background:"var(--rbg)", color:"var(--red)",
-                    border:"1px solid var(--red)", borderRadius:8,
-                    padding:"4px 8px", cursor:"pointer", fontSize:11,
-                    fontFamily:"inherit", flexShrink:0, display:"flex" }}>
-                  <X size={12} />
-                </button>
-              )}
-            </div>
+            <SwipeToDelete key={ma.id}
+              onDelete={darfBearbeiten && setKolonnen ? () => mitarbeiterEntfernen(ma.id) : undefined}>
+              <MitarbeiterZeilen
+                ma={ma}
+                zeitdaten={zeitdaten}
+                vonDatum={vonDatum}
+                bisDatum={bisDatum}
+              />
+            </SwipeToDelete>
           ))}
 
           {/* Mitarbeiter hinzufügen */}
@@ -159,17 +152,6 @@ export function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, zeitenGeladen, 
                 + Hinzufügen
               </button>
             </div>
-          )}
-
-          {/* Ganze Kolonne löschen */}
-          {darfBearbeiten && setKolonnen && (
-            <button onClick={kolonneLoeschen}
-              style={{ width:"100%", background:"var(--rbg)", color:"var(--red)",
-                border:"1px solid var(--red)", borderRadius:8, padding:"7px 0",
-                cursor:"pointer", fontSize:12, fontWeight:700, fontFamily:"inherit",
-                marginTop:8, display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
-              <Trash2 size={13} /> Kolonne löschen
-            </button>
           )}
 
           {/* Kolonnen-Summe */}
