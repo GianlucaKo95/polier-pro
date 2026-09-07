@@ -46,7 +46,7 @@ export function WeatherView({ compact = false, ort = null, plz = null, projektId
     try {
       const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
         + `&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,weather_code`
-        + `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code`
+        + `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,weather_code`
         + `&timezone=Europe%2FBerlin&forecast_days=7`;
       const res = await fetch(url);
       const data = await res.json();
@@ -63,6 +63,7 @@ export function WeatherView({ compact = false, ort = null, plz = null, projektId
           max:  Math.round(data.daily.temperature_2m_max[i]),
           min:  Math.round(data.daily.temperature_2m_min[i]),
           rain: data.daily.precipitation_sum[i],
+          wind: Math.round(data.daily.wind_speed_10m_max[i]),
           icon: wmoIcon(data.daily.weather_code[i]),
         })),
       });
@@ -111,7 +112,7 @@ export function WeatherView({ compact = false, ort = null, plz = null, projektId
       <div style={{ display:"flex", gap:6, marginTop:10, overflowX:"auto" }}>
         {weather.forecast.map((f,i) => (
           <div key={i} style={{ minWidth:52, background: "var(--surface2)", borderRadius:12, padding:"6px 4px", textAlign:"center",
-            border: betonCheck({temp:f.max,wind:0,rain:f.rain,humidity:70}).length > 0
+            border: betonCheck({temp:f.max,wind:f.wind,rain:f.rain}).length > 0
               ? `2px solid ${'var(--red)'}` : `1px solid ${'var(--border)'}` }}>
             <div style={{ color: "var(--muted)", fontSize:10 }}>{f.day}</div>
             <div style={{ fontSize:16 }}>{f.icon}</div>
@@ -175,7 +176,7 @@ export function WeatherView({ compact = false, ort = null, plz = null, projektId
         <div style={{ color: "var(--yellow)", fontWeight:700, marginBottom:9,
           display:"flex", alignItems:"center", gap:7 }}><Calendar size={15} /> 7-Tage Betonierplan</div>
         {weather.forecast.map((f,i) => {
-          const dayWarn = betonCheck({ temp:f.max, wind:30, rain:f.rain, humidity:70 });
+          const dayWarn = betonCheck({ temp:f.max, wind:f.wind, rain:f.rain });
           const dayOk = dayWarn.length === 0;
           return (
             <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
@@ -186,7 +187,9 @@ export function WeatherView({ compact = false, ort = null, plz = null, projektId
                 <span style={{ fontSize:20 }}>{f.icon}</span>
                 <div>
                   <div style={{ color: "var(--text)", fontWeight:600, fontSize:13 }}>{f.day} · {new Date(f.date).getDate()}.{(new Date(f.date).getMonth()+1).toString().padStart(2,"0")}.</div>
-                  <div style={{ color: "var(--muted)", fontSize:11, display:"flex", alignItems:"center", gap:4 }}>{f.min}° – {f.max}° · {f.rain > 0 ? <><CloudRain size={10} /> {f.rain}mm</> : "kein Regen"}</div>
+                  <div style={{ color: "var(--muted)", fontSize:11, display:"flex", alignItems:"center", gap:4, flexWrap:"wrap" }}>
+                    {f.min}° – {f.max}° · <Wind size={10} /> {f.wind} km/h · {f.rain > 0 ? <><CloudRain size={10} /> {f.rain}mm</> : "kein Regen"}
+                  </div>
                 </div>
               </div>
               <div style={{ color: dayOk ? "var(--green)" : "var(--red)", fontWeight:700, fontSize:12,
