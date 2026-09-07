@@ -106,6 +106,7 @@ export default function PolierApp() {
   const [tab,           setTab]         = useState("dashboard");
   const [aufgabenFilter,setAufgabenFilter] = useState("alle"); // für Dashboard-Sprungziele
   const [zeigeMehr,     setZeigeMehr]    = useState(false);
+  const [fachTab,       setFachTab]      = useState("stempeln"); // Facharbeiter-Ansicht: stempeln | aufgaben
   const [mehrDragY,     setMehrDragY]    = useState(0);
   const [mehrDragging,  setMehrDragging] = useState(false);
   const mehrDragStartY  = useRef(null);
@@ -398,14 +399,36 @@ export default function PolierApp() {
             </button>
           </div>
         </div>
+
+        {/* Nur Stempeln + Aufgaben lesen — Facharbeiter dürfen Aufgaben
+            weder bearbeiten noch löschen, nur sehen was ansteht. */}
+        <div style={{ display:"flex", gap:6, padding:"10px 16px 0" }}>
+          {[["stempeln","Stempeln"], ["aufgaben","Aufgaben"]].map(([k,l]) => (
+            <button key={k} onClick={() => setFachTab(k)}
+              style={{ flex:1, background: fachTab===k ? "var(--yellow)" : "var(--surface)",
+                color: fachTab===k ? "#1a1200" : "var(--muted)",
+                border:`1.5px solid ${fachTab===k ? "var(--yellow)" : "var(--border)"}`,
+                borderRadius:10, padding:9, fontWeight: fachTab===k ? 700 : 400,
+                cursor:"pointer", fontSize:13, fontFamily:"inherit" }}>
+              {l}
+            </button>
+          ))}
+        </div>
+
         <div style={{ padding:"14px 16px" }}>
-          <StempeluhrView profil={aktiveProfil}
-            projekte={aktiveProfil?.kolonne_id
-              ? projekte.filter(p => (p.kolonnen||[]).some(k => k.id === aktiveProfil.kolonne_id)).length > 0
-                ? projekte.filter(p => (p.kolonnen||[]).some(k => k.id === aktiveProfil.kolonne_id))
-                : projekte
-              : projekte}
-            session={auth.session} />
+          {fachTab === "stempeln" && (
+            <StempeluhrView profil={aktiveProfil}
+              projekte={aktiveProfil?.kolonne_id
+                ? projekte.filter(p => (p.kolonnen||[]).some(k => k.id === aktiveProfil.kolonne_id)).length > 0
+                  ? projekte.filter(p => (p.kolonnen||[]).some(k => k.id === aktiveProfil.kolonne_id))
+                  : projekte
+                : projekte}
+              session={auth.session} />
+          )}
+          {fachTab === "aufgaben" && (
+            <AufgabenView aufgaben={felder} setAufgaben={setFelder} kolonnen={kolonnen}
+              sbConnected={sbConnected} darfBearbeiten={false} />
+          )}
         </div>
       </div>
     );
@@ -864,7 +887,7 @@ export default function PolierApp() {
   // Rollenbasierte Tabs
   const ALLE_TABS = [
     { id:"dashboard",     icon:"📊",  label:"Übersicht",   rollen:["administrator","bauleiter","polier","vorarbeiter"] },
-    { id:"aufgaben",      icon:"✅",  label:"Aufgaben",    rollen:["administrator","bauleiter","polier","vorarbeiter"] },
+    { id:"aufgaben",      icon:"✅",  label:"Aufgaben",    rollen:["administrator","bauleiter","polier","vorarbeiter","facharbeiter"] },
     { id:"gantt",         icon:"📅",  label:"Zeitplan",    rollen:["administrator","bauleiter","polier"] },
     { id:"kosten",        icon:"💰",  label:"Kosten",      rollen:["administrator"] },
     { id:"wetter",        icon:"🌤️", label:"Wetter",      rollen:["administrator","bauleiter","polier","vorarbeiter"] },
