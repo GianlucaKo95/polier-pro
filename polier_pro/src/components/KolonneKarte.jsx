@@ -2,7 +2,7 @@ import { useState } from "react";
 import { MapPin, HardHat, X, Trash2 } from "lucide-react";
 import { MitarbeiterZeilen } from "./MitarbeiterZeilen.jsx";
 
-export function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, erfasstVerbunden, setKolonnen, darfBearbeiten = true }) {
+export function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, zeitenGeladen, setKolonnen, darfBearbeiten = true }) {
   const [expanded, setExpanded] = useState(false);
   const [neuerName, setNeuerName] = useState("");
   const mas = k.mitarbeiter || [];
@@ -64,13 +64,13 @@ export function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, erfasstVerbunde
             )}
           </div>
           <div style={{ textAlign:"right" }}>
-            {erfasstVerbunden && kolonneH > 0 ? (
+            {zeitenGeladen && kolonneH > 0 ? (
               <div style={{ color: "var(--yellow)", fontWeight:800, fontSize:18 }}>{kolonneH.toFixed(1)}h</div>
             ) : (
               <div style={{ color: "var(--yellow)", fontSize:13,
                 display:"flex", alignItems:"center", gap:4, justifyContent:"flex-end" }}><HardHat size={13} /> {totalMann} Mann</div>
             )}
-            {erfasstVerbunden && (
+            {zeitenGeladen && (
               <div style={{ color: "var(--muted)", fontSize:10 }}>
                 {anwesend}/{totalMann} anwesend
               </div>
@@ -79,7 +79,7 @@ export function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, erfasstVerbunde
         </div>
 
         {/* Fortschrittsbalken Anwesenheit */}
-        {erfasstVerbunden && totalMann > 0 && (
+        {zeitenGeladen && totalMann > 0 && (
           <div style={{ marginTop:10 }}>
             <div style={{ background: "var(--border)", borderRadius:4, height:5 }}>
               <div style={{ background: anwesend === totalMann ? "var(--green)" : "var(--yellow)",
@@ -173,7 +173,7 @@ export function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, erfasstVerbunde
           )}
 
           {/* Kolonnen-Summe */}
-          {erfasstVerbunden && kolonneH > 0 && (
+          {zeitenGeladen && kolonneH > 0 && (
             <div style={{ display:"flex", justifyContent:"space-between",
               background: "var(--border)", borderRadius:8, padding:"7px 12px", marginTop:8 }}>
               <div style={{ color: "var(--muted)", fontSize:12 }}>Kolonne gesamt</div>
