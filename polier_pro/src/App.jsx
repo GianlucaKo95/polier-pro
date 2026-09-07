@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Bell, LogOut, Plus, MapPin, Hash, TriangleAlert, LayoutGrid,
   CircleCheckBig, NotebookPen, Users, Clock, Ellipsis, ChevronRight,
   Building2, Calendar, Euro, CloudSun, ChartColumn, FileText, Settings,
-  UserCog, RefreshCw } from "lucide-react";
+  UserCog, RefreshCw, User } from "lucide-react";
 import { useTheme } from "./hooks/useTheme.js";
 import { useAuth } from "./hooks/useAuth.js";
 import { DEFAULT_EINHEITSPREISE, DEFAULT_LV_VORLAGEN, ONBOARDING_KEY, ROLLEN, PROJEKTTYPEN } from "./config/konstanten.js";
@@ -35,6 +35,7 @@ import { StundenExportView } from "./views/StundenExportView.jsx";
 import { AngebotView } from "./views/AngebotView.jsx";
 import { AdminParameterView } from "./views/AdminParameterView.jsx";
 import { NutzerVerwaltungView } from "./views/NutzerVerwaltungView.jsx";
+import { MeinProfilView } from "./views/MeinProfilView.jsx";
 import { PWABanner } from "./components/PWABanner.jsx";
 import { PushBanner } from "./components/PushBanner.jsx";
 
@@ -831,6 +832,7 @@ export default function PolierApp() {
     { id:"angebot",       icon:"📄",  label:"Angebot",     rollen:["administrator"] },
     { id:"admin_params",  icon:"⚙️",  label:"Parameter",   rollen:["administrator"] },
     { id:"nutzer",        icon:"👥",  label:"Nutzer",      rollen:["administrator"] },
+    { id:"profil",        icon:"👤",  label:"Mein Profil", rollen:["administrator","bauleiter","polier","vorarbeiter","facharbeiter"] },
   ];
   const TABS = ALLE_TABS.filter(t => !aktiveRolle || t.rollen.includes(aktiveRolle));
 
@@ -842,7 +844,7 @@ export default function PolierApp() {
   const aktivInMehr = mehrTabs.some(t => t.id === tab);
   const TAB_ICONS = { dashboard:LayoutGrid, aufgaben:CircleCheckBig, tagebuch:NotebookPen,
     kolonnen:Users, stempeln:Clock, gantt:Calendar, kosten:Euro, wetter:CloudSun,
-    stunden:ChartColumn, angebot:FileText, admin_params:Settings, nutzer:UserCog };
+    stunden:ChartColumn, angebot:FileText, admin_params:Settings, nutzer:UserCog, profil:User };
 
   return (
     // position:fixed auf html/body war der Bug (siehe theme.css) — aber
@@ -951,6 +953,7 @@ export default function PolierApp() {
         {tab === "angebot"       && <AngebotView projekt={projekt} aufgaben={felder} einheitspreise={einheitspreise} lvVorlagen={lvVorlagen} eigeneFirma={eigeneFirma} />}
         {tab === "admin_params" && <AdminParameterView einheitspreise={einheitspreise} setEinheitspreise={setEinheitspreise} lvVorlagen={lvVorlagen} setLvVorlagen={setLvVorlagen} />}
         {tab === "nutzer"       && <NutzerVerwaltungView session={auth.session} kolonnen={kolonnen} firmaId={firma?.id} />}
+        {tab === "profil"       && <MeinProfilView profil={aktiveProfil} session={auth.session} />}
       </div>
       </PlanGuard>
 

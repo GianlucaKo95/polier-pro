@@ -1,15 +1,20 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Users, Plus, TriangleAlert, X, Pencil, HardHat, Phone, CircleCheckBig, Ban, User, Calendar, Copy, ArrowUpRight, Mail } from "lucide-react";
+import { Users, Plus, TriangleAlert, X, Pencil, HardHat, Phone, CircleCheckBig, Ban, User, Calendar, Copy, ArrowUpRight, Mail, FileClock } from "lucide-react";
 import { sbFetch } from "../lib/supabase.js";
 import { ROLLEN } from "../config/konstanten.js";
 import { EinladungGenerieren } from "./EinladungGenerieren.jsx";
 
+const AENDERUNGS_FELD_LABEL = {
+  strasse: "Straße", plz: "PLZ", ort: "Ort", iban: "IBAN", kontoinhaber: "Kontoinhaber",
+};
+
 export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null }) {
   const [nutzer,      setNutzer]      = useState([]);
   const [einladungen, setEinladungen] = useState([]);
+  const [aenderungen, setAenderungen] = useState([]);
   const [laden,       setLaden]       = useState(true);
-  const [ansicht,     setAnsicht]     = useState("nutzer"); // nutzer | einladungen
+  const [ansicht,     setAnsicht]     = useState("nutzer"); // nutzer | einladungen | aenderungen
   const [editNutzer,  setEditNutzer]  = useState(null);
   const [zeigeEinladen, setZeigeEinladen] = useState(false);
   const [aktionsFehler, setAktionsFehler] = useState("");
@@ -18,17 +23,37 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
 
   async function ladeAlles() {
     setLaden(true);
-    const [n, e] = await Promise.all([
+    const [n, e, a] = await Promise.all([
       sbFetch("profile?select=*&order=created_at.desc", {
         headers: { "Authorization": `Bearer ${session?.access_token}` }
       }),
       sbFetch("einladungen?select=*&order=created_at.desc&limit=20", {
         headers: { "Authorization": `Bearer ${session?.access_token}` }
       }),
+      sbFetch("profil_aenderungen?select=*,profile!profil_aenderungen_profil_id_fkey(vorname,nachname)&order=beantragt_am.desc&limit=50", {
+        headers: { "Authorization": `Bearer ${session?.access_token}` }
+      }),
     ]);
     if (n) setNutzer(n);
     if (e) setEinladungen(e);
+    if (a) setAenderungen(a);
     setLaden(false);
+  }
+
+  async function aenderungBearbeiten(id, status) {
+    setAktionsFehler("");
+    let admin_notiz = null;
+    if (status === "abgelehnt") {
+      admin_notiz = window.prompt("Grund der Ablehnung (optional):") || null;
+    }
+    const ok = await sbFetch(`profil_aenderungen?id=eq.${id}`, {
+      method: "PATCH",
+      headers: { "Authorization": `Bearer ${session?.access_token}` },
+      body: JSON.stringify({ status, bearbeitet_von: session?.user?.id, admin_notiz }),
+    });
+    if (!ok?.length) { setAktionsFehler("Änderungsanfrage konnte nicht bearbeitet werden."); return; }
+    if (status === "genehmigt") ladeAlles(); // Profil hat sich serverseitig mitgeändert
+    else setAenderungen(prev => prev.map(a => a.id === id ? { ...a, ...ok[0] } : a));
   }
 
   async function rolleAendern(id, neueRolle) {
@@ -88,6 +113,8 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
   const inaktiveNutzer = nutzer.filter(n => n.aktiv === false);
   const offeneEinl     = einladungen.filter(e => e.aktiv && new Date(e.läuft_ab_at) > new Date());
   const abgelaufeneEinl= einladungen.filter(e => !e.aktiv || new Date(e.läuft_ab_at) <= new Date());
+  const offeneAenderungen = aenderungen.filter(a => a.status === "offen");
+  const entschiedeneAenderungen = aenderungen.filter(a => a.status !== "offen");
 
   return (
     <div>
@@ -117,12 +144,13 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
       )}
 
       {/* Stats */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr",
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr",
         gap:8, marginBottom:12 }}>
         {[
-          ["Aktive Nutzer",    aktiveNutzer.length,    "var(--green)"],
-          ["Inaktiv",          inaktiveNutzer.length,  "var(--muted)"],
-          ["Offen. Einl.",     offeneEinl.length,      "var(--yellow)"],
+          ["Aktive Nutzer",    aktiveNutzer.length,       "var(--green)"],
+          ["Inaktiv",          inaktiveNutzer.length,     "var(--muted)"],
+          ["Offen. Einl.",     offeneEinl.length,         "var(--yellow)"],
+          ["Änderungen",       offeneAenderungen.length,  offeneAenderungen.length > 0 ? "var(--red)" : "var(--muted)"],
         ].map(([l,v,c]) => (
           <div key={l} style={{ background:"var(--surface)", borderRadius:12,
             padding:"7px 12px", border:"1.5px solid var(--border)",
@@ -138,14 +166,23 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
 
       {/* Tab Toggle */}
       <div style={{ display:"flex", gap:6, marginBottom:10 }}>
-        {[["nutzer",User,"Nutzer"], ["einladungen",Mail,"Einladungen"]].map(([k,Icon,l]) => (
+        {[["nutzer",User,"Nutzer"], ["einladungen",Mail,"Einladungen"], ["aenderungen",FileClock,"Änderungen"]].map(([k,Icon,l]) => (
           <button key={k} onClick={() => setAnsicht(k)}
-            style={{ flex:1, background: ansicht===k ? "var(--yellow)" : "var(--surface2)",
+            style={{ flex:1, position:"relative", background: ansicht===k ? "var(--yellow)" : "var(--surface2)",
               color: ansicht===k ? "#1a1200" : "var(--muted)",
               border:`1.5px solid ${ansicht===k ? "var(--yellow)" : "var(--border)"}`,
               borderRadius:10, padding:9, fontWeight: ansicht===k ? 700 : 400,
               cursor:"pointer", fontSize:13, fontFamily:"inherit",
-              display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}><Icon size={13} /> {l}</button>
+              display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+            <Icon size={13} /> {l}
+            {k === "aenderungen" && offeneAenderungen.length > 0 && (
+              <span style={{ position:"absolute", top:-6, right:-6, background:"var(--red)",
+                color:"#fff", borderRadius:20, minWidth:18, height:18, fontSize:10, fontWeight:800,
+                display:"flex", alignItems:"center", justifyContent:"center", padding:"0 4px" }}>
+                {offeneAenderungen.length}
+              </span>
+            )}
+          </button>
         ))}
       </div>
 
@@ -277,6 +314,89 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
               color:"var(--muted)" }}>
               <div style={{ display:"flex", justifyContent:"center", marginBottom:6 }}><User size={32} /></div>
               <div>Noch keine Nutzer · Lade Mitarbeiter ein</div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ÄNDERUNGSANFRAGEN — Adresse/Bankverbindung, von Mitarbeitern
+          eingereicht, wirken sich erst nach Freigabe hier auf das Profil aus */}
+      {!laden && ansicht === "aenderungen" && (
+        <div>
+          {offeneAenderungen.length > 0 && (
+            <div style={{ color:"var(--text)", fontWeight:700, fontSize:13, marginBottom:6 }}>
+              Offene Anfragen
+            </div>
+          )}
+          {offeneAenderungen.map(a => {
+            const name = a.profile ? `${a.profile.vorname||""} ${a.profile.nachname||""}`.trim() : "Unbekannt";
+            return (
+              <div key={a.id} style={{ background:"var(--surface)", borderRadius:12,
+                padding:"10px 14px", marginBottom:7, border:"1.5px solid var(--yellow)" }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:10 }}>
+                  <div>
+                    <div style={{ color:"var(--text)", fontWeight:700, fontSize:14 }}>{name}</div>
+                    <div style={{ color:"var(--muted)", fontSize:11, marginTop:2,
+                      display:"flex", alignItems:"center", gap:4 }}>
+                      <Calendar size={10} /> {new Date(a.beantragt_am).toLocaleDateString("de-DE")}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ color:"var(--text2)", fontSize:12, marginTop:8,
+                  background:"var(--surface2)", borderRadius:8, padding:"7px 10px" }}>
+                  {Object.entries(a.felder).map(([k,v]) => (
+                    <div key={k}>{AENDERUNGS_FELD_LABEL[k] || k}: <strong>{v || "—"}</strong></div>
+                  ))}
+                </div>
+                <div style={{ display:"flex", gap:8, marginTop:9 }}>
+                  <button onClick={() => aenderungBearbeiten(a.id, "abgelehnt")}
+                    style={{ flex:1, background:"var(--rbg)", color:"var(--red)",
+                      border:`1px solid ${'var(--red)'}`, borderRadius:8, padding:"8px 0",
+                      cursor:"pointer", fontWeight:700, fontSize:12, fontFamily:"inherit",
+                      display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}>
+                    <Ban size={13} /> Ablehnen
+                  </button>
+                  <button onClick={() => aenderungBearbeiten(a.id, "genehmigt")}
+                    style={{ flex:1, background:"var(--green)", color:"#fff",
+                      border:"none", borderRadius:8, padding:"8px 0",
+                      cursor:"pointer", fontWeight:700, fontSize:12, fontFamily:"inherit",
+                      display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}>
+                    <CircleCheckBig size={13} /> Genehmigen
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+
+          {entschiedeneAenderungen.length > 0 && (
+            <div>
+              <div style={{ color:"var(--muted)", fontWeight:600, fontSize:12,
+                marginTop:16, marginBottom:6 }}>Bereits entschieden</div>
+              {entschiedeneAenderungen.map(a => {
+                const name = a.profile ? `${a.profile.vorname||""} ${a.profile.nachname||""}`.trim() : "Unbekannt";
+                const genehmigt = a.status === "genehmigt";
+                return (
+                  <div key={a.id} style={{ background:"var(--surface)", borderRadius:10,
+                    padding:"7px 12px", marginBottom:6, opacity:0.75,
+                    border:"1px solid var(--border)" }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                      <div style={{ color:"var(--text)", fontSize:12, fontWeight:600 }}>{name}</div>
+                      <div style={{ color: genehmigt ? "var(--green)" : "var(--red)",
+                        fontSize:11, fontWeight:700, display:"flex", alignItems:"center", gap:4 }}>
+                        {genehmigt ? <CircleCheckBig size={11} /> : <Ban size={11} />}
+                        {genehmigt ? "Genehmigt" : "Abgelehnt"}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {aenderungen.length === 0 && (
+            <div style={{ textAlign:"center", padding:"23px 20px", color:"var(--muted)" }}>
+              <div style={{ display:"flex", justifyContent:"center", marginBottom:6 }}><FileClock size={32} /></div>
+              <div>Keine Änderungsanfragen</div>
             </div>
           )}
         </div>
