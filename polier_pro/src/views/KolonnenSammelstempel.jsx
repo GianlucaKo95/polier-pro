@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { HardHat, X, MapPin, Check, CircleCheckBig, TriangleAlert, Play } from "lucide-react";
+import { HardHat, X, MapPin, Check, CircleCheckBig, TriangleAlert, Play, KeyRound, SkipForward } from "lucide-react";
 import { getGPSPosition, reverseGeocode } from "../lib/geo.js";
 import { sbFetch } from "../lib/supabase.js";
+import { sha256Hex } from "../lib/utils.js";
 import { Label } from "../components/Label.jsx";
 import { TAETIGKEITEN } from "../config/konstanten.js";
+
+const MAX_VERSUCHE = 3;
 
 export function KolonnenSammelstempel({ kolonne, projekte, session, onClose }) {
   const [ausgewaehlt, setAusgewaehlt] = useState(() => {
@@ -15,11 +18,21 @@ export function KolonnenSammelstempel({ kolonne, projekte, session, onClose }) {
   const [aktivProjekt, setAktivProjekt] = useState(projekte[0]?.id || null);
   const [taetigkeit,   setTaetigkeit]   = useState("beton");
   const [gpsLaden,     setGpsLaden]     = useState(false);
-  const [ergebnis,     setErgebnis]     = useState(null); // { erfolg, fehler }
+
+  // auswahl → pin (jede Person bestätigt sich selbst) → ergebnis
+  const [phase,        setPhase]        = useState("auswahl");
+  const [warteschlange,setWarteschlange]= useState([]); // Mitarbeiter mit PIN, einer nach dem anderen
+  const [index,        setIndex]        = useState(0);
+  const [pinEingabe,   setPinEingabe]   = useState("");
+  const [pinFehler,    setPinFehler]    = useState("");
+  const [versuche,     setVersuche]     = useState(0);
+  const [posDaten,     setPosDaten]     = useState(null);
+  const [buchtGerade,  setBuchtGerade]  = useState(false);
+  const [ergebnisse,   setErgebnisse]   = useState([]); // {name, status}
 
   const anzahlAusgewaehlt = Object.values(ausgewaehlt).filter(Boolean).length;
 
-  async function sammelEinstempeln() {
+  async function weiterZurBestaetigung() {
     setGpsLaden(true);
     let pos = null, adresse = null;
     try {
@@ -27,37 +40,93 @@ export function KolonnenSammelstempel({ kolonne, projekte, session, onClose }) {
       adresse = await reverseGeocode(pos.lat, pos.lng);
     } catch { /* GPS optional — Buchung geht auch ohne */ }
     setGpsLaden(false);
+    setPosDaten({ pos, adresse });
 
-    const ausgewaehlteMitarbeiter = (kolonne.mitarbeiter || [])
-      .filter((_, i) => ausgewaehlt[i]);
+    const ausgewaehlteMitarbeiter = (kolonne.mitarbeiter || []).filter((_, i) => ausgewaehlt[i]);
+    const mitPin  = ausgewaehlteMitarbeiter.filter(m => m.pinHash);
+    const ohnePin = ausgewaehlteMitarbeiter.filter(m => !m.pinHash);
 
-    let erfolgreich = 0, fehlgeschlagen = 0;
-    for (const mitarbeiter of ausgewaehlteMitarbeiter) {
-      const buchung = {
-        profil_id:        null, // kein eigener Account — Name in Notiz
-        projekt_id:       aktivProjekt,
-        kolonne_id:       kolonne.id,
-        eingestempelt_at: new Date().toISOString(),
-        ein_lat:          pos?.lat,
-        ein_lng:          pos?.lng,
-        ein_adresse:      adresse || null,
-        status:           "aktiv",
-        taetigkeit:       taetigkeit,
-        notiz:            `Sammelbuchung Kolonne ${kolonne.name}: ${mitarbeiter.name}`,
-      };
-      if (session?.access_token) {
-        const data = await sbFetch("zeitbuchungen", {
-          method: "POST",
-          headers: { "Authorization": `Bearer ${session.access_token}` },
-          body: JSON.stringify(buchung),
-        });
-        if (data?.[0]) erfolgreich++; else fehlgeschlagen++;
-      } else {
-        erfolgreich++; // Demo-Modus: immer "erfolgreich"
-      }
-    }
-    setErgebnis({ erfolgreich, fehlgeschlagen, gesamt: ausgewaehlteMitarbeiter.length });
+    setErgebnisse(ohnePin.map(m => ({ name: m.name, status: "keine_pin" })));
+    setWarteschlange(mitPin);
+    setIndex(0);
+    setPinEingabe("");
+    setPinFehler("");
+    setVersuche(0);
+
+    if (mitPin.length === 0) setPhase("ergebnis");
+    else setPhase("pin");
   }
+
+  async function buchePerson(mitarbeiter) {
+    const { pos, adresse } = posDaten || {};
+    const buchung = {
+      profil_id:        null, // kein eigener Account — Name in Notiz
+      projekt_id:       aktivProjekt,
+      kolonne_id:       kolonne.id,
+      eingestempelt_at: new Date().toISOString(),
+      ein_lat:          pos?.lat,
+      ein_lng:          pos?.lng,
+      ein_adresse:      adresse || null,
+      status:           "aktiv",
+      taetigkeit:       taetigkeit,
+      notiz:            `Sammelbuchung Kolonne ${kolonne.name}: ${mitarbeiter.name}`,
+    };
+    if (session?.access_token) {
+      const data = await sbFetch("zeitbuchungen", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${session.access_token}` },
+        body: JSON.stringify(buchung),
+      });
+      return !!data?.[0];
+    }
+    return true; // Demo-Modus: immer "erfolgreich"
+  }
+
+  function naechstePerson() {
+    if (index + 1 >= warteschlange.length) { setPhase("ergebnis"); return; }
+    setIndex(i => i + 1);
+    setPinEingabe("");
+    setPinFehler("");
+    setVersuche(0);
+  }
+
+  async function pinBestaetigen() {
+    if (buchtGerade || pinEingabe.length !== 4) return;
+    const mitarbeiter = warteschlange[index];
+    const hash = await sha256Hex(pinEingabe);
+    if (hash !== mitarbeiter.pinHash) {
+      const neueVersuche = versuche + 1;
+      setVersuche(neueVersuche);
+      setPinEingabe("");
+      if (neueVersuche >= MAX_VERSUCHE) {
+        setErgebnisse(prev => [...prev, { name: mitarbeiter.name, status: "falsche_pin" }]);
+        naechstePerson();
+      } else {
+        setPinFehler(`Falsche PIN — noch ${MAX_VERSUCHE - neueVersuche} Versuch${MAX_VERSUCHE - neueVersuche===1?"":"e"}.`);
+      }
+      return;
+    }
+    setBuchtGerade(true);
+    const erfolg = await buchePerson(mitarbeiter);
+    setBuchtGerade(false);
+    setErgebnisse(prev => [...prev, { name: mitarbeiter.name, status: erfolg ? "bestaetigt" : "fehler" }]);
+    naechstePerson();
+  }
+
+  function ueberspringen() {
+    const mitarbeiter = warteschlange[index];
+    setErgebnisse(prev => [...prev, { name: mitarbeiter.name, status: "uebersprungen" }]);
+    naechstePerson();
+  }
+
+  const ERGEBNIS_LABEL = {
+    bestaetigt:    { label: "Eingestempelt",        farbe: "var(--green)" },
+    fehler:        { label: "Fehler beim Speichern", farbe: "var(--red)" },
+    falsche_pin:   { label: "Falsche PIN",           farbe: "var(--red)" },
+    uebersprungen: { label: "Übersprungen",          farbe: "var(--muted)" },
+    keine_pin:     { label: "Keine PIN hinterlegt",  farbe: "var(--muted)" },
+  };
+  const anzahlErfolgreich = ergebnisse.filter(e => e.status === "bestaetigt").length;
 
   // Als Portal direkt in document.body gerendert — verschachtelt im
   // normalen Baum bricht die iOS-Standalone-PWA sonst denselben
@@ -85,13 +154,14 @@ export function KolonnenSammelstempel({ kolonne, projekte, session, onClose }) {
 
       <div style={{ padding:"18px 16px 100px" }}>
 
-        {!ergebnis ? (
+        {phase === "auswahl" && (
           <>
             <div style={{ color:"var(--muted)", fontSize:13, marginBottom:12,
               lineHeight:1.5 }}>
-              Stempelt <strong>{kolonne.name}</strong> gesammelt ein. Praktisch
-              wenn nicht jeder Mitarbeiter ein eigenes Smartphone mit App hat —
-              der Vorarbeiter erfasst für das ganze Team auf einmal.
+              Stempelt <strong>{kolonne.name}</strong> gesammelt ein. Jede
+              ausgewählte Person mit hinterlegter PIN bestätigt sich danach
+              selbst — der Vorarbeiter kann niemanden ohne dessen PIN
+              einstempeln.
             </div>
 
             <div style={{ marginBottom:10 }}>
@@ -157,13 +227,21 @@ export function KolonnenSammelstempel({ kolonne, projekte, session, onClose }) {
                   color:"#1a1200" }}>
                   {ausgewaehlt[i] && <Check size={14} />}
                 </div>
-                <div style={{ color:"var(--text)", fontSize:13, fontWeight:600 }}>
-                  {mitarbeiter.name}
+                <div style={{ flex:1 }}>
+                  <div style={{ color:"var(--text)", fontSize:13, fontWeight:600 }}>
+                    {mitarbeiter.name}
+                  </div>
+                  {!mitarbeiter.pinHash && (
+                    <div style={{ color:"var(--muted)", fontSize:10, marginTop:1 }}>
+                      Keine PIN hinterlegt
+                    </div>
+                  )}
                 </div>
+                {mitarbeiter.pinHash && <KeyRound size={13} color="var(--muted)" />}
               </div>
             ))}
 
-            <button onClick={sammelEinstempeln}
+            <button onClick={weiterZurBestaetigung}
               disabled={gpsLaden || anzahlAusgewaehlt===0 || !aktivProjekt}
               style={{ width:"100%", background: anzahlAusgewaehlt>0 && aktivProjekt ? "var(--green)" : "var(--surface2)",
                 color: anzahlAusgewaehlt>0 && aktivProjekt ? "#fff" : "var(--muted)",
@@ -172,28 +250,84 @@ export function KolonnenSammelstempel({ kolonne, projekte, session, onClose }) {
                 cursor: anzahlAusgewaehlt>0 && aktivProjekt ? "pointer" : "default",
                 fontFamily:"inherit",
                 display:"flex", alignItems:"center", justifyContent:"center", gap:7 }}>
-              {gpsLaden ? <><MapPin size={15} /> GPS…</> : <><Play size={14} /> {anzahlAusgewaehlt} Mitarbeiter einstempeln</>}
+              {gpsLaden ? <><MapPin size={15} /> GPS…</> : <><Play size={14} /> Weiter zur Bestätigung</>}
             </button>
           </>
-        ) : (
+        )}
+
+        {phase === "pin" && warteschlange[index] && (
           <div style={{ textAlign:"center", paddingTop:20 }}>
-            <div style={{ display:"flex", justifyContent:"center", marginBottom:12,
-              color: ergebnis.fehlgeschlagen === 0 ? "var(--green)" : "var(--yellow)" }}>
-              {ergebnis.fehlgeschlagen === 0 ? <CircleCheckBig size={40} /> : <TriangleAlert size={40} />}
+            <div style={{ color:"var(--muted)", fontSize:12, marginBottom:6 }}>
+              Person {index+1} von {warteschlange.length}
             </div>
-            <div style={{ color:"var(--text)", fontWeight:800, fontSize:18,
-              marginBottom:6 }}>
-              {ergebnis.erfolgreich} von {ergebnis.gesamt} eingestempelt
+            <div style={{ display:"flex", justifyContent:"center", marginBottom:12, color:"var(--yellow)" }}>
+              <KeyRound size={36} />
             </div>
-            {ergebnis.fehlgeschlagen > 0 && (
-              <div style={{ color:"var(--red)", fontSize:13, marginBottom:12 }}>
-                {ergebnis.fehlgeschlagen} Buchung(en) fehlgeschlagen — bitte erneut versuchen.
+            <div style={{ color:"var(--text)", fontWeight:800, fontSize:20, marginBottom:4 }}>
+              {warteschlange[index].name}
+            </div>
+            <div style={{ color:"var(--muted)", fontSize:13, marginBottom:20 }}>
+              Bitte eigene PIN eingeben, um sich selbst einzustempeln
+            </div>
+            <input value={pinEingabe} onChange={e=>setPinEingabe(e.target.value.replace(/\D/g,"").slice(0,4))}
+              inputMode="numeric" maxLength={4} autoFocus disabled={buchtGerade}
+              onKeyDown={e => e.key==="Enter" && pinBestaetigen()}
+              style={{ width:140, textAlign:"center", fontSize:28, fontWeight:800,
+                letterSpacing:12, padding:"12px 0", borderRadius:12,
+                border:`2px solid ${pinFehler ? "var(--red)" : "var(--border)"}`,
+                background:"var(--surface)", color:"var(--text)", fontFamily:"inherit" }} />
+            {pinFehler && (
+              <div style={{ color:"var(--red)", fontSize:12, marginTop:8, fontWeight:700 }}>
+                {pinFehler}
               </div>
             )}
+            <div style={{ display:"flex", gap:10, marginTop:24 }}>
+              <button onClick={ueberspringen} disabled={buchtGerade}
+                style={{ flex:1, background:"var(--surface2)", color:"var(--muted)",
+                  border:"1px solid var(--border)", borderRadius:12, padding:14,
+                  cursor:"pointer", fontWeight:700, fontSize:13, fontFamily:"inherit",
+                  display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+                <SkipForward size={15} /> Überspringen
+              </button>
+              <button onClick={pinBestaetigen} disabled={buchtGerade || pinEingabe.length !== 4}
+                style={{ flex:2, background: pinEingabe.length === 4 ? "var(--green)" : "var(--surface2)",
+                  color: pinEingabe.length === 4 ? "#fff" : "var(--muted)",
+                  border:"none", borderRadius:12, padding:14,
+                  cursor: pinEingabe.length === 4 ? "pointer" : "default",
+                  fontWeight:800, fontSize:14, fontFamily:"inherit",
+                  display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+                <CircleCheckBig size={16} /> {buchtGerade ? "…" : "Bestätigen"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {phase === "ergebnis" && (
+          <div style={{ textAlign:"center", paddingTop:20 }}>
+            <div style={{ display:"flex", justifyContent:"center", marginBottom:12,
+              color: anzahlErfolgreich === ergebnisse.length ? "var(--green)" : "var(--yellow)" }}>
+              {anzahlErfolgreich === ergebnisse.length ? <CircleCheckBig size={40} /> : <TriangleAlert size={40} />}
+            </div>
+            <div style={{ color:"var(--text)", fontWeight:800, fontSize:18, marginBottom:16 }}>
+              {anzahlErfolgreich} von {ergebnisse.length} eingestempelt
+            </div>
+            <div style={{ textAlign:"left" }}>
+              {ergebnisse.map((e,i) => {
+                const l = ERGEBNIS_LABEL[e.status];
+                return (
+                  <div key={i} style={{ display:"flex", justifyContent:"space-between",
+                    alignItems:"center", background:"var(--surface)", borderRadius:8,
+                    padding:"8px 12px", marginBottom:6, border:"1px solid var(--border)" }}>
+                    <span style={{ color:"var(--text)", fontSize:13, fontWeight:600 }}>{e.name}</span>
+                    <span style={{ color:l.farbe, fontSize:12, fontWeight:700 }}>{l.label}</span>
+                  </div>
+                );
+              })}
+            </div>
             <button onClick={onClose}
               style={{ background:"var(--yellow)", color:"#1a1200", border:"none",
                 borderRadius:12, padding:"12px 24px", fontWeight:800,
-                cursor:"pointer", fontSize:15, fontFamily:"inherit" }}>
+                cursor:"pointer", fontSize:15, fontFamily:"inherit", marginTop:16 }}>
               Fertig
             </button>
           </div>
