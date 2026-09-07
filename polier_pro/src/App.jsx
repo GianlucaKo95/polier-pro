@@ -875,7 +875,7 @@ export default function PolierApp() {
     { id:"angebot",       icon:"📄",  label:"Angebot",     rollen:["administrator"] },
     { id:"admin_params",  icon:"⚙️",  label:"Parameter",   rollen:["administrator"] },
     { id:"nutzer",        icon:"👥",  label:"Nutzer",      rollen:["administrator"] },
-    { id:"profil",        icon:"👤",  label:"Mein Profil", rollen:["administrator","bauleiter","polier","vorarbeiter","facharbeiter"] },
+    { id:"profil",        icon:"👤",  label:"Mein Profil", rollen:["bauleiter","polier","vorarbeiter","facharbeiter"] },
   ];
   const TABS = ALLE_TABS.filter(t => !aktiveRolle || t.rollen.includes(aktiveRolle));
 
