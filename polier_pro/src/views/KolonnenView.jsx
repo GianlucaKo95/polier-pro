@@ -1,12 +1,33 @@
 import { useState, useEffect } from "react";
-import { RefreshCw, Info, TriangleAlert, CircleX, Plus } from "lucide-react";
+import { RefreshCw, Info, CircleX, Plus } from "lucide-react";
 import { ERFASST_PROXY, erfasstQuery } from "../lib/erfasst.js";
+import { sbFetch } from "../lib/supabase.js";
+import { TAETIGKEITEN } from "../config/konstanten.js";
 import { Label, inputStyle } from "../components/Label.jsx";
 import { KolonneKarte } from "../components/KolonneKarte.jsx";
 
-export function KolonnenView({ kolonnen, projekt, setKolonnen, darfBearbeiten = true, profil, session }) {
+// Wandelt eine native zeitbuchungen-Zeile in die gleiche Form um, die
+// KolonneKarte/MitarbeiterZeilen bisher nur von 123erfasst kannten — so
+// müssen diese Komponenten nicht wissen, aus welcher Quelle die Daten kommen.
+function alsZeitEintrag(b) {
+  const minuten = b.netto_minuten || 0;
+  return {
+    person: {
+      ident:         b.profil_id,
+      formattedName: b.profile ? `${b.profile.vorname||""} ${b.profile.nachname||""}`.trim() : "",
+    },
+    hours:    Math.floor(minuten / 60),
+    minutes:  minuten % 60,
+    date:     b.eingestempelt_at,
+    activity: b.taetigkeit ? { name: TAETIGKEITEN[b.taetigkeit]?.label || b.taetigkeit } : null,
+    note:     b.notiz || "",
+  };
+}
+
+export function KolonnenView({ kolonnen, projekt, setKolonnen, darfBearbeiten = true, kannKolonneLoeschen = false, profil, session }) {
   const [zeitdaten,   setZeitdaten]   = useState([]);
   const [ladeStatus,  setLadeStatus]  = useState("idle"); // idle | loading | ok | error
+  const [datenquelle, setDatenquelle] = useState(null);   // "eigen" | "123erfasst"
   const [vonDatum,    setVonDatum]    = useState(() => {
     const d = new Date(); d.setDate(d.getDate()-6);
     return d.toISOString().slice(0,10);
@@ -22,31 +43,60 @@ export function KolonnenView({ kolonnen, projekt, setKolonnen, darfBearbeiten = 
   const totalMann = kolonnen.reduce((s,k) => s + (k.mitarbeiter?.length || 0), 0);
   const totalStd  = zeitdaten.reduce((s,z) => s + (z.hours||0) + (z.minutes||0)/60, 0);
 
+  // Standard: eigene Zeiterfassung (Stempeluhr/zeitbuchungen). 123erfasst
+  // ist nur noch Fallback für Projekte, die weiterhin darüber verknüpft
+  // sind und im Zeitraum keine eigenen Buchungen haben.
   async function ladeZeiten() {
-    if (!erfasstLinked) return;
+    if (!projekt?.id) return;
     setLadeStatus("loading");
     try {
-      const data = await erfasstQuery(Q_TIMES, {
-        from:         vonDatum + "T00:00:00",
-        to:           bisDatum + "T23:59:59",
-        projectIdent: projekt.erfasstIdent,
-      });
-      setZeitdaten(data?.hoursBlocks?.nodes || []);
+      const eigene = await sbFetch(
+        `zeitbuchungen?select=*,profile(vorname,nachname)&status=eq.abgeschlossen` +
+        `&projekt_id=eq.${projekt.id}` +
+        `&eingestempelt_at=gte.${vonDatum}T00:00:00` +
+        `&eingestempelt_at=lte.${bisDatum}T23:59:59`,
+        { headers: { Authorization: `Bearer ${session?.access_token}` } }
+      );
+      if (eigene?.length) {
+        setZeitdaten(eigene.map(alsZeitEintrag));
+        setDatenquelle("eigen");
+        setLadeStatus("ok");
+        return;
+      }
+      if (erfasstLinked) {
+        const data = await erfasstQuery(Q_TIMES, {
+          from:         vonDatum + "T00:00:00",
+          to:           bisDatum + "T23:59:59",
+          projectIdent: projekt.erfasstIdent,
+        });
+        setZeitdaten(data?.hoursBlocks?.nodes || []);
+        setDatenquelle("123erfasst");
+        setLadeStatus("ok");
+        return;
+      }
+      setZeitdaten([]);
+      setDatenquelle("eigen");
       setLadeStatus("ok");
     } catch(e) {
       setLadeStatus("error");
     }
   }
 
-  useEffect(() => { ladeZeiten(); }, [vonDatum, bisDatum, projekt?.erfasstIdent]);
+  useEffect(() => { ladeZeiten(); }, [vonDatum, bisDatum, projekt?.id, projekt?.erfasstIdent]);
 
   function kolonneAnlegen() {
     if (!kName.trim() || !setKolonnen) return;
+    const vorarbeiterName = kVorarbeiter.trim();
     const neu = {
       id: Date.now(),
       name: kName.trim(),
-      vorarbeiter: kVorarbeiter.trim(),
-      mitarbeiter: [],
+      vorarbeiter: vorarbeiterName,
+      // Der Vorarbeiter, nach dem die Kolonne meist benannt ist, gehört
+      // ihr auch als Mitarbeiter an — sonst müsste er zusätzlich manuell
+      // in der Mitarbeiterliste angelegt werden.
+      mitarbeiter: vorarbeiterName
+        ? [{ id: Date.now(), name: vorarbeiterName, rolle: "Vorarbeiter" }]
+        : [],
     };
     setKolonnen(prev => [...prev, neu]);
     setKName(""); setKVorarbeiter(""); setNeueKolonne(false);
@@ -72,42 +122,31 @@ export function KolonnenView({ kolonnen, projekt, setKolonnen, darfBearbeiten = 
         </div>
       </div>
 
-      {/* Datumsfilter (nur wenn 123erfasst verbunden) */}
-      {konfiguriert && (
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr auto", gap:8, marginBottom:10, alignItems:"end" }}>
-          <div>
-            <Label>Von</Label>
-            <input type="date" value={vonDatum} onChange={e => setVonDatum(e.target.value)} style={inputStyle()} />
-          </div>
-          <div>
-            <Label>Bis</Label>
-            <input type="date" value={bisDatum} onChange={e => setBisDatum(e.target.value)} style={inputStyle()} />
-          </div>
-          <button onClick={ladeZeiten}
-            style={{ background: "var(--border)", border:"none", color: "var(--text)",
-              borderRadius:8, padding:"10px 12px", cursor:"pointer",
-              height:40, display:"flex", alignItems:"center" }}>
-            <RefreshCw size={16} />
-          </button>
+      {/* Datumsfilter */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr auto", gap:8, marginBottom:10, alignItems:"end" }}>
+        <div>
+          <Label>Von</Label>
+          <input type="date" value={vonDatum} onChange={e => setVonDatum(e.target.value)} style={inputStyle()} />
         </div>
-      )}
+        <div>
+          <Label>Bis</Label>
+          <input type="date" value={bisDatum} onChange={e => setBisDatum(e.target.value)} style={inputStyle()} />
+        </div>
+        <button onClick={ladeZeiten}
+          style={{ background: "var(--border)", border:"none", color: "var(--text)",
+            borderRadius:8, padding:"10px 12px", cursor:"pointer",
+            height:40, display:"flex", alignItems:"center" }}>
+          <RefreshCw size={16} />
+        </button>
+      </div>
 
       {/* Status-Banner */}
-      {!konfiguriert && (
+      {ladeStatus === "ok" && datenquelle === "123erfasst" && (
         <div style={{ background: "var(--border)", borderRadius:8, padding:"6px 12px", marginBottom:9,
           display:"flex", gap:8, alignItems:"center" }}>
           <Info size={14} style={{ color:"var(--muted)", flexShrink:0 }} />
           <span style={{ color: "var(--muted)", fontSize:12 }}>
-            123erfasst nicht konfiguriert — Stunden werden aus Mock-Daten angezeigt.
-          </span>
-        </div>
-      )}
-      {konfiguriert && !erfasstLinked && (
-        <div style={{ background:"#2A2010", borderRadius:8, padding:"6px 12px", marginBottom:9,
-          display:"flex", gap:8, alignItems:"center" }}>
-          <TriangleAlert size={14} style={{ color:"var(--yellow)", flexShrink:0 }} />
-          <span style={{ color: "var(--yellow)", fontSize:12 }}>
-            Kein 123erfasst-Projekt verknüpft. Im Zeiten-Tab verknüpfen.
+            Keine eigenen Zeitbuchungen im Zeitraum — Stunden aus 123erfasst (Fallback).
           </span>
         </div>
       )}
@@ -126,9 +165,10 @@ export function KolonnenView({ kolonnen, projekt, setKolonnen, darfBearbeiten = 
           zeitdaten={zeitdaten}
           vonDatum={vonDatum}
           bisDatum={bisDatum}
-          erfasstVerbunden={ladeStatus === "ok"}
+          zeitenGeladen={ladeStatus === "ok"}
           setKolonnen={setKolonnen}
           darfBearbeiten={darfBearbeiten}
+          kannKolonneLoeschen={kannKolonneLoeschen}
         />
       ))}
 

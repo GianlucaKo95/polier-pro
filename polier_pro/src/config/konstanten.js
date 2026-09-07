@@ -256,6 +256,7 @@ export const ROLLEN = {
     tabs: ["dashboard","felder","gantt","editor","scanner","wetter","kolonnen","tagebuch","zeiten","firmen"],
     kannBearbeiten: true,
     kannNutzerVerwalten: true,
+    kannKolonneLoeschen: true,
     siehtAlleProjekte: true,
   },
   bauleiter: {
@@ -265,6 +266,7 @@ export const ROLLEN = {
     tabs: ["dashboard","felder","gantt","wetter","kolonnen","tagebuch","zeiten"],
     kannBearbeiten: false,
     kannNutzerVerwalten: false,
+    kannKolonneLoeschen: false,
     siehtAlleProjekte: true,
   },
   polier: {
@@ -274,6 +276,7 @@ export const ROLLEN = {
     tabs: ["dashboard","felder","gantt","editor","scanner","wetter","kolonnen","tagebuch","zeiten"],
     kannBearbeiten: true,
     kannNutzerVerwalten: false,
+    kannKolonneLoeschen: false,
     siehtAlleProjekte: false,
   },
   vorarbeiter: {
@@ -283,6 +286,7 @@ export const ROLLEN = {
     tabs: ["dashboard","felder","kolonnen","tagebuch","stempeln"],
     kannBearbeiten: true,
     kannNutzerVerwalten: false,
+    kannKolonneLoeschen: false,
     siehtAlleProjekte: false,
   },
   facharbeiter: {
@@ -292,6 +296,7 @@ export const ROLLEN = {
     tabs: ["stempeln"],
     kannBearbeiten: false,
     kannNutzerVerwalten: false,
+    kannKolonneLoeschen: false,
     siehtAlleProjekte: false,
   },
 };

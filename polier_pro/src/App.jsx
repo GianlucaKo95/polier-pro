@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Bell, LogOut, Plus, MapPin, Hash, TriangleAlert, LayoutGrid,
   CircleCheckBig, NotebookPen, Users, Clock, Ellipsis, ChevronRight,
   Building2, Calendar, Euro, CloudSun, ChartColumn, FileText, Settings,
-  UserCog, RefreshCw } from "lucide-react";
+  UserCog, RefreshCw, User } from "lucide-react";
 import { useTheme } from "./hooks/useTheme.js";
 import { useAuth } from "./hooks/useAuth.js";
 import { DEFAULT_EINHEITSPREISE, DEFAULT_LV_VORLAGEN, ONBOARDING_KEY, ROLLEN, PROJEKTTYPEN } from "./config/konstanten.js";
@@ -14,6 +14,7 @@ import { PasswortSetzenScreen } from "./views/PasswortSetzenScreen.jsx";
 import { EinladungScreen } from "./views/EinladungScreen.jsx";
 import { RegistrierungScreen } from "./views/RegistrierungScreen.jsx";
 import { LoginScreen } from "./views/LoginScreen.jsx";
+import { PinSperreScreen } from "./views/PinSperreScreen.jsx";
 import { RollenBadge } from "./components/RollenBadge.jsx";
 import { ThemeToggle } from "./components/ThemeToggle.jsx";
 import { StempeluhrView } from "./views/StempeluhrView.jsx";
@@ -35,6 +36,7 @@ import { StundenExportView } from "./views/StundenExportView.jsx";
 import { AngebotView } from "./views/AngebotView.jsx";
 import { AdminParameterView } from "./views/AdminParameterView.jsx";
 import { NutzerVerwaltungView } from "./views/NutzerVerwaltungView.jsx";
+import { MeinProfilView } from "./views/MeinProfilView.jsx";
 import { PWABanner } from "./components/PWABanner.jsx";
 import { PushBanner } from "./components/PushBanner.jsx";
 
@@ -93,10 +95,20 @@ export default function PolierApp() {
   const [projekteLadeFehler, setProjekteLadeFehler] = useState("");
   const [speicherFehler, setSpeicherFehler] = useState("");
 
+  // ── App-Sperre (PIN) ── Hooks müssen vor jedem bedingten return stehen
+  // (Rules of Hooks), deshalb hier ganz oben statt erst beim eigentlichen
+  // Einsatz weiter unten.
+  const [gesperrt,        setGesperrt]        = useState(false);
+  const [pinGeprueftFuer, setPinGeprueftFuer]  = useState(null);
+  const versteckSeit = useRef(null);
+
   const [aktivId,       setAktivId]     = useState(null);
   const [tab,           setTab]         = useState("dashboard");
   const [aufgabenFilter,setAufgabenFilter] = useState("alle"); // für Dashboard-Sprungziele
   const [zeigeMehr,     setZeigeMehr]    = useState(false);
+  const [mehrDragY,     setMehrDragY]    = useState(0);
+  const [mehrDragging,  setMehrDragging] = useState(false);
+  const mehrDragStartY  = useRef(null);
   const [sbConnected,   setSbConn]      = useState(false);
   const [neuProjekt,    setNeuProjekt]  = useState(false);
   const [editProjekt,   setEditProjekt] = useState(false);
@@ -273,6 +285,33 @@ export default function PolierApp() {
   const aktiveRolle  = aktiveProfil?.rolle || null;
   const rolleConfig  = aktiveRolle ? ROLLEN[aktiveRolle] : null;
 
+  // Erstmaliges Sperren nach Login/App-Start, sobald ein Profil mit
+  // hinterlegter PIN feststeht (pro Profil nur einmal, nicht bei jedem
+  // Re-Render).
+  useEffect(() => {
+    if (!aktiveProfil?.pin) return;
+    if (pinGeprueftFuer === aktiveProfil.id) return;
+    setGesperrt(true);
+    setPinGeprueftFuer(aktiveProfil.id);
+  }, [aktiveProfil?.id, aktiveProfil?.pin, pinGeprueftFuer]);
+
+  // Erneut sperren, wenn die App länger im Hintergrund war (Tab/App
+  // gewechselt, Bildschirm gesperrt) — kurze Wechsel (z.B. eine
+  // Berechtigungs-Abfrage) lösen bewusst keine Sperre aus.
+  useEffect(() => {
+    function beiSichtbarkeitswechsel() {
+      if (document.hidden) {
+        versteckSeit.current = Date.now();
+      } else if (versteckSeit.current) {
+        const dauerMs = Date.now() - versteckSeit.current;
+        versteckSeit.current = null;
+        if (dauerMs > 30000 && aktiveProfil?.pin) setGesperrt(true);
+      }
+    }
+    document.addEventListener("visibilitychange", beiSichtbarkeitswechsel);
+    return () => document.removeEventListener("visibilitychange", beiSichtbarkeitswechsel);
+  }, [aktiveProfil?.pin]);
+
   // ── Passwort-Setzen nach Einladung ──
   if (auth.inviteToken) {
     return <PasswortSetzenScreen auth={auth} type={auth.inviteType} />;
@@ -325,6 +364,14 @@ export default function PolierApp() {
     // und meldet automatisch erneut an.
     await auth.abmelden?.();
     window.location.reload();
+  }
+
+  // ── App-Sperre ── vor allem anderen (auch vor der Facharbeiter-Ansicht),
+  // damit eine hinterlegte PIN wirklich jede Ansicht abdeckt.
+  if (gesperrt && aktiveProfil?.pin) {
+    return <PinSperreScreen profil={aktiveProfil}
+      onEntsperrt={() => setGesperrt(false)}
+      onAbmelden={abmelden} />;
   }
 
   // ── Facharbeiter → nur Stempeluhr ──
@@ -828,6 +875,7 @@ export default function PolierApp() {
     { id:"angebot",       icon:"📄",  label:"Angebot",     rollen:["administrator"] },
     { id:"admin_params",  icon:"⚙️",  label:"Parameter",   rollen:["administrator"] },
     { id:"nutzer",        icon:"👥",  label:"Nutzer",      rollen:["administrator"] },
+    { id:"profil",        icon:"👤",  label:"Mein Profil", rollen:["administrator","bauleiter","polier","vorarbeiter","facharbeiter"] },
   ];
   const TABS = ALLE_TABS.filter(t => !aktiveRolle || t.rollen.includes(aktiveRolle));
 
@@ -839,7 +887,7 @@ export default function PolierApp() {
   const aktivInMehr = mehrTabs.some(t => t.id === tab);
   const TAB_ICONS = { dashboard:LayoutGrid, aufgaben:CircleCheckBig, tagebuch:NotebookPen,
     kolonnen:Users, stempeln:Clock, gantt:Calendar, kosten:Euro, wetter:CloudSun,
-    stunden:ChartColumn, angebot:FileText, admin_params:Settings, nutzer:UserCog };
+    stunden:ChartColumn, angebot:FileText, admin_params:Settings, nutzer:UserCog, profil:User };
 
   return (
     // position:fixed auf html/body war der Bug (siehe theme.css) — aber
@@ -924,7 +972,10 @@ export default function PolierApp() {
             }} />}
         {tab === "gantt"     && <GanttView felder={felder} />}
         {tab === "wetter"    && <WeatherView ort={projekt?.ort} plz={projekt?.plz} projektId={projekt?.id} />}
-        {tab === "kolonnen"  && <KolonnenView kolonnen={kolonnen} projekt={projekt} setKolonnen={setKolonnen} darfBearbeiten={rolleConfig?.kannBearbeiten !== false} />}
+        {tab === "kolonnen"  && <KolonnenView kolonnen={kolonnen} projekt={projekt} setKolonnen={setKolonnen}
+            darfBearbeiten={rolleConfig?.kannBearbeiten !== false}
+            kannKolonneLoeschen={rolleConfig?.kannKolonneLoeschen === true}
+            profil={aktiveProfil} session={auth.session} />}
         {tab === "tagebuch"  && <TagesbuchView
             berichte={berichte} setBerichte={setBerichte} sbConnected={sbConnected}
             projekt={projekt} eigeneFirma={eigeneFirma} kolonnen={kolonnen}
@@ -945,6 +996,7 @@ export default function PolierApp() {
         {tab === "angebot"       && <AngebotView projekt={projekt} aufgaben={felder} einheitspreise={einheitspreise} lvVorlagen={lvVorlagen} eigeneFirma={eigeneFirma} />}
         {tab === "admin_params" && <AdminParameterView einheitspreise={einheitspreise} setEinheitspreise={setEinheitspreise} lvVorlagen={lvVorlagen} setLvVorlagen={setLvVorlagen} />}
         {tab === "nutzer"       && <NutzerVerwaltungView session={auth.session} kolonnen={kolonnen} firmaId={firma?.id} />}
+        {tab === "profil"       && <MeinProfilView profil={aktiveProfil} session={auth.session} />}
       </div>
       </PlanGuard>
 
@@ -993,10 +1045,24 @@ export default function PolierApp() {
           onClick={() => setZeigeMehr(false)}>
           <div onClick={e => e.stopPropagation()}
             style={{ position:"absolute", bottom:0, left:0, right:0,
-              background:"var(--surface)",
+              background:"var(--surface)", transform:`translateY(${mehrDragY}px)`,
+              transition: mehrDragging ? "none" : "transform 0.25s ease",
               padding:"14px 16px", paddingBottom:"calc(20px + env(safe-area-inset-bottom))" }}>
-            <div style={{ width:40, height:4, background:"rgba(0,0,0,.15)",
-              margin:"0 auto 18px" }} />
+            <div
+              onTouchStart={e => { mehrDragStartY.current = e.touches[0].clientY; setMehrDragging(true); }}
+              onTouchMove={e => {
+                if (mehrDragStartY.current == null) return;
+                const delta = e.touches[0].clientY - mehrDragStartY.current;
+                if (delta > 0) setMehrDragY(delta);
+              }}
+              onTouchEnd={() => {
+                if (mehrDragY > 80) setZeigeMehr(false);
+                setMehrDragY(0);
+                mehrDragStartY.current = null;
+                setMehrDragging(false);
+              }}
+              style={{ width:40, height:4, background:"rgba(0,0,0,.15)",
+                margin:"0 auto 18px", touchAction:"none" }} />
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
               <div style={{ color:"var(--text)", fontWeight:800, fontSize:15 }}>Weitere Funktionen</div>
               <button onClick={() => setZeigeMehr(false)}

@@ -1,10 +1,13 @@
 import { useState } from "react";
-import { MapPin, HardHat, X, Trash2 } from "lucide-react";
+import { MapPin, HardHat } from "lucide-react";
 import { MitarbeiterZeilen } from "./MitarbeiterZeilen.jsx";
+import { SwipeToDelete } from "./SwipeToDelete.jsx";
+import { sha256Hex } from "../lib/utils.js";
 
-export function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, erfasstVerbunden, setKolonnen, darfBearbeiten = true }) {
+export function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, zeitenGeladen, setKolonnen, darfBearbeiten = true, kannKolonneLoeschen = false }) {
   const [expanded, setExpanded] = useState(false);
   const [neuerName, setNeuerName] = useState("");
+  const [neuePin,  setNeuePin]  = useState("");
   const mas = k.mitarbeiter || [];
   const totalMann = mas.length;
 
@@ -13,13 +16,17 @@ export function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, erfasstVerbunde
     setKolonnen(prev => prev.filter(kol => kol.id !== k.id));
   }
 
-  function mitarbeiterHinzufuegen() {
-    if (!neuerName.trim() || !setKolonnen) return;
-    const neu = { id: Date.now(), name: neuerName.trim() };
+  // PIN wird nur gehasht gespeichert (Kolonnen sind für alle Firmenmitglieder
+  // lesbar) — Mitarbeiter ohne eigenen Account bestätigen sich damit beim
+  // Sammelstempeln selbst, statt dass der Vorarbeiter einfach für sie
+  // abhaken kann.
+  async function mitarbeiterHinzufuegen() {
+    if (!neuerName.trim() || !/^\d{4}$/.test(neuePin) || !setKolonnen) return;
+    const neu = { id: Date.now(), name: neuerName.trim(), pinHash: await sha256Hex(neuePin) };
     setKolonnen(prev => prev.map(kol =>
       kol.id === k.id ? { ...kol, mitarbeiter: [...(kol.mitarbeiter||[]), neu] } : kol
     ));
-    setNeuerName("");
+    setNeuerName(""); setNeuePin("");
   }
 
   function mitarbeiterEntfernen(id) {
@@ -49,7 +56,8 @@ export function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, erfasstVerbunde
 
   return (
     <div style={{ marginBottom:9 }}>
-      {/* Kolonne Header */}
+      {/* Kolonne Header — nach links wischen legt den Löschen-Button frei */}
+      <SwipeToDelete onDelete={kannKolonneLoeschen && setKolonnen ? kolonneLoeschen : undefined}>
       <div style={{ background: "var(--surface)", borderRadius: expanded ? "12px 12px 0 0" : 12,
         padding:"10px 16px", border:`1px solid ${'var(--border)'}`,
         borderBottom: expanded ? "none" : undefined }}>
@@ -64,13 +72,13 @@ export function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, erfasstVerbunde
             )}
           </div>
           <div style={{ textAlign:"right" }}>
-            {erfasstVerbunden && kolonneH > 0 ? (
+            {zeitenGeladen && kolonneH > 0 ? (
               <div style={{ color: "var(--yellow)", fontWeight:800, fontSize:18 }}>{kolonneH.toFixed(1)}h</div>
             ) : (
               <div style={{ color: "var(--yellow)", fontSize:13,
                 display:"flex", alignItems:"center", gap:4, justifyContent:"flex-end" }}><HardHat size={13} /> {totalMann} Mann</div>
             )}
-            {erfasstVerbunden && (
+            {zeitenGeladen && (
               <div style={{ color: "var(--muted)", fontSize:10 }}>
                 {anwesend}/{totalMann} anwesend
               </div>
@@ -79,7 +87,7 @@ export function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, erfasstVerbunde
         </div>
 
         {/* Fortschrittsbalken Anwesenheit */}
-        {erfasstVerbunden && totalMann > 0 && (
+        {zeitenGeladen && totalMann > 0 && (
           <div style={{ marginTop:10 }}>
             <div style={{ background: "var(--border)", borderRadius:4, height:5 }}>
               <div style={{ background: anwesend === totalMann ? "var(--green)" : "var(--yellow)",
@@ -114,66 +122,58 @@ export function KolonneKarte({ k, zeitdaten, vonDatum, bisDatum, erfasstVerbunde
           </button>
         </div>
       </div>
+      </SwipeToDelete>
 
       {/* Aufgeklappte MA-Liste */}
       {expanded && (
         <div style={{ background: "var(--surface2)", borderRadius:"0 0 12px 12px",
           border:`1px solid ${'var(--border)'}`, borderTop:"none", padding:"7px 12px" }}>
           {mas.map(ma => (
-            <div key={ma.id} style={{ display:"flex", alignItems:"center", gap:8 }}>
-              <div style={{ flex:1 }}>
-                <MitarbeiterZeilen
-                  ma={ma}
-                  zeitdaten={zeitdaten}
-                  vonDatum={vonDatum}
-                  bisDatum={bisDatum}
-                />
-              </div>
-              {darfBearbeiten && setKolonnen && (
-                <button onClick={() => mitarbeiterEntfernen(ma.id)}
-                  style={{ background:"var(--rbg)", color:"var(--red)",
-                    border:"1px solid var(--red)", borderRadius:8,
-                    padding:"4px 8px", cursor:"pointer", fontSize:11,
-                    fontFamily:"inherit", flexShrink:0, display:"flex" }}>
-                  <X size={12} />
-                </button>
-              )}
-            </div>
+            <SwipeToDelete key={ma.id}
+              onDelete={darfBearbeiten && setKolonnen ? () => mitarbeiterEntfernen(ma.id) : undefined}>
+              <MitarbeiterZeilen
+                ma={ma}
+                zeitdaten={zeitdaten}
+                vonDatum={vonDatum}
+                bisDatum={bisDatum}
+              />
+            </SwipeToDelete>
           ))}
 
           {/* Mitarbeiter hinzufügen */}
           {darfBearbeiten && setKolonnen && (
-            <div style={{ display:"flex", gap:6, marginTop:10 }}>
-              <input value={neuerName} onChange={e=>setNeuerName(e.target.value)}
-                placeholder="Name des Mitarbeiters"
-                onKeyDown={e => e.key==="Enter" && mitarbeiterHinzufuegen()}
-                style={{ flex:1, background:"var(--surface)", color:"var(--text)",
-                  border:"1px solid var(--border)", borderRadius:8,
-                  padding:"7px 10px", fontSize:12, fontFamily:"inherit" }} />
-              <button onClick={mitarbeiterHinzufuegen} disabled={!neuerName.trim()}
-                style={{ background: neuerName.trim() ? "var(--yellow)" : "var(--border)",
-                  color: neuerName.trim() ? "#1a1200" : "var(--muted)",
+            <div style={{ marginTop:10 }}>
+              <div style={{ display:"flex", gap:6 }}>
+                <input value={neuerName} onChange={e=>setNeuerName(e.target.value)}
+                  placeholder="Name des Mitarbeiters"
+                  style={{ flex:1, background:"var(--surface)", color:"var(--text)",
+                    border:"1px solid var(--border)", borderRadius:8,
+                    padding:"7px 10px", fontSize:12, fontFamily:"inherit" }} />
+                <input value={neuePin} onChange={e=>setNeuePin(e.target.value.replace(/\D/g,"").slice(0,4))}
+                  placeholder="PIN" inputMode="numeric" maxLength={4}
+                  onKeyDown={e => e.key==="Enter" && mitarbeiterHinzufuegen()}
+                  style={{ width:64, background:"var(--surface)", color:"var(--text)",
+                    border:"1px solid var(--border)", borderRadius:8,
+                    padding:"7px 10px", fontSize:12, fontFamily:"inherit", textAlign:"center" }} />
+              </div>
+              <div style={{ color:"var(--muted)", fontSize:10, marginTop:4 }}>
+                4-stellige PIN, mit der sich {neuerName.trim() || "die Person"} beim Sammelstempeln selbst bestätigt.
+              </div>
+              <button onClick={mitarbeiterHinzufuegen}
+                disabled={!neuerName.trim() || !/^\d{4}$/.test(neuePin)}
+                style={{ width:"100%", marginTop:6,
+                  background: neuerName.trim() && /^\d{4}$/.test(neuePin) ? "var(--yellow)" : "var(--border)",
+                  color: neuerName.trim() && /^\d{4}$/.test(neuePin) ? "#1a1200" : "var(--muted)",
                   border:"none", borderRadius:8, padding:"7px 14px",
-                  cursor: neuerName.trim() ? "pointer" : "default", fontSize:12,
-                  fontWeight:700, fontFamily:"inherit", flexShrink:0 }}>
+                  cursor: neuerName.trim() && /^\d{4}$/.test(neuePin) ? "pointer" : "default", fontSize:12,
+                  fontWeight:700, fontFamily:"inherit" }}>
                 + Hinzufügen
               </button>
             </div>
           )}
 
-          {/* Ganze Kolonne löschen */}
-          {darfBearbeiten && setKolonnen && (
-            <button onClick={kolonneLoeschen}
-              style={{ width:"100%", background:"var(--rbg)", color:"var(--red)",
-                border:"1px solid var(--red)", borderRadius:8, padding:"7px 0",
-                cursor:"pointer", fontSize:12, fontWeight:700, fontFamily:"inherit",
-                marginTop:8, display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
-              <Trash2 size={13} /> Kolonne löschen
-            </button>
-          )}
-
           {/* Kolonnen-Summe */}
-          {erfasstVerbunden && kolonneH > 0 && (
+          {zeitenGeladen && kolonneH > 0 && (
             <div style={{ display:"flex", justifyContent:"space-between",
               background: "var(--border)", borderRadius:8, padding:"7px 12px", marginTop:8 }}>
               <div style={{ color: "var(--muted)", fontSize:12 }}>Kolonne gesamt</div>

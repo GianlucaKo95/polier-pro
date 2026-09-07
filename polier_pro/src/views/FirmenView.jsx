@@ -4,6 +4,7 @@ import { sbClientMitToken } from "../lib/supabase.js";
 import { ALLE_GEWERKE, ONBOARDING_KEY } from "../config/konstanten.js";
 import { Chip } from "../components/Chip.jsx";
 import { Label, inputStyle } from "../components/Label.jsx";
+import { SwipeToDelete } from "../components/SwipeToDelete.jsx";
 
 export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboardingReset, session = null, firmaId = null }) {
   const [screen, setScreen]     = useState("home"); // home | eigene | subs | subEdit
@@ -101,8 +102,11 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
               <div style={{ color: "var(--muted)", marginTop:8 }}>Noch keine Subunternehmer angelegt.</div>
             </div>
           ) : subs.map(s => (
-            <div key={s.id} onClick={() => { setEditSub({...s}); setScreen("subEdit"); }}
-              style={{ background: "var(--surface)", borderRadius:11, padding:"9px 15px", marginBottom:6,
+            <SwipeToDelete key={s.id} style={{ marginBottom:6 }}
+              onDelete={() => setSubs(prev => prev.filter(x => x.id !== s.id))}
+              onClick={() => { setEditSub({...s}); setScreen("subEdit"); }}>
+            <div
+              style={{ background: "var(--surface)", borderRadius:11, padding:"9px 15px",
                 border:`1.5px solid ${s.status==="aktiv" ? "var(--border)" : "var(--red)"}`, cursor:"pointer" }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
                 <div style={{ flex:1 }}>
@@ -129,6 +133,7 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
                 <div style={{ color: "var(--muted)", display:"flex" }}><ChevronRight size={17} /></div>
               </div>
             </div>
+            </SwipeToDelete>
           ))}
 
           {/* Onboarding zurücksetzen */}
