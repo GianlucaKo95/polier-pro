@@ -53,7 +53,7 @@ export function SwipeToDelete({ onDelete, onClick, disabled, children, style }) 
         onTouchStart={aktiv ? onTouchStart : undefined}
         onTouchMove={aktiv ? onTouchMove : undefined}
         onTouchEnd={aktiv ? onTouchEnd : undefined}
-        style={{ position:"relative", zIndex:1,
+        style={{ position:"relative", zIndex:1, background:"var(--surface)",
           transform:`translateX(${offset}px)`,
           transition: ziehen ? "none" : "transform 0.2s ease" }}>
         {children}
