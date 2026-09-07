@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { Users, Plus, TriangleAlert, X, Pencil, HardHat, Phone, CircleCheckBig, Ban, User, Calendar, Copy, ArrowUpRight, Mail, FileClock } from "lucide-react";
 import { sbFetch } from "../lib/supabase.js";
 import { ROLLEN } from "../config/konstanten.js";
+import { ibanMaskiert } from "../lib/utils.js";
 import { EinladungGenerieren } from "./EinladungGenerieren.jsx";
 
 const AENDERUNGS_FELD_LABEL = {
@@ -18,6 +19,7 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
   const [editNutzer,  setEditNutzer]  = useState(null);
   const [zeigeEinladen, setZeigeEinladen] = useState(false);
   const [aktionsFehler, setAktionsFehler] = useState("");
+  const [ibanAufgedeckt, setIbanAufgedeckt] = useState(new Set());
 
   useEffect(() => { ladeAlles(); }, []);
 
@@ -344,9 +346,27 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
                 </div>
                 <div style={{ color:"var(--text2)", fontSize:12, marginTop:8,
                   background:"var(--surface2)", borderRadius:8, padding:"7px 10px" }}>
-                  {Object.entries(a.felder).map(([k,v]) => (
-                    <div key={k}>{AENDERUNGS_FELD_LABEL[k] || k}: <strong>{v || "—"}</strong></div>
-                  ))}
+                  {Object.entries(a.felder).map(([k,v]) => {
+                    const istIban = k === "iban";
+                    const aufgedeckt = ibanAufgedeckt.has(a.id);
+                    const anzeige = istIban && v && !aufgedeckt ? ibanMaskiert(v) : (v || "—");
+                    return (
+                      <div key={k} style={{ display:"flex", alignItems:"center", gap:8 }}>
+                        <span>{AENDERUNGS_FELD_LABEL[k] || k}: <strong>{anzeige}</strong></span>
+                        {istIban && v && (
+                          <button onClick={() => setIbanAufgedeckt(prev => {
+                              const next = new Set(prev);
+                              next.has(a.id) ? next.delete(a.id) : next.add(a.id);
+                              return next;
+                            })}
+                            style={{ background:"none", border:"none", color:"var(--muted)",
+                              cursor:"pointer", fontSize:10, textDecoration:"underline", fontFamily:"inherit" }}>
+                            {aufgedeckt ? "verbergen" : "anzeigen"}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
                 <div style={{ display:"flex", gap:8, marginTop:9 }}>
                   <button onClick={() => aenderungBearbeiten(a.id, "abgelehnt")}

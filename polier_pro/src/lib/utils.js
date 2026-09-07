@@ -12,6 +12,28 @@ export function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>"']/g, c => HTML_ESCAPES[c]);
 }
 
+// IBAN-Prüfsumme (ISO 7064 Mod 97-10) — fängt Tippfehler ab, bevor eine
+// falsche Bankverbindung als Änderungsanfrage beim Administrator landet.
+export function ibanGueltig(iban) {
+  const bereinigt = String(iban || "").replace(/\s+/g, "").toUpperCase();
+  if (!/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/.test(bereinigt)) return false;
+  const umgestellt = bereinigt.slice(4) + bereinigt.slice(0, 4);
+  const numerisch = umgestellt.replace(/[A-Z]/g, c => c.charCodeAt(0) - 55);
+  // Ziffernweise Modulo statt BigInt — bleibt jederzeit unter 970,
+  // damit auch ältere Ziel-Browser (safari14-Build-Target) das können.
+  let rest = 0;
+  for (const ziffer of numerisch) rest = (rest * 10 + Number(ziffer)) % 97;
+  return rest === 1;
+}
+
+// Zeigt nur die ersten 4 und letzten 4 Zeichen einer IBAN, Rest maskiert —
+// für Listenansichten, in denen die volle Nummer nicht nötig ist.
+export function ibanMaskiert(iban) {
+  const bereinigt = String(iban || "").replace(/\s+/g, "").toUpperCase();
+  if (bereinigt.length <= 8) return bereinigt;
+  return `${bereinigt.slice(0,4)} •••• •••• ${bereinigt.slice(-4)}`;
+}
+
 export async function sha256Hex(text) {
   const bytes  = new TextEncoder().encode(text);
   const digest = await crypto.subtle.digest("SHA-256", bytes);

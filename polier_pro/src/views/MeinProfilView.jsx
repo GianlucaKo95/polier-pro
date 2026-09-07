@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { MapPin, Landmark, Send, Clock, CircleCheckBig, Ban } from "lucide-react";
 import { sbFetch } from "../lib/supabase.js";
 import { ROLLEN } from "../config/konstanten.js";
+import { ibanGueltig } from "../lib/utils.js";
 import { Label, inputStyle } from "../components/Label.jsx";
 
 const STATUS_ANZEIGE = {
@@ -50,11 +51,15 @@ export function MeinProfilView({ profil, session }) {
     setFehler("");
     const geaendert = {};
     for (const key of ["strasse", "plz", "ort", "iban", "kontoinhaber"]) {
-      const neu = form[key].trim();
+      const neu = key === "iban" ? form[key].replace(/\s+/g, "").trim() : form[key].trim();
       if (neu !== (profil[key] || "")) geaendert[key] = neu;
     }
     if (Object.keys(geaendert).length === 0) {
       setFehler("Keine Änderung gegenüber den hinterlegten Daten.");
+      return;
+    }
+    if (geaendert.iban && !ibanGueltig(geaendert.iban)) {
+      setFehler("IBAN ungültig — bitte prüfen (Tippfehler in Länderkürzel, Prüfziffer oder Kontonummer).");
       return;
     }
     setSenden(true);
