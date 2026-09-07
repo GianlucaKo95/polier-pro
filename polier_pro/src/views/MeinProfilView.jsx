@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { MapPin, Landmark, Send, Clock, CircleCheckBig, Ban } from "lucide-react";
+import { MapPin, Landmark, Send, Clock, CircleCheckBig, Ban, Lock, LockOpen } from "lucide-react";
 import { sbFetch } from "../lib/supabase.js";
 import { ROLLEN } from "../config/konstanten.js";
-import { ibanGueltig } from "../lib/utils.js";
+import { ibanGueltig, sha256Hex } from "../lib/utils.js";
 import { Label, inputStyle } from "../components/Label.jsx";
 
 const STATUS_ANZEIGE = {
@@ -23,6 +23,17 @@ export function MeinProfilView({ profil, session }) {
   const [senden,   setSenden]   = useState(false);
   const [fehler,   setFehler]   = useState("");
 
+  // App-Sperre — anders als Adresse/Bankverbindung rein persönlich (wie ein
+  // Passwort), deshalb ohne Admin-Freigabe direkt änderbar. Nur der Hash
+  // landet in profile.pin, nie die PIN selbst.
+  const [pinAktiv,   setPinAktiv]   = useState(false);
+  const [pinBearbeiten, setPinBearbeiten] = useState(false);
+  const [pinNeu,      setPinNeu]      = useState("");
+  const [pinNeu2,     setPinNeu2]     = useState("");
+  const [pinSpeichert,setPinSpeichert]= useState(false);
+  const [pinFehler,   setPinFehler]   = useState("");
+  const [pinErfolg,   setPinErfolg]   = useState("");
+
   useEffect(() => {
     if (!profil?.id) return;
     setForm({
@@ -32,8 +43,44 @@ export function MeinProfilView({ profil, session }) {
       iban:         profil.iban || "",
       kontoinhaber: profil.kontoinhaber || "",
     });
+    setPinAktiv(!!profil.pin);
     ladeAnfragen();
   }, [profil?.id]);
+
+  async function pinSpeichern() {
+    setPinFehler(""); setPinErfolg("");
+    if (!/^\d{4}$/.test(pinNeu) || pinNeu !== pinNeu2) {
+      setPinFehler("Beide Eingaben müssen aus 4 Ziffern bestehen und übereinstimmen.");
+      return;
+    }
+    setPinSpeichert(true);
+    const hash = await sha256Hex(pinNeu);
+    const ok = await sbFetch(`profile?id=eq.${profil.id}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${session?.access_token}` },
+      body: JSON.stringify({ pin: hash }),
+    });
+    setPinSpeichert(false);
+    if (!ok?.length) { setPinFehler("PIN konnte nicht gespeichert werden."); return; }
+    setPinAktiv(true);
+    setPinBearbeiten(false);
+    setPinNeu(""); setPinNeu2("");
+    setPinErfolg("PIN gespeichert — gilt ab dem nächsten Öffnen der App.");
+  }
+
+  async function pinEntfernen() {
+    setPinFehler(""); setPinErfolg("");
+    setPinSpeichert(true);
+    const ok = await sbFetch(`profile?id=eq.${profil.id}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${session?.access_token}` },
+      body: JSON.stringify({ pin: null }),
+    });
+    setPinSpeichert(false);
+    if (!ok?.length) { setPinFehler("PIN konnte nicht entfernt werden."); return; }
+    setPinAktiv(false);
+    setPinErfolg("App-Sperre deaktiviert.");
+  }
 
   async function ladeAnfragen() {
     setLaden(true);
@@ -109,6 +156,72 @@ export function MeinProfilView({ profil, session }) {
             {rolle.icon} {rolle.label}
           </div>
         </div>
+      </div>
+
+      {/* App-Sperre */}
+      <div style={{ background:"var(--surface)", border:"1px solid var(--border)",
+        borderRadius:12, padding:"12px 14px", marginBottom:16 }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+          <div style={{ color:"var(--text)", fontWeight:700, fontSize:13,
+            display:"flex", alignItems:"center", gap:6 }}>
+            {pinAktiv ? <Lock size={14} /> : <LockOpen size={14} />} App-Sperre
+          </div>
+          {!pinBearbeiten && (
+            <button onClick={() => { setPinBearbeiten(true); setPinFehler(""); setPinErfolg(""); }}
+              style={{ background:"none", border:"none", color:"var(--ydark)",
+                cursor:"pointer", fontSize:12, fontWeight:700, fontFamily:"inherit" }}>
+              {pinAktiv ? "PIN ändern" : "PIN einrichten"}
+            </button>
+          )}
+        </div>
+        <div style={{ color:"var(--muted)", fontSize:11, marginTop:4 }}>
+          {pinAktiv
+            ? "Aktiv — beim Öffnen der App und nach längerer Zeit im Hintergrund wird die PIN abgefragt."
+            : "Noch nicht eingerichtet — schneller Schutz, falls das Handy in fremde Hände gerät."}
+        </div>
+
+        {pinBearbeiten && (
+          <div style={{ marginTop:10 }}>
+            <div style={{ display:"flex", gap:8 }}>
+              <input value={pinNeu} onChange={e=>setPinNeu(e.target.value.replace(/\D/g,"").slice(0,4))}
+                placeholder="Neue PIN" inputMode="numeric" maxLength={4}
+                style={{ flex:1, textAlign:"center", letterSpacing:6, ...inputStyle() }} />
+              <input value={pinNeu2} onChange={e=>setPinNeu2(e.target.value.replace(/\D/g,"").slice(0,4))}
+                placeholder="Wiederholen" inputMode="numeric" maxLength={4}
+                onKeyDown={e => e.key==="Enter" && pinSpeichern()}
+                style={{ flex:1, textAlign:"center", letterSpacing:6, ...inputStyle() }} />
+            </div>
+            {pinFehler && (
+              <div style={{ color:"var(--red)", fontSize:11, marginTop:6 }}>{pinFehler}</div>
+            )}
+            <div style={{ display:"flex", gap:8, marginTop:8 }}>
+              <button onClick={() => { setPinBearbeiten(false); setPinNeu(""); setPinNeu2(""); setPinFehler(""); }}
+                style={{ flex:1, background:"var(--surface2)", color:"var(--muted)",
+                  border:"1px solid var(--border)", borderRadius:8, padding:9,
+                  cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>
+                Abbrechen
+              </button>
+              <button onClick={pinSpeichern} disabled={pinSpeichert}
+                style={{ flex:1, background:"var(--yellow)", color:"#1a1200", border:"none",
+                  borderRadius:8, padding:9, fontWeight:700, cursor:"pointer",
+                  fontSize:12, fontFamily:"inherit" }}>
+                {pinSpeichert ? "…" : "Speichern"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {pinAktiv && !pinBearbeiten && (
+          <button onClick={pinEntfernen} disabled={pinSpeichert}
+            style={{ background:"none", border:"none", color:"var(--red)",
+              cursor:"pointer", fontSize:11, marginTop:8, fontFamily:"inherit",
+              textDecoration:"underline" }}>
+            App-Sperre deaktivieren
+          </button>
+        )}
+        {pinErfolg && (
+          <div style={{ color:"var(--green)", fontSize:11, marginTop:8, fontWeight:600 }}>{pinErfolg}</div>
+        )}
       </div>
 
       {fehler && (

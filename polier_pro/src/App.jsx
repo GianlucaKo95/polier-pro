@@ -14,6 +14,7 @@ import { PasswortSetzenScreen } from "./views/PasswortSetzenScreen.jsx";
 import { EinladungScreen } from "./views/EinladungScreen.jsx";
 import { RegistrierungScreen } from "./views/RegistrierungScreen.jsx";
 import { LoginScreen } from "./views/LoginScreen.jsx";
+import { PinSperreScreen } from "./views/PinSperreScreen.jsx";
 import { RollenBadge } from "./components/RollenBadge.jsx";
 import { ThemeToggle } from "./components/ThemeToggle.jsx";
 import { StempeluhrView } from "./views/StempeluhrView.jsx";
@@ -93,6 +94,13 @@ export default function PolierApp() {
   const [projekteLaden, setProjekteLaden] = useState(false);
   const [projekteLadeFehler, setProjekteLadeFehler] = useState("");
   const [speicherFehler, setSpeicherFehler] = useState("");
+
+  // ── App-Sperre (PIN) ── Hooks müssen vor jedem bedingten return stehen
+  // (Rules of Hooks), deshalb hier ganz oben statt erst beim eigentlichen
+  // Einsatz weiter unten.
+  const [gesperrt,        setGesperrt]        = useState(false);
+  const [pinGeprueftFuer, setPinGeprueftFuer]  = useState(null);
+  const versteckSeit = useRef(null);
 
   const [aktivId,       setAktivId]     = useState(null);
   const [tab,           setTab]         = useState("dashboard");
@@ -277,6 +285,33 @@ export default function PolierApp() {
   const aktiveRolle  = aktiveProfil?.rolle || null;
   const rolleConfig  = aktiveRolle ? ROLLEN[aktiveRolle] : null;
 
+  // Erstmaliges Sperren nach Login/App-Start, sobald ein Profil mit
+  // hinterlegter PIN feststeht (pro Profil nur einmal, nicht bei jedem
+  // Re-Render).
+  useEffect(() => {
+    if (!aktiveProfil?.pin) return;
+    if (pinGeprueftFuer === aktiveProfil.id) return;
+    setGesperrt(true);
+    setPinGeprueftFuer(aktiveProfil.id);
+  }, [aktiveProfil?.id, aktiveProfil?.pin, pinGeprueftFuer]);
+
+  // Erneut sperren, wenn die App länger im Hintergrund war (Tab/App
+  // gewechselt, Bildschirm gesperrt) — kurze Wechsel (z.B. eine
+  // Berechtigungs-Abfrage) lösen bewusst keine Sperre aus.
+  useEffect(() => {
+    function beiSichtbarkeitswechsel() {
+      if (document.hidden) {
+        versteckSeit.current = Date.now();
+      } else if (versteckSeit.current) {
+        const dauerMs = Date.now() - versteckSeit.current;
+        versteckSeit.current = null;
+        if (dauerMs > 30000 && aktiveProfil?.pin) setGesperrt(true);
+      }
+    }
+    document.addEventListener("visibilitychange", beiSichtbarkeitswechsel);
+    return () => document.removeEventListener("visibilitychange", beiSichtbarkeitswechsel);
+  }, [aktiveProfil?.pin]);
+
   // ── Passwort-Setzen nach Einladung ──
   if (auth.inviteToken) {
     return <PasswortSetzenScreen auth={auth} type={auth.inviteType} />;
@@ -329,6 +364,14 @@ export default function PolierApp() {
     // und meldet automatisch erneut an.
     await auth.abmelden?.();
     window.location.reload();
+  }
+
+  // ── App-Sperre ── vor allem anderen (auch vor der Facharbeiter-Ansicht),
+  // damit eine hinterlegte PIN wirklich jede Ansicht abdeckt.
+  if (gesperrt && aktiveProfil?.pin) {
+    return <PinSperreScreen profil={aktiveProfil}
+      onEntsperrt={() => setGesperrt(false)}
+      onAbmelden={abmelden} />;
   }
 
   // ── Facharbeiter → nur Stempeluhr ──
