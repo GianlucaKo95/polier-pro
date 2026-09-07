@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Bell, LogOut, Plus, MapPin, Hash, TriangleAlert, LayoutGrid,
   CircleCheckBig, NotebookPen, Users, Clock, Ellipsis, ChevronRight,
   Building2, Calendar, Euro, CloudSun, ChartColumn, FileText, Settings,
@@ -97,6 +97,9 @@ export default function PolierApp() {
   const [tab,           setTab]         = useState("dashboard");
   const [aufgabenFilter,setAufgabenFilter] = useState("alle"); // für Dashboard-Sprungziele
   const [zeigeMehr,     setZeigeMehr]    = useState(false);
+  const [mehrDragY,     setMehrDragY]    = useState(0);
+  const [mehrDragging,  setMehrDragging] = useState(false);
+  const mehrDragStartY  = useRef(null);
   const [sbConnected,   setSbConn]      = useState(false);
   const [neuProjekt,    setNeuProjekt]  = useState(false);
   const [editProjekt,   setEditProjekt] = useState(false);
@@ -993,10 +996,24 @@ export default function PolierApp() {
           onClick={() => setZeigeMehr(false)}>
           <div onClick={e => e.stopPropagation()}
             style={{ position:"absolute", bottom:0, left:0, right:0,
-              background:"var(--surface)",
+              background:"var(--surface)", transform:`translateY(${mehrDragY}px)`,
+              transition: mehrDragging ? "none" : "transform 0.25s ease",
               padding:"14px 16px", paddingBottom:"calc(20px + env(safe-area-inset-bottom))" }}>
-            <div style={{ width:40, height:4, background:"rgba(0,0,0,.15)",
-              margin:"0 auto 18px" }} />
+            <div
+              onTouchStart={e => { mehrDragStartY.current = e.touches[0].clientY; setMehrDragging(true); }}
+              onTouchMove={e => {
+                if (mehrDragStartY.current == null) return;
+                const delta = e.touches[0].clientY - mehrDragStartY.current;
+                if (delta > 0) setMehrDragY(delta);
+              }}
+              onTouchEnd={() => {
+                if (mehrDragY > 80) setZeigeMehr(false);
+                setMehrDragY(0);
+                mehrDragStartY.current = null;
+                setMehrDragging(false);
+              }}
+              style={{ width:40, height:4, background:"rgba(0,0,0,.15)",
+                margin:"0 auto 18px", touchAction:"none" }} />
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
               <div style={{ color:"var(--text)", fontWeight:800, fontSize:15 }}>Weitere Funktionen</div>
               <button onClick={() => setZeigeMehr(false)}
