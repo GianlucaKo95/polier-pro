@@ -52,6 +52,7 @@ export function leereAufgabe() {
     soll_stunden: null,
     dauer_tage:   null,
     mindest_mitarbeiter: null,
+    maximal_mitarbeiter: null,
     abhaengig_von: [],
     beschreibung: "",
     fotos:        [],

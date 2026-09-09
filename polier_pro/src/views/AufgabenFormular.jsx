@@ -173,11 +173,19 @@ export function AufgabenFormular({ initial, kolonnen, alleAufgaben = [], onSave,
           </div>
         )}
 
-        <div style={{ marginBottom:9 }}>
-          <Label>Mindestbesetzung (optional)</Label>
-          <input type="number" min="1" step="1" value={a.mindest_mitarbeiter ?? ""}
-            onChange={e=>setA(p=>({...p, mindest_mitarbeiter: e.target.value === "" ? null : Number(e.target.value)}))}
-            placeholder="z.B. 4 — geht nicht mit weniger Leuten" style={inputStyle()} />
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:9 }}>
+          <div>
+            <Label>Mindestbesetzung (optional)</Label>
+            <input type="number" min="1" step="1" value={a.mindest_mitarbeiter ?? ""}
+              onChange={e=>setA(p=>({...p, mindest_mitarbeiter: e.target.value === "" ? null : Number(e.target.value)}))}
+              placeholder="z.B. 4 — geht nicht mit weniger" style={inputStyle()} />
+          </div>
+          <div>
+            <Label>Maximalbesetzung (optional)</Label>
+            <input type="number" min="1" step="1" value={a.maximal_mitarbeiter ?? ""}
+              onChange={e=>setA(p=>({...p, maximal_mitarbeiter: e.target.value === "" ? null : Number(e.target.value)}))}
+              placeholder="z.B. 3 — mehr bringt nichts" style={inputStyle()} />
+          </div>
         </div>
 
         {/* Abhängigkeiten — diese Aufgabe kann laut Terminketten-Berechnung

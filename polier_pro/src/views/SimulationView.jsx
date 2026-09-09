@@ -16,7 +16,7 @@ import { Label, inputStyle } from "../components/Label.jsx";
 // läuft über aufgabe.zustaendig === kolonne.name, da kolonne_id an Aufgaben
 // im UI nirgends gesetzt wird (siehe AufgabenFormular).
 //
-// Zwei bewusste Ausnahmen von der reinen Skalierung (siehe Chat-Diskussion):
+// Drei bewusste Ausnahmen von der reinen Skalierung (siehe Chat-Diskussion):
 // - Betonage-Aufgaben (typ === "beton") werden NICHT skaliert. Ihre Dauer
 //   ist meist von der Aushärtezeit dominiert (7–28 Tage, wetterabhängig),
 //   nicht von der Mannstärke — mehr Leute gießen den Beton schneller ein,
@@ -24,6 +24,10 @@ import { Label, inputStyle } from "../components/Label.jsx";
 // - mindest_mitarbeiter an einer Aufgabe blockiert die Simulation, wenn die
 //   verbleibende Mannstärke der abgebenden Kolonne darunter fällt, statt
 //   stillschweigend eine unrealistisch kurze Dauer zu berechnen.
+// - maximal_mitarbeiter deckelt die für die Skalierung einer Aufgabe
+//   angesetzte Mannstärke (Platz-/Werkzeugbeschränkung, Koordinations-
+//   aufwand) — eine Aufstockung über dieses Maximum hinaus wirkt sich auf
+//   die Dauer dieser Aufgabe nicht mehr aus.
 export function SimulationView({ aufgaben = [], kolonnen = [], projekt, projekte = [], session }) {
   const [modus, setModus] = useState("verzoegern"); // verzoegern | wetter | personal
   const offeneAufgaben = aufgaben.filter(a => a.status !== "abgeschlossen");
@@ -71,10 +75,16 @@ export function SimulationView({ aufgaben = [], kolonnen = [], projekt, projekte
 
   function skaliereDauer(aufgabenListe, kolonneName, altAnzahl, neuAnzahl) {
     if (altAnzahl <= 0) return aufgabenListe;
-    const faktor = altAnzahl / Math.max(neuAnzahl, 0.5);
     return aufgabenListe.map(a => {
       if (a.zustaendig !== kolonneName || a.status === "abgeschlossen") return a;
       if (a.typ === "beton") return a; // Aushärtezeit ist mannstärke-unabhängig
+      // Maximalbesetzung deckelt, wie viel Mannstärke für DIESE Aufgabe
+      // überhaupt etwas bringt — unabhängig von der tatsächlichen
+      // Kolonnengröße davor/danach.
+      const effAlt = a.maximal_mitarbeiter ? Math.min(altAnzahl, a.maximal_mitarbeiter) : altAnzahl;
+      const effNeu = a.maximal_mitarbeiter ? Math.min(neuAnzahl, a.maximal_mitarbeiter) : neuAnzahl;
+      if (effAlt <= 0) return a;
+      const faktor = effAlt / Math.max(effNeu, 0.5);
       return { ...a, dauer_tage: Math.max(0.5, (a.dauer_tage && a.dauer_tage > 0 ? a.dauer_tage : 1) * faktor) };
     });
   }
@@ -225,8 +235,9 @@ export function SimulationView({ aufgaben = [], kolonnen = [], projekt, projekte
               <div style={{ color:"var(--muted)", fontSize:10.5, marginBottom:10, lineHeight:1.4 }}>
                 Nimmt an, dass sich die Dauer offener Aufgaben umgekehrt proportional zur Mannstärke
                 der zuständigen Kolonne verhält — eine grobe, transparente Näherung. Betonage-Aufgaben
-                werden davon ausgenommen (Aushärtezeit ist mannstärke-unabhängig), und eine Kolonne
-                fällt nie unter die für eine Aufgabe hinterlegte Mindestbesetzung.
+                werden davon ausgenommen (Aushärtezeit ist mannstärke-unabhängig), eine hinterlegte
+                Maximalbesetzung deckelt den Effekt einer Aufstockung, und eine Kolonne fällt nie unter
+                die für eine Aufgabe hinterlegte Mindestbesetzung.
               </div>
               <div style={{ marginBottom:9 }}>
                 <Label>Von Baustelle</Label>

@@ -137,6 +137,7 @@ export async function sbAufgabeSpeichern(a, projektId, session, istNeu) {
     soll_stunden:        a.soll_stunden ?? null,
     dauer_tage:          a.dauer_tage ?? null,
     mindest_mitarbeiter: a.mindest_mitarbeiter ?? null,
+    maximal_mitarbeiter: a.maximal_mitarbeiter ?? null,
     abhaengig_von:       Array.isArray(a.abhaengig_von) ? a.abhaengig_von.filter(id => typeof id === "number" && id < 1e12) : [],
     beschreibung:        a.beschreibung || "",
     fotos:               a.fotos || [],
