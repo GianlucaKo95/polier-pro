@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { CircleX, Wind, Droplet, CloudRain, CircleCheckBig, Ban, MapPin, Blocks, Calendar } from "lucide-react";
 import { geocodePLZ, geocodeAdresse, wmoIcon, betonCheck } from "../lib/geo.js";
 
-export function WeatherView({ compact = false, ort = null, plz = null, projektId = null }) {
+export function WeatherView({ compact = false, ort = null, plz = null, projektId = null, onData }) {
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loc, setLoc] = useState({ lat: 48.137, lon: 11.576, name: "München" });
@@ -40,6 +40,12 @@ export function WeatherView({ compact = false, ort = null, plz = null, projektId
     if (!standortAufgeloest) return; // erst Wetter laden wenn Standort feststeht
     fetchWeather(loc.lat, loc.lon);
   }, [loc.lat, loc.lon, standortAufgeloest]);
+
+  // Erlaubt einem Elternteil (z.B. dem Baustellen-Cockpit im Dashboard),
+  // das Wetterrisiko ohne eigenen zweiten API-Call mitzubekommen.
+  useEffect(() => {
+    onData?.({ weather, warn: betonCheck(weather) });
+  }, [weather]);
 
   async function fetchWeather(lat, lon) {
     setLoading(true);

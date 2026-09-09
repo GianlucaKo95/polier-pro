@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Calendar, TriangleAlert, Zap } from "lucide-react";
 import { daysBetween } from "../lib/utils.js";
-import { berechneTerminkette } from "../lib/terminkette.js";
+import { terminprognose } from "../lib/terminkette.js";
 import { AUFGABEN_STATUS } from "../config/konstanten.js";
 
 export function GanttView({ felder }) {
@@ -14,10 +14,7 @@ export function GanttView({ felder }) {
   // Kritischer Pfad + berechnetes Projektende aus Dauer + Abhängigkeiten —
   // über alle Aufgaben, nicht nur die mit gesetztem Fälligkeitsdatum, da
   // undatierte Aufgaben trotzdem Teil einer Abhängigkeitskette sein können.
-  const { proAufgabe: terminketten, projektEnde } = berechneTerminkette(felder);
-  const geplanteTermine = felder.map(f => f.faellig_am).filter(Boolean).map(d => new Date(d).getTime());
-  const zielTermin = geplanteTermine.length ? new Date(Math.max(...geplanteTermine)) : null;
-  const deltaTage = zielTermin ? Math.round((projektEnde - zielTermin) / 86400000) : null;
+  const { proAufgabe: terminketten, projektEnde, zielTermin, deltaTage } = terminprognose(felder);
 
   // Scroll to today on mount
   useEffect(() => {

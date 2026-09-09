@@ -113,3 +113,13 @@ export function berechneTerminkette(aufgaben) {
 
   return { proAufgabe: ergebnis, projektEnde };
 }
+
+// Vergleicht das berechnete Projektende gegen das späteste gesetzte
+// Fälligkeitsdatum — die Terminprognose fürs Cockpit und den Gantt-Kopf.
+export function terminprognose(aufgaben) {
+  const { proAufgabe, projektEnde } = berechneTerminkette(aufgaben);
+  const geplanteTermine = aufgaben.map(a => a.faellig_am).filter(Boolean).map(d => new Date(d).getTime());
+  const zielTermin = geplanteTermine.length ? new Date(Math.max(...geplanteTermine)) : null;
+  const deltaTage = zielTermin ? Math.round((projektEnde - zielTermin) / 86400000) : null;
+  return { proAufgabe, projektEnde, zielTermin, deltaTage };
+}
