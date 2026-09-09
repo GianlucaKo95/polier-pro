@@ -1,13 +1,32 @@
+import { useState } from "react";
 import { Calendar, CalendarX, Users, ArrowRight } from "lucide-react";
 import { WeatherView } from "./WeatherView.jsx";
+import { terminprognose } from "../lib/terminkette.js";
 
 export function DashboardView({ aufgaben, kolonnen, sbConnected, onNavigate, projekt, wetter }) {
+  const [wetterInfo, setWetterInfo] = useState(null);
   const offeneAufgaben = aufgaben.filter(a => a.status !== "abgeschlossen");
   const kritisch  = aufgaben.filter(a => a.prioritaet === "kritisch" && a.status !== "abgeschlossen").length;
   const maengel   = aufgaben.filter(a => a.ist_mangel && a.status !== "abgeschlossen").length;
   const ueberfaellig = aufgaben.filter(a => a.faellig_am &&
     new Date(a.faellig_am) < new Date() && a.status !== "abgeschlossen");
   const totalMann = kolonnen.reduce((s,k) => s + (k.mitarbeiter?.length || 0), 0);
+
+  // Baustellen-Cockpit — automatische Zusammenfassung ohne manuelles
+  // Eintragen: Ampel aus dem berechneten kritischen Pfad statt aus
+  // Priorität allein, geplante Stunden aus den Soll-Stunden offener
+  // Aufgaben, Terminprognose aus derselben Terminketten-Berechnung wie
+  // im Zeitplan-Tab.
+  const { proAufgabe: terminketten, deltaTage } = terminprognose(aufgaben);
+  let ampelRot = 0, ampelOrange = 0, ampelGruen = 0;
+  for (const a of offeneAufgaben) {
+    const info = terminketten.get(a.id);
+    const istUeberfaellig = ueberfaellig.includes(a);
+    if (istUeberfaellig || info?.terminkonflikt) ampelRot++;
+    else if (info?.kritisch) ampelOrange++;
+    else ampelGruen++;
+  }
+  const stundenGeplant = offeneAufgaben.reduce((s,a) => s + (a.soll_stunden || 0), 0);
 
   const betonM2Gesamt = aufgaben.filter(a=>a.typ==="beton").reduce((s,a)=>s+(a.m2||0),0);
   const betonM2Fertig = aufgaben.filter(a=>a.typ==="beton" && a.status==="abgeschlossen").reduce((s,a)=>s+(a.m2||0),0);
@@ -23,9 +42,27 @@ export function DashboardView({ aufgaben, kolonnen, sbConnected, onNavigate, pro
     else onNavigate(tabId);
   }
 
+  const hatOffeneBetonage = offeneAufgaben.some(a => a.typ === "beton");
+  // wetterInfo kommt auch bei fehlgeschlagenem Abruf, dann aber mit
+  // weather:null — nur dann gilt das Risiko als tatsächlich eingeschätzt.
+  const wetterVorhanden = !!wetterInfo?.weather;
+  const wetterWarnungen = wetterInfo?.warn || [];
+  const betonageKritisch = wetterWarnungen.some(w => w.startsWith("🚫"));
+  const betonageVorsicht = wetterWarnungen.length > 0;
+
   return (
     <div>
-      <WeatherView compact ort={projekt?.ort} plz={projekt?.plz} projektId={projekt?.id} />
+      <WeatherView compact ort={projekt?.ort} plz={projekt?.plz} projektId={projekt?.id} onData={setWetterInfo} />
+
+      {/* Baustellen-Cockpit — automatischer Tagesüberblick, bevor man
+          irgendwo hinklicken muss. */}
+      {(offeneAufgaben.length > 0 || totalMann > 0) && (
+        <CockpitKarte
+          ampelRot={ampelRot} ampelOrange={ampelOrange} ampelGruen={ampelGruen}
+          totalMann={totalMann} stundenGeplant={stundenGeplant}
+          wetterGeladen={wetterVorhanden} betonageVorsicht={betonageVorsicht} betonageKritisch={betonageKritisch}
+          hatOffeneBetonage={hatOffeneBetonage} deltaTage={deltaTage} />
+      )}
 
       {/* Kennzahlen — jede Kachel ist ein Sprungziel */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12 }}>
@@ -160,6 +197,44 @@ export function DashboardView({ aufgaben, kolonnen, sbConnected, onNavigate, pro
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function CockpitKarte({ ampelRot, ampelOrange, ampelGruen, totalMann, stundenGeplant,
+  wetterGeladen, betonageVorsicht, betonageKritisch, hatOffeneBetonage, deltaTage }) {
+  const zeile = { display:"flex", alignItems:"center", gap:6, fontSize:12.5, color:"var(--text)", fontWeight:600 };
+  return (
+    <div style={{ background:"var(--surface)", border:"1px solid var(--border)",
+      padding:"12px 16px", marginBottom:12 }}>
+      <div style={{ color:"var(--muted)", fontSize:10.5, fontWeight:700, textTransform:"uppercase",
+        letterSpacing:0.8, marginBottom:8 }}>Baustellen-Cockpit</div>
+
+      <div style={{ display:"flex", gap:14, flexWrap:"wrap", marginBottom:8 }}>
+        <span style={zeile}>🟢 {ampelGruen} im Plan</span>
+        <span style={zeile}>🟠 {ampelOrange} gefährdet</span>
+        <span style={zeile}>🔴 {ampelRot} kritisch</span>
+      </div>
+
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>
+        <span style={zeile}>👷 {totalMann} Mitarbeiter eingeplant</span>
+        {stundenGeplant > 0 && <span style={zeile}>⏱️ {stundenGeplant}h geplant</span>}
+        {wetterGeladen && (
+          <span style={zeile}>
+            🌦️ Wetterrisiko: {betonageKritisch ? "hoch" : betonageVorsicht ? "erhöht" : "gering"}
+          </span>
+        )}
+        {wetterGeladen && hatOffeneBetonage && (
+          <span style={zeile}>
+            🏗️ Betonage: {betonageKritisch ? "nicht empfohlen" : betonageVorsicht ? "mit Vorsicht möglich" : "möglich"}
+          </span>
+        )}
+        {deltaTage !== null && (
+          <span style={{ ...zeile, gridColumn:"1 / -1", color: deltaTage > 0 ? "var(--red)" : "var(--green)" }}>
+            📅 Terminprognose: {deltaTage > 0 ? `+${deltaTage} Tag${deltaTage===1?"":"e"} Verzug` : "im Plan"}
+          </span>
+        )}
+      </div>
     </div>
   );
 }

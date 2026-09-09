@@ -1,19 +1,24 @@
 // Polaris – send-push-reminders
 //
-// Versendet die drei täglichen Erinnerungen (Wetterbriefing 6:30, Verzug
-// 7:00, Tagesbericht-Erinnerung 17:00, jeweils Europe/Berlin) als echte
-// Web-Push-Benachrichtigungen an alle Nutzer mit einer gespeicherten
-// push_subscriptions-Zeile. Ersetzt den vorherigen rein clientseitigen
-// Reminder-Check (src/hooks/usePushNotifications.js), der nur feuerte,
-// solange der Tab zufällig zur richtigen Uhrzeit offen war.
+// Zwei Arten von Web-Push-Benachrichtigungen, alle als echte Server-Push
+// (nicht nur clientseitig, siehe src/hooks/usePushNotifications.js für den
+// alten, rein lokalen Ansatz):
 //
-// Bewusste Vereinfachung: die Erinnerungen sind hier NICHT pro Firma
-// personalisiert (keine exakte Anzahl "aktiver Baustellen"/"verzögerter
-// Aufgaben" wie im alten Client-Code) — das würde Joins über
-// push_subscriptions → profile → projekte/aufgaben brauchen, die ohne
-// Zugriff auf ein echtes Supabase-Projekt hier nicht verifizierbar wären.
-// Alle Abonnenten bekommen dieselbe generische Erinnerung; das lässt sich
-// bei Bedarf später pro Firma erweitern.
+// 1. Generische Tages-Erinnerungen (Wetterbriefing 6:30, Tagesbericht 17:00,
+//    jeweils Europe/Berlin) an ALLE Abonnenten, dedupliziert pro Kalendertag
+//    über push_reminder_log.
+//
+// 2. Automatische Eskalationsleiter für überfällige Aufgaben: bei jedem
+//    Cron-Tick werden alle offenen, überfälligen Aufgaben geprüft. Der
+//    Verzug in % (Tage überfällig ÷ geplante Dauer) bestimmt eine Stufe
+//    1–3. Bei einem STUFENANSTIEG (nicht bei jedem Tick erneut) wird genau
+//    die neu erreichte Rollenebene benachrichtigt:
+//      Stufe 1 (>0–20% Verzug):  Polier + Vorarbeiter der Firma
+//      Stufe 2 (20–40% Verzug):  zusätzlich Bauleiter
+//      Stufe 3 (>40% Verzug):    zusätzlich Administrator ("Projektleiter")
+//    Der zuletzt erreichte Stand steht in aufgaben_eskalation (siehe
+//    Migration aufgaben_eskalation_tabelle), damit nicht bei jedem 15-
+//    Minuten-Tick erneut an dieselbe Ebene gesendet wird.
 //
 // ─── Deployment (einmalig) ──────────────────────────────────────────────
 //   supabase functions deploy send-push-reminders
@@ -23,15 +28,10 @@
 //     VAPID_SUBJECT=mailto:deine-email@example.com
 //
 // ─── Scheduling ─────────────────────────────────────────────────────────
-// Per pg_cron (siehe supabase-push-notifications.sql, Abschnitt 3) oder
-// einem externen Scheduler alle 15 Minuten aufrufen. Die Funktion selbst
-// prüft die aktuelle Berliner Uhrzeit und dedupliziert pro Kalendertag über
-// push_reminder_log, ein 15-Minuten-Takt sendet also nicht mehrfach.
-//
-// ─── Hinweis ────────────────────────────────────────────────────────────
-// Diese Datei ist nicht gegen ein echtes Supabase-Projekt getestet (kein
-// Deploy-Zugriff aus dieser Session heraus). Vor Produktivbetrieb einmal
-// manuell aufrufen und die Function-Logs prüfen.
+// Per pg_cron alle 15 Minuten (siehe supabase-push-notifications.sql,
+// Abschnitt 3). Die Eskalationsprüfung ist über den Stufenvergleich in
+// aufgaben_eskalation von selbst idempotent — ein häufigerer Takt bedeutet
+// nur schnellere Erkennung, keine doppelten Benachrichtigungen.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
@@ -45,6 +45,8 @@ const VAPID_SUBJECT     = Deno.env.get("VAPID_SUBJECT") || "mailto:admin@example
 webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+
+type PushSub = { id: number; endpoint: string; p256dh: string; auth_key: string };
 
 function berlinerStunde(): number {
   const fmt = new Intl.DateTimeFormat("de-DE", {
@@ -60,10 +62,7 @@ async function schonHeuteGesendet(typ: string): Promise<boolean> {
   return !!error;
 }
 
-async function sendeAnAlle(titel: string, text: string, tag: string): Promise<number> {
-  const { data: subs, error } = await supabase.from("push_subscriptions").select("*");
-  if (error || !subs?.length) return 0;
-
+async function sendeAnSubscriptions(subs: PushSub[], titel: string, text: string, tag: string): Promise<number> {
   let versendet = 0;
   for (const sub of subs) {
     try {
@@ -85,19 +84,99 @@ async function sendeAnAlle(titel: string, text: string, tag: string): Promise<nu
   return versendet;
 }
 
+async function sendeAnAlle(titel: string, text: string, tag: string): Promise<number> {
+  const { data: subs, error } = await supabase.from("push_subscriptions").select("*");
+  if (error || !subs?.length) return 0;
+  return sendeAnSubscriptions(subs as PushSub[], titel, text, tag);
+}
+
+// Push an alle Nutzer einer Firma mit einer der angegebenen Rollen.
+async function sendeAnRollen(firmaId: number, rollen: string[], titel: string, text: string, tag: string): Promise<number> {
+  const { data: profile } = await supabase.from("profile").select("id").eq("firma_id", firmaId).in("rolle", rollen);
+  const profilIds = (profile || []).map(p => p.id);
+  if (!profilIds.length) return 0;
+  const { data: subs } = await supabase.from("push_subscriptions").select("*").in("profil_id", profilIds);
+  if (!subs?.length) return 0;
+  return sendeAnSubscriptions(subs as PushSub[], titel, text, tag);
+}
+
+// Rollen, die bei Erreichen einer Stufe NEU informiert werden (kumulativ:
+// wer schon auf Stufe 1 informiert wurde, wird bei Stufe 2 nicht erneut
+// mit derselben Meldung behelligt — nur die jeweils neu hinzukommende
+// Ebene bekommt die Benachrichtigung für diesen Stufensprung).
+const ESKALATIONS_ROLLEN: Record<number, string[]> = {
+  1: ["polier", "vorarbeiter"],
+  2: ["bauleiter"],
+  3: ["administrator"],
+};
+const ESKALATIONS_TITEL: Record<number, string> = {
+  1: "⚠️ Aufgabe in Verzug",
+  2: "🟠 Verzug eskaliert",
+  3: "🔴 Termin gefährdet",
+};
+
+async function pruefeEskalationen(): Promise<Record<string, number>> {
+  const heute = new Date();
+  const heuteISO = heute.toISOString().slice(0, 10);
+
+  const { data: aufgaben } = await supabase
+    .from("aufgaben")
+    .select("id, titel, faellig_am, dauer_tage, status, projekt_id, projekte!inner(id, name, firma_id)")
+    .neq("status", "abgeschlossen")
+    .not("faellig_am", "is", null)
+    .lt("faellig_am", heuteISO);
+
+  const ergebnis: Record<string, number> = { stufe1: 0, stufe2: 0, stufe3: 0 };
+  const aktiveIds: number[] = [];
+
+  for (const a of aufgaben || []) {
+    aktiveIds.push(a.id);
+    const projekt = (a as unknown as { projekte: { id: number; name: string; firma_id: number } }).projekte;
+
+    const faellig = new Date(a.faellig_am as string);
+    const verzugTage = Math.round((Date.UTC(heute.getUTCFullYear(), heute.getUTCMonth(), heute.getUTCDate())
+      - Date.UTC(faellig.getUTCFullYear(), faellig.getUTCMonth(), faellig.getUTCDate())) / 86400000);
+    if (verzugTage <= 0) continue;
+
+    const dauer = a.dauer_tage && a.dauer_tage > 0 ? a.dauer_tage : 1;
+    const verzugProzent = (verzugTage / dauer) * 100;
+    const neueStufe = verzugProzent > 40 ? 3 : verzugProzent > 20 ? 2 : 1;
+
+    const { data: bestehend } = await supabase
+      .from("aufgaben_eskalation").select("stufe").eq("aufgabe_id", a.id).maybeSingle();
+    const alteStufe = bestehend?.stufe || 0;
+
+    if (neueStufe > alteStufe) {
+      const rollen = ESKALATIONS_ROLLEN[neueStufe] || [];
+      const text = `${projekt.name}: "${a.titel}" ist ${verzugTage} Tag${verzugTage === 1 ? "" : "e"} `
+        + `(${Math.round(verzugProzent)}%) hinter Plan.`;
+      const versendet = await sendeAnRollen(projekt.firma_id, rollen, ESKALATIONS_TITEL[neueStufe], text, `eskalation-${a.id}`);
+      ergebnis[`stufe${neueStufe}`] = (ergebnis[`stufe${neueStufe}`] || 0) + versendet;
+    }
+
+    await supabase.from("aufgaben_eskalation").upsert({
+      aufgabe_id: a.id, stufe: neueStufe, verzug_prozent: verzugProzent, aktualisiert_am: new Date().toISOString(),
+    });
+  }
+
+  // Aufräumen: Aufgaben, die nicht mehr überfällig sind (erledigt oder
+  // Termin verschoben), auf Stufe 0 zurücksetzen — eine erneute Verspätung
+  // beginnt dann wieder bei Stufe 1, statt sofort erneut zu eskalieren.
+  await supabase.from("aufgaben_eskalation")
+    .update({ stufe: 0, verzug_prozent: 0 })
+    .neq("stufe", 0)
+    .not("aufgabe_id", "in", `(${aktiveIds.length ? aktiveIds.join(",") : "0"})`);
+
+  return ergebnis;
+}
+
 Deno.serve(async () => {
   const stunde = berlinerStunde();
-  const ergebnis: Record<string, number> = {};
+  const ergebnis: Record<string, unknown> = {};
 
   if (stunde === 6 && !(await schonHeuteGesendet("morgen-wetter"))) {
     ergebnis["morgen-wetter"] = await sendeAnAlle(
       "☀️ Guten Morgen!", "Wetter für die heutigen Baustellen checken.", "morgen-wetter"
-    );
-  }
-
-  if (stunde === 7 && !(await schonHeuteGesendet("verzug"))) {
-    ergebnis["verzug"] = await sendeAnAlle(
-      "⚠️ Verzug prüfen", "Bitte offene Aufgaben und Fristen kontrollieren.", "verzug"
     );
   }
 
@@ -106,6 +185,8 @@ Deno.serve(async () => {
       "📋 Tagesbericht nicht vergessen", "Bitte den Tagesbericht für heute erfassen.", "tagesbericht"
     );
   }
+
+  ergebnis["eskalation"] = await pruefeEskalationen();
 
   return new Response(JSON.stringify({ ok: true, stunde, ergebnis }), {
     headers: { "Content-Type": "application/json" },

@@ -21,6 +21,95 @@ export function betonCheck(w) {
   return warn;
 }
 
+// Einmalige 7-Tage-Vorhersage für einen Standort (Ort/PLZ) — dieselbe
+// Geocoding- + Open-Meteo-Logik wie WeatherView, aber als einzelner Abruf
+// statt reaktiver Komponente. Für Stellen, die nur einen aktuellen
+// Datenschnappschuss brauchen (z.B. die KI-Kontextbildung), statt eine
+// zweite <WeatherView> zu mounten.
+export async function holeWettervorhersage(ort, plz) {
+  if (!ort?.trim() && !plz?.trim()) return null;
+  const ziel = plz?.trim() ? await geocodePLZ(plz, ort) : await geocodeAdresse(ort);
+  if (!ziel) return null;
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${ziel.lat}&longitude=${ziel.lon}`
+      + `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,weather_code`
+      + `&timezone=Europe%2FBerlin&forecast_days=7`;
+    const res = await fetch(url);
+    const data = await res.json();
+    return data.daily.time.slice(0, 7).map((day, i) => ({
+      day:  ["So","Mo","Di","Mi","Do","Fr","Sa"][new Date(day).getDay()],
+      date: day,
+      max:  Math.round(data.daily.temperature_2m_max[i]),
+      min:  Math.round(data.daily.temperature_2m_min[i]),
+      rain: data.daily.precipitation_sum[i],
+      wind: Math.round(data.daily.wind_speed_10m_max[i]),
+    }));
+  } catch { return null; }
+}
+
+// Stündliche Vorhersage für einen einzelnen Tag — nutzt precipitation_probability
+// von Open-Meteo, eine ECHTE, vom Wettermodell berechnete Regenwahrscheinlichkeit
+// (kein erfundener Wert). Für die Betonage-Zeitfenster-Empfehlung.
+export async function holeStuendlicheVorhersage(ort, plz, datumISO) {
+  if (!ort?.trim() && !plz?.trim()) return null;
+  const ziel = plz?.trim() ? await geocodePLZ(plz, ort) : await geocodeAdresse(ort);
+  if (!ziel) return null;
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${ziel.lat}&longitude=${ziel.lon}`
+      + `&hourly=temperature_2m,precipitation_probability,precipitation,wind_speed_10m,weather_code`
+      + `&timezone=Europe%2FBerlin&start_date=${datumISO}&end_date=${datumISO}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!data.hourly?.time) return null;
+    return data.hourly.time.map((zeit, i) => ({
+      stunde: new Date(zeit).getHours(),
+      temp:   Math.round(data.hourly.temperature_2m[i]),
+      regenWahrscheinlichkeit: data.hourly.precipitation_probability[i],
+      regenMenge: data.hourly.precipitation[i],
+      wind:   Math.round(data.hourly.wind_speed_10m[i]),
+      icon:   wmoIcon(data.hourly.weather_code[i]),
+    }));
+  } catch { return null; }
+}
+
+// Grobe, transparente Eignungs-Heuristik (0-100) für eine einzelne Stunde,
+// abgeleitet aus denselben Grenzwerten wie betonCheck() — KEINE
+// wissenschaftliche Vorhersage, sondern eine nachvollziehbare Gewichtung
+// aus echten Rohwerten. Immer zusammen mit den Rohwerten selbst zeigen,
+// nie als eigenständige "KI-Prognose" ausgeben, damit niemand mehr
+// Präzision hineinliest, als tatsächlich dahintersteckt.
+export function betonageEignung(stunde) {
+  let wert = 100;
+  const gruende = [];
+  if (stunde.regenWahrscheinlichkeit > 0) {
+    wert -= Math.round(stunde.regenWahrscheinlichkeit * 0.6);
+    if (stunde.regenWahrscheinlichkeit >= 50) gruende.push(`${stunde.regenWahrscheinlichkeit}% Regenwahrscheinlichkeit`);
+  }
+  if (stunde.regenMenge > 5) { wert -= 30; gruende.push("Starkregen erwartet"); }
+  if (stunde.wind > 40) { wert -= 50; gruende.push(`Wind ${stunde.wind}km/h über Grenzwert`); }
+  else if (stunde.wind > 25) { wert -= Math.round((stunde.wind - 25) * 2); }
+  if (stunde.temp < 5) { wert -= 50; gruende.push(`Temperatur ${stunde.temp}°C unter Frostgrenze`); }
+  else if (stunde.temp < 8) { wert -= Math.round((8 - stunde.temp) * 8); }
+  if (stunde.temp > 30) { wert -= 30; gruende.push(`Temperatur ${stunde.temp}°C über 30°C`); }
+  return { wert: Math.max(0, Math.min(100, wert)), gruende };
+}
+
+// Bestes zusammenhängendes Arbeitszeitfenster (Standard: 2 Stunden) für
+// Betonage an einem Tag, gemittelt über den Eignungswert je Stunde.
+export function besteZeitfenster(stundenDaten, fensterGroesse = 2) {
+  const arbeitsstunden = (stundenDaten || []).filter(s => s.stunde >= 6 && s.stunde <= 18);
+  let bestes = null;
+  for (let i = 0; i <= arbeitsstunden.length - fensterGroesse; i++) {
+    const fenster = arbeitsstunden.slice(i, i + fensterGroesse);
+    const werte = fenster.map(s => betonageEignung(s).wert);
+    const avg = werte.reduce((a, b) => a + b, 0) / werte.length;
+    if (!bestes || avg > bestes.avg) {
+      bestes = { start: fenster[0].stunde, ende: fenster[fenster.length - 1].stunde + 1, avg: Math.round(avg) };
+    }
+  }
+  return bestes;
+}
+
 export async function getGPSPosition() {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {

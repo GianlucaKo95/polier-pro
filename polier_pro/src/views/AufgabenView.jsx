@@ -8,7 +8,7 @@ import { AufgabenKarte } from "../components/AufgabenKarte.jsx";
 import { AUFGABEN_STATUS, AUFGABEN_TYPEN } from "../config/konstanten.js";
 
 export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, darfBearbeiten = true, initialFilter = "alle",
-  kannVorschlagen = false, onVorschlagen, onEntscheiden }) {
+  kannVorschlagen = false, onVorschlagen, onEntscheiden, zeitbuchungen = [] }) {
   const [ansicht,     setAnsicht]     = useState("liste");  // liste | kanban
   const [filter,      setFilter]      = useState(initialFilter);
   const [neuAufgabe,  setNeuAufgabe]  = useState(false);
@@ -61,6 +61,7 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
       <AufgabenFormular
         initial={{ ...leereAufgabe(), typ:"mangel", ist_mangel:true }}
         kolonnen={kolonnen}
+        alleAufgaben={aufgaben}
         onSave={handleSave}
         onClose={() => setNeuMangel(false)}
       />
@@ -72,6 +73,7 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
       <AufgabenFormular
         initial={editAufgabe}
         kolonnen={kolonnen}
+        alleAufgaben={aufgaben}
         onSave={handleSave}
         onClose={() => setEditAufgabe(null)}
       />
@@ -85,6 +87,15 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
     maengel:       aufgaben.filter(a=>a.ist_mangel && a.status!=="abgeschlossen").length,
     abgeschlossen: aufgaben.filter(a=>a.status==="abgeschlossen").length,
   };
+
+  // Ist-Stunden je Aufgabe: Summe der abgeschlossenen Zeitbuchungen, die
+  // beim Stempeln dieser Aufgabe zugeordnet wurden — Grundlage für den
+  // Soll/Ist-Produktivitätsvergleich auf der Karte.
+  const istStundenProAufgabe = {};
+  for (const z of zeitbuchungen) {
+    if (!z.aufgabe_id || z.status !== "abgeschlossen" || !z.netto_minuten) continue;
+    istStundenProAufgabe[z.aufgabe_id] = (istStundenProAufgabe[z.aufgabe_id] || 0) + z.netto_minuten / 60;
+  }
 
   const zurPruefungListe  = gefiltert.filter(a => a.status === "zur_pruefung");
   const ueberfaelligListe = gefiltert.filter(a => a.status !== "abgeschlossen" && a.status !== "zur_pruefung" && a.faellig_am && new Date(a.faellig_am) < new Date());
@@ -151,7 +162,7 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
             <>
               <SektionsTitel label="Zur Prüfung" />
               {zurPruefungListe.map(a => (
-                <AufgabenKarte key={a.id} aufgabe={a} kolonnen={kolonnen}
+                <AufgabenKarte key={a.id} aufgabe={a} kolonnen={kolonnen} istStunden={istStundenProAufgabe[a.id] || 0}
                   onClick={() => darfBearbeiten && setEditAufgabe(a)}
                   onDelete={darfBearbeiten ? handleDelete : undefined}
                   onEntscheiden={darfBearbeiten ? onEntscheiden : undefined} />
@@ -163,7 +174,7 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
             <>
               <SektionsTitel label="Überfällig" />
               {ueberfaelligListe.map(a => (
-                <AufgabenKarte key={a.id} aufgabe={a} kolonnen={kolonnen}
+                <AufgabenKarte key={a.id} aufgabe={a} kolonnen={kolonnen} istStunden={istStundenProAufgabe[a.id] || 0}
                   onClick={() => darfBearbeiten && setEditAufgabe(a)}
                   onDelete={darfBearbeiten ? handleDelete : undefined}
                   onToggleErledigt={darfBearbeiten ? handleToggleErledigt : undefined}
@@ -176,7 +187,7 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
             <>
               <SektionsTitel label="Offen" />
               {offenListe.map(a => (
-                <AufgabenKarte key={a.id} aufgabe={a} kolonnen={kolonnen}
+                <AufgabenKarte key={a.id} aufgabe={a} kolonnen={kolonnen} istStunden={istStundenProAufgabe[a.id] || 0}
                   onClick={() => darfBearbeiten && setEditAufgabe(a)}
                   onDelete={darfBearbeiten ? handleDelete : undefined}
                   onToggleErledigt={darfBearbeiten ? handleToggleErledigt : undefined}
@@ -189,7 +200,7 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
             <>
               <SektionsTitel label="Erledigt" />
               {erledigtListe.map(a => (
-                <AufgabenKarte key={a.id} aufgabe={a} kolonnen={kolonnen}
+                <AufgabenKarte key={a.id} aufgabe={a} kolonnen={kolonnen} istStunden={istStundenProAufgabe[a.id] || 0}
                   onClick={() => darfBearbeiten && setEditAufgabe(a)}
                   onDelete={darfBearbeiten ? handleDelete : undefined}
                   onToggleErledigt={darfBearbeiten ? handleToggleErledigt : undefined} />

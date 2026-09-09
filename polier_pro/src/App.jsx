@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Bell, LogOut, Plus, MapPin, Hash, TriangleAlert, LayoutGrid,
   CircleCheckBig, NotebookPen, Users, Clock, Ellipsis, ChevronRight,
   Building2, Calendar, Euro, CloudSun, ChartColumn, FileText, Settings,
-  UserCog, RefreshCw, User } from "lucide-react";
+  UserCog, RefreshCw, User, Sparkles, FlaskConical } from "lucide-react";
 import { useTheme } from "./hooks/useTheme.js";
 import { useAuth } from "./hooks/useAuth.js";
 import { DEFAULT_EINHEITSPREISE, DEFAULT_LV_VORLAGEN, ONBOARDING_KEY, ROLLEN, PROJEKTTYPEN } from "./config/konstanten.js";
@@ -31,6 +31,8 @@ import { WeatherView } from "./views/WeatherView.jsx";
 import { KolonnenView } from "./views/KolonnenView.jsx";
 import { TagesbuchView } from "./views/TagesbuchView.jsx";
 import { AufgabenView } from "./views/AufgabenView.jsx";
+import { KiFrageView } from "./views/KiFrageView.jsx";
+import { SimulationView } from "./views/SimulationView.jsx";
 import { KostenView } from "./views/KostenView.jsx";
 import { StundenExportView } from "./views/StundenExportView.jsx";
 import { AngebotView } from "./views/AngebotView.jsx";
@@ -240,6 +242,7 @@ export default function PolierApp() {
   useEffect(() => {
     if (!aktivId || !auth.session?.access_token) {
       setAktProjektAufgaben([]); setAktProjektKolonnen([]); setAktProjektBerichte([]);
+      setZeitbuchungen([]);
       return;
     }
     let abgebrochen = false;
@@ -252,12 +255,14 @@ export default function PolierApp() {
       client.from("aufgaben").select("*").eq("projekt_id", aktivId).order("created_at", { ascending: false }),
       client.from("kolonnen").select("*").eq("projekt_id", aktivId).order("created_at", { ascending: true }),
       client.from("tagesberichte").select("*").eq("projekt_id", aktivId).order("datum", { ascending: false }),
-    ]).then(([aRes, kRes, bRes]) => {
+      client.from("zeitbuchungen").select("*").eq("projekt_id", aktivId),
+    ]).then(([aRes, kRes, bRes, zRes]) => {
       if (abgebrochen) return;
       const fehler = [];
       if (aRes.error) fehler.push(`Aufgaben: ${aRes.error.message}`);
       if (kRes.error) fehler.push(`Kolonnen: ${kRes.error.message}`);
       if (bRes.error) fehler.push(`Berichte: ${bRes.error.message}`);
+      if (zRes.error) fehler.push(`Zeiterfassung: ${zRes.error.message}`);
       if (fehler.length) {
         setProjektDatenFehler("Projektdaten konnten nicht vollständig geladen werden: " + fehler.join(", "));
       }
@@ -265,6 +270,7 @@ export default function PolierApp() {
       setAktProjektAufgaben(aRes.data || []);
       setAktProjektKolonnen(kRes.data || []);
       setAktProjektBerichte(bRes.data || []);
+      setZeitbuchungen(zRes.data || []);
       setProjektDatenLaden(false);
     }).catch(e => {
       if (abgebrochen) return;
@@ -859,6 +865,8 @@ export default function PolierApp() {
     { id:"tagebuch",      icon:"📋",  label:"Tagebuch",    rollen:["administrator","polier","vorarbeiter"] },
     { id:"stempeln",      icon:"⏱️",  label:"Stempeln",    rollen:["administrator","polier","vorarbeiter","facharbeiter"] },
     { id:"stunden",       icon:"📊",  label:"Stunden",     rollen:["administrator","bauleiter","polier","vorarbeiter"] },
+    { id:"ki_frage",      icon:"💬",  label:"KI fragen",   rollen:["administrator","bauleiter","polier","vorarbeiter"] },
+    { id:"simulation",    icon:"🧪",  label:"Simulation",  rollen:["administrator","bauleiter","polier"] },
     { id:"angebot",       icon:"📄",  label:"Angebot",     rollen:["administrator"] },
     { id:"admin_params",  icon:"⚙️",  label:"Parameter",   rollen:["administrator"] },
     { id:"nutzer",        icon:"👥",  label:"Nutzer",      rollen:["administrator"] },
@@ -874,7 +882,7 @@ export default function PolierApp() {
   const aktivInMehr = mehrTabs.some(t => t.id === tab);
   const TAB_ICONS = { dashboard:LayoutGrid, aufgaben:CircleCheckBig, tagebuch:NotebookPen,
     kolonnen:Users, stempeln:Clock, gantt:Calendar, kosten:Euro, wetter:CloudSun,
-    stunden:ChartColumn, angebot:FileText, admin_params:Settings, nutzer:UserCog, profil:User };
+    stunden:ChartColumn, angebot:FileText, admin_params:Settings, nutzer:UserCog, profil:User, ki_frage:Sparkles, simulation:FlaskConical };
 
   return (
     // position:fixed auf html/body war der Bug (siehe theme.css) — aber
@@ -971,7 +979,8 @@ export default function PolierApp() {
             session={auth.session}
           />}
         {tab === "aufgaben"      && <AufgabenView aufgaben={felder} setAufgaben={setFelder} kolonnen={kolonnen} sbConnected={sbConnected} darfBearbeiten={rolleConfig?.kannBearbeiten !== false} initialFilter={aufgabenFilter}
-            kannVorschlagen={aktiveRolle === "facharbeiter"} onVorschlagen={aufgabeVorschlagen} onEntscheiden={aufgabeEntscheiden} />}
+            kannVorschlagen={aktiveRolle === "facharbeiter"} onVorschlagen={aufgabeVorschlagen} onEntscheiden={aufgabeEntscheiden}
+            zeitbuchungen={zeitbuchungen} />}
         {tab === "kosten"        && <KostenView projekt={projekt} aufgaben={felder} kolonnen={kolonnen} zeitbuchungen={zeitbuchungen} />}
         {tab === "stempeln"      && <StempeluhrView profil={aktiveProfil}
             projekte={aktiveProfil?.kolonne_id
@@ -979,8 +988,10 @@ export default function PolierApp() {
                 ? projekte.filter(p => (p.kolonnen||[]).some(k => k.id === aktiveProfil.kolonne_id))
                 : projekte
               : projekte}
-            session={auth.session} kolonnen={kolonnen} />}
+            session={auth.session} kolonnen={kolonnen} aufgaben={felder} />}
         {tab === "stunden"       && <StundenExportView profil={aktiveProfil} session={auth.session} projekte={projekte} darfAlleSehen={rolleConfig?.kannBearbeiten !== false && aktiveRolle !== "vorarbeiter"} />}
+        {tab === "ki_frage"      && <KiFrageView projekt={projekt} aufgaben={felder} kolonnen={kolonnen} session={auth.session} />}
+        {tab === "simulation"    && <SimulationView aufgaben={felder} kolonnen={kolonnen} projekt={projekt} projekte={projekte} session={auth.session} />}
         {tab === "angebot"       && <AngebotView projekt={projekt} aufgaben={felder} einheitspreise={einheitspreise} lvVorlagen={lvVorlagen} eigeneFirma={eigeneFirma} />}
         {tab === "admin_params" && <AdminParameterView einheitspreise={einheitspreise} setEinheitspreise={setEinheitspreise} lvVorlagen={lvVorlagen} setLvVorlagen={setLvVorlagen} />}
         {tab === "nutzer"       && <NutzerVerwaltungView session={auth.session} kolonnen={kolonnen} firmaId={firma?.id} />}

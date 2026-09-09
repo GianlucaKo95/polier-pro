@@ -1,12 +1,15 @@
 import { useState, useEffect } from "react";
-import { CircleX, Wind, Droplet, CloudRain, CircleCheckBig, Ban, MapPin, Blocks, Calendar } from "lucide-react";
-import { geocodePLZ, geocodeAdresse, wmoIcon, betonCheck } from "../lib/geo.js";
+import { CircleX, Wind, Droplet, CloudRain, CircleCheckBig, Ban, MapPin, Blocks, Calendar, ChevronDown, Clock3 } from "lucide-react";
+import { geocodePLZ, geocodeAdresse, wmoIcon, betonCheck, holeStuendlicheVorhersage, betonageEignung, besteZeitfenster } from "../lib/geo.js";
 
-export function WeatherView({ compact = false, ort = null, plz = null, projektId = null }) {
+export function WeatherView({ compact = false, ort = null, plz = null, projektId = null, onData }) {
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loc, setLoc] = useState({ lat: 48.137, lon: 11.576, name: "München" });
   const [standortAufgeloest, setStandortAufgeloest] = useState(false);
+  const [ausgewaehlterTag, setAusgewaehlterTag] = useState(null); // date-string des aufgeklappten Tages
+  const [stundenDaten,      setStundenDaten]      = useState(null);
+  const [stundenLaden,      setStundenLaden]       = useState(false);
 
   // PLZ ist eindeutig und daher die zuverlässigste Suchgrundlage —
   // Ortsnamen können mehrfach vorkommen (z.B. "Neustadt" >20x in
@@ -41,6 +44,12 @@ export function WeatherView({ compact = false, ort = null, plz = null, projektId
     fetchWeather(loc.lat, loc.lon);
   }, [loc.lat, loc.lon, standortAufgeloest]);
 
+  // Erlaubt einem Elternteil (z.B. dem Baustellen-Cockpit im Dashboard),
+  // das Wetterrisiko ohne eigenen zweiten API-Call mitzubekommen.
+  useEffect(() => {
+    onData?.({ weather, warn: betonCheck(weather) });
+  }, [weather]);
+
   async function fetchWeather(lat, lon) {
     setLoading(true);
     try {
@@ -73,8 +82,19 @@ export function WeatherView({ compact = false, ort = null, plz = null, projektId
     setLoading(false);
   }
 
+  async function tagAufklappen(datumISO) {
+    if (ausgewaehlterTag === datumISO) { setAusgewaehlterTag(null); return; }
+    setAusgewaehlterTag(datumISO);
+    setStundenDaten(null);
+    setStundenLaden(true);
+    const daten = await holeStuendlicheVorhersage(ort, plz, datumISO);
+    setStundenDaten(daten);
+    setStundenLaden(false);
+  }
+
   const warn = betonCheck(weather);
   const ok = warn.length === 0;
+  const empfehlung = stundenDaten ? besteZeitfenster(stundenDaten) : null;
 
   if (loading) return (
     <div style={{ background: "var(--surface)", borderRadius: 12, padding:14, textAlign:"center", color: "var(--muted)" }}>
@@ -178,24 +198,78 @@ export function WeatherView({ compact = false, ort = null, plz = null, projektId
         {weather.forecast.map((f,i) => {
           const dayWarn = betonCheck({ temp:f.max, wind:f.wind, rain:f.rain });
           const dayOk = dayWarn.length === 0;
+          const aufgeklappt = ausgewaehlterTag === f.date;
           return (
-            <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
-              padding:"7px 12px", borderRadius:8, marginBottom:6,
-              background: dayOk ? "#1A2E1E" : "#2E1A1A",
-              border: `1px solid ${dayOk ? "var(--green)" : "var(--red)"}` }}>
-              <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                <span style={{ fontSize:20 }}>{f.icon}</span>
-                <div>
-                  <div style={{ color: "var(--text)", fontWeight:600, fontSize:13 }}>{f.day} · {new Date(f.date).getDate()}.{(new Date(f.date).getMonth()+1).toString().padStart(2,"0")}.</div>
-                  <div style={{ color: "var(--muted)", fontSize:11, display:"flex", alignItems:"center", gap:4, flexWrap:"wrap" }}>
-                    {f.min}° – {f.max}° · <Wind size={10} /> {f.wind} km/h · {f.rain > 0 ? <><CloudRain size={10} /> {f.rain}mm</> : "kein Regen"}
+            <div key={i} style={{ marginBottom:6 }}>
+              <div onClick={() => tagAufklappen(f.date)}
+                style={{ display:"flex", justifyContent:"space-between", alignItems:"center", cursor:"pointer",
+                padding:"7px 12px", borderRadius: aufgeklappt ? "8px 8px 0 0" : 8,
+                background: dayOk ? "#1A2E1E" : "#2E1A1A",
+                border: `1px solid ${dayOk ? "var(--green)" : "var(--red)"}`, borderBottom: aufgeklappt ? "none" : undefined }}>
+                <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                  <span style={{ fontSize:20 }}>{f.icon}</span>
+                  <div>
+                    <div style={{ color: "var(--text)", fontWeight:600, fontSize:13 }}>{f.day} · {new Date(f.date).getDate()}.{(new Date(f.date).getMonth()+1).toString().padStart(2,"0")}.</div>
+                    <div style={{ color: "var(--muted)", fontSize:11, display:"flex", alignItems:"center", gap:4, flexWrap:"wrap" }}>
+                      {f.min}° – {f.max}° · <Wind size={10} /> {f.wind} km/h · {f.rain > 0 ? <><CloudRain size={10} /> {f.rain}mm</> : "kein Regen"}
+                    </div>
                   </div>
                 </div>
+                <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                  <div style={{ color: dayOk ? "var(--green)" : "var(--red)", fontWeight:700, fontSize:12,
+                    display:"flex", alignItems:"center", gap:4 }}>
+                    {dayOk ? <><CircleCheckBig size={13} /> OK</> : <><Ban size={13} /> Nein</>}
+                  </div>
+                  <ChevronDown size={14} color="var(--muted)" style={{ transform: aufgeklappt ? "rotate(180deg)" : "none", transition:"transform 0.2s" }} />
+                </div>
               </div>
-              <div style={{ color: dayOk ? "var(--green)" : "var(--red)", fontWeight:700, fontSize:12,
-                display:"flex", alignItems:"center", gap:4 }}>
-                {dayOk ? <><CircleCheckBig size={13} /> OK</> : <><Ban size={13} /> Nein</>}
-              </div>
+
+              {aufgeklappt && (
+                <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderTop:"none",
+                  borderRadius:"0 0 8px 8px", padding:"10px 12px" }}>
+                  {stundenLaden && (
+                    <div style={{ color:"var(--muted)", fontSize:12, textAlign:"center", padding:8 }}>Stündliche Vorhersage wird geladen…</div>
+                  )}
+                  {!stundenLaden && !stundenDaten && (
+                    <div style={{ color:"var(--red)", fontSize:12, textAlign:"center", padding:8 }}>Stündliche Vorhersage nicht verfügbar</div>
+                  )}
+                  {!stundenLaden && stundenDaten && (
+                    <>
+                      <div style={{ color:"var(--muted)", fontSize:10.5, marginBottom:8, lineHeight:1.4 }}>
+                        Eignungswert je Stunde — grobe Heuristik aus Regenwahrscheinlichkeit (echte Modelldaten), Temperatur und Wind, keine wissenschaftliche Vorhersage.
+                      </div>
+                      {empfehlung && (
+                        <div style={{ background:"var(--ybg)", border:"1px solid var(--yellow)", borderRadius:8,
+                          padding:"8px 12px", marginBottom:10, display:"flex", alignItems:"center", gap:8 }}>
+                          <Clock3 size={14} color="var(--ydark)" />
+                          <div style={{ color:"var(--ydark)", fontSize:12.5, fontWeight:700 }}>
+                            Empfohlenes Zeitfenster: {empfehlung.start}:00–{empfehlung.ende}:00 Uhr (Ø Eignung {empfehlung.avg}%)
+                          </div>
+                        </div>
+                      )}
+                      <div style={{ display:"flex", gap:5, overflowX:"auto", paddingBottom:4 }}>
+                        {stundenDaten.filter(s => s.stunde >= 6 && s.stunde <= 18).map(s => {
+                          const { wert, gruende } = betonageEignung(s);
+                          const farbe = wert >= 70 ? "var(--green)" : wert >= 40 ? "var(--yellow)" : "var(--red)";
+                          return (
+                            <div key={s.stunde} title={gruende.join("; ") || "keine Einschränkungen"}
+                              style={{ minWidth:54, background:"var(--surface2)", borderRadius:8, padding:"6px 4px",
+                                textAlign:"center", border:`1.5px solid ${farbe}` }}>
+                              <div style={{ color:"var(--muted)", fontSize:9.5 }}>{s.stunde}:00</div>
+                              <div style={{ fontSize:14, marginTop:2 }}>{s.icon}</div>
+                              <div style={{ color:"var(--text)", fontSize:10.5, fontWeight:600, marginTop:2 }}>{s.temp}°</div>
+                              <div style={{ color:farbe, fontSize:10.5, fontWeight:800, marginTop:2 }}>{wert}%</div>
+                              {s.regenWahrscheinlichkeit > 0 && (
+                                <div style={{ color:"#6CA8FF", fontSize:9 }}>{s.regenWahrscheinlichkeit}% Regen</div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           );
         })}

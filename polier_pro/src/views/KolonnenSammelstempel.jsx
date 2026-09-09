@@ -9,7 +9,7 @@ import { TAETIGKEITEN } from "../config/konstanten.js";
 
 const MAX_VERSUCHE = 3;
 
-export function KolonnenSammelstempel({ kolonne, projekte, session, onClose }) {
+export function KolonnenSammelstempel({ kolonne, projekte, aufgaben = [], session, onClose }) {
   const [ausgewaehlt, setAusgewaehlt] = useState(() => {
     const sel = {};
     (kolonne.mitarbeiter || []).forEach((_, i) => sel[i] = true);
@@ -17,7 +17,10 @@ export function KolonnenSammelstempel({ kolonne, projekte, session, onClose }) {
   });
   const [aktivProjekt, setAktivProjekt] = useState(projekte[0]?.id || null);
   const [taetigkeit,   setTaetigkeit]   = useState("beton");
+  const [aufgabeId,    setAufgabeId]    = useState(null);
   const [gpsLaden,     setGpsLaden]     = useState(false);
+
+  const offeneAufgaben = aufgaben.filter(a => a.projekt_id === aktivProjekt && a.status !== "abgeschlossen");
 
   // auswahl → pin (jede Person bestätigt sich selbst) → ergebnis
   const [phase,        setPhase]        = useState("auswahl");
@@ -69,6 +72,7 @@ export function KolonnenSammelstempel({ kolonne, projekte, session, onClose }) {
       ein_adresse:      adresse || null,
       status:           "aktiv",
       taetigkeit:       taetigkeit,
+      aufgabe_id:       aufgabeId,
       notiz:            `Sammelbuchung Kolonne ${kolonne.name}: ${mitarbeiter.name}`,
     };
     if (session?.access_token) {
@@ -168,7 +172,7 @@ export function KolonnenSammelstempel({ kolonne, projekte, session, onClose }) {
               <Label>Projekt</Label>
               <div style={{ display:"flex", flexDirection:"column", gap:6, marginTop:6 }}>
                 {projekte.map(p => (
-                  <button key={p.id} onClick={() => setAktivProjekt(p.id)}
+                  <button key={p.id} onClick={() => { setAktivProjekt(p.id); setAufgabeId(null); }}
                     style={{ background: aktivProjekt===p.id ? "var(--ybg)" : "var(--surface)",
                       color:"var(--text)", border:`2px solid ${aktivProjekt===p.id ? "var(--yellow)" : "var(--border)"}`,
                       borderRadius:12, padding:"10px 14px", cursor:"pointer",
@@ -196,6 +200,21 @@ export function KolonnenSammelstempel({ kolonne, projekte, session, onClose }) {
                 ))}
               </div>
             </div>
+
+            {offeneAufgaben.length > 0 && (
+              <div style={{ marginBottom:12 }}>
+                <Label>Aufgabe (optional)</Label>
+                <select value={aufgabeId ?? ""} onChange={e => setAufgabeId(e.target.value ? Number(e.target.value) : null)}
+                  style={{ width:"100%", background:"var(--surface)", color:"var(--text)",
+                    border:"1.5px solid var(--border)", borderRadius:10, padding:"10px 12px",
+                    fontSize:13, fontFamily:"inherit", boxSizing:"border-box" }}>
+                  <option value="">— keine bestimmte Aufgabe —</option>
+                  {offeneAufgaben.map(a => (
+                    <option key={a.id} value={a.id}>{a.titel}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div style={{ display:"flex", justifyContent:"space-between",
               alignItems:"center", marginBottom:7 }}>
