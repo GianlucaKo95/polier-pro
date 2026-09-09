@@ -240,6 +240,7 @@ export default function PolierApp() {
   useEffect(() => {
     if (!aktivId || !auth.session?.access_token) {
       setAktProjektAufgaben([]); setAktProjektKolonnen([]); setAktProjektBerichte([]);
+      setZeitbuchungen([]);
       return;
     }
     let abgebrochen = false;
@@ -252,12 +253,14 @@ export default function PolierApp() {
       client.from("aufgaben").select("*").eq("projekt_id", aktivId).order("created_at", { ascending: false }),
       client.from("kolonnen").select("*").eq("projekt_id", aktivId).order("created_at", { ascending: true }),
       client.from("tagesberichte").select("*").eq("projekt_id", aktivId).order("datum", { ascending: false }),
-    ]).then(([aRes, kRes, bRes]) => {
+      client.from("zeitbuchungen").select("*").eq("projekt_id", aktivId),
+    ]).then(([aRes, kRes, bRes, zRes]) => {
       if (abgebrochen) return;
       const fehler = [];
       if (aRes.error) fehler.push(`Aufgaben: ${aRes.error.message}`);
       if (kRes.error) fehler.push(`Kolonnen: ${kRes.error.message}`);
       if (bRes.error) fehler.push(`Berichte: ${bRes.error.message}`);
+      if (zRes.error) fehler.push(`Zeiterfassung: ${zRes.error.message}`);
       if (fehler.length) {
         setProjektDatenFehler("Projektdaten konnten nicht vollständig geladen werden: " + fehler.join(", "));
       }
@@ -265,6 +268,7 @@ export default function PolierApp() {
       setAktProjektAufgaben(aRes.data || []);
       setAktProjektKolonnen(kRes.data || []);
       setAktProjektBerichte(bRes.data || []);
+      setZeitbuchungen(zRes.data || []);
       setProjektDatenLaden(false);
     }).catch(e => {
       if (abgebrochen) return;
@@ -971,7 +975,8 @@ export default function PolierApp() {
             session={auth.session}
           />}
         {tab === "aufgaben"      && <AufgabenView aufgaben={felder} setAufgaben={setFelder} kolonnen={kolonnen} sbConnected={sbConnected} darfBearbeiten={rolleConfig?.kannBearbeiten !== false} initialFilter={aufgabenFilter}
-            kannVorschlagen={aktiveRolle === "facharbeiter"} onVorschlagen={aufgabeVorschlagen} onEntscheiden={aufgabeEntscheiden} />}
+            kannVorschlagen={aktiveRolle === "facharbeiter"} onVorschlagen={aufgabeVorschlagen} onEntscheiden={aufgabeEntscheiden}
+            zeitbuchungen={zeitbuchungen} />}
         {tab === "kosten"        && <KostenView projekt={projekt} aufgaben={felder} kolonnen={kolonnen} zeitbuchungen={zeitbuchungen} />}
         {tab === "stempeln"      && <StempeluhrView profil={aktiveProfil}
             projekte={aktiveProfil?.kolonne_id
@@ -979,7 +984,7 @@ export default function PolierApp() {
                 ? projekte.filter(p => (p.kolonnen||[]).some(k => k.id === aktiveProfil.kolonne_id))
                 : projekte
               : projekte}
-            session={auth.session} kolonnen={kolonnen} />}
+            session={auth.session} kolonnen={kolonnen} aufgaben={felder} />}
         {tab === "stunden"       && <StundenExportView profil={aktiveProfil} session={auth.session} projekte={projekte} darfAlleSehen={rolleConfig?.kannBearbeiten !== false && aktiveRolle !== "vorarbeiter"} />}
         {tab === "angebot"       && <AngebotView projekt={projekt} aufgaben={felder} einheitspreise={einheitspreise} lvVorlagen={lvVorlagen} eigeneFirma={eigeneFirma} />}
         {tab === "admin_params" && <AdminParameterView einheitspreise={einheitspreise} setEinheitspreise={setEinheitspreise} lvVorlagen={lvVorlagen} setLvVorlagen={setLvVorlagen} />}

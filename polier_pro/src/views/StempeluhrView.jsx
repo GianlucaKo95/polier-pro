@@ -11,7 +11,7 @@ import { Label, inputStyle } from "../components/Label.jsx";
 // hartes Limit, da Adress-Geocoding selbst ungenau sein kann.
 const GEO_WARNUNG_METER = 2000;
 
-export function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
+export function StempeluhrView({ profil, projekte, session, kolonnen = [], aufgaben = [] }) {
   const [status,      setStatus]      = useState("aus");   // aus | ein | pause
   const [aktiveBuchung, setAktiveBuchung] = useState(null);
   const [gps,         setGPS]         = useState(null);
@@ -26,7 +26,13 @@ export function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
   const [aktivProjekt,setAktivProjekt]= useState(projekte[0]?.id || null);
   const [notiz,       setNotiz]       = useState("");
   const [taetigkeit,  setTaetigkeit]  = useState("beton");
+  const [aufgabeId,   setAufgabeId]   = useState(null);
   const [zeigeSammel, setZeigeSammel] = useState(false);
+
+  // Offene Aufgaben des gewählten Projekts — Grundlage für den späteren
+  // Soll/Ist-Stundenvergleich pro Aufgabe. Optional: nicht jede Arbeitszeit
+  // lässt sich einer einzelnen Aufgabe zuordnen.
+  const offeneAufgaben = aufgaben.filter(a => a.projekt_id === aktivProjekt && a.status !== "abgeschlossen");
 
   // Eigene Kolonne finden (für Vorarbeiter mit Team-Sammelerfassung)
   const eigeneKolonne = kolonnen.find(k => k.id === profil?.kolonne_id);
@@ -55,6 +61,7 @@ export function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
       <KolonnenSammelstempel
         kolonne={eigeneKolonne}
         projekte={projekte}
+        aufgaben={aufgaben}
         session={session}
         onClose={() => setZeigeSammel(false)}
       />
@@ -132,6 +139,7 @@ export function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
         status:           "aktiv",
         notiz:            notiz || null,
         taetigkeit:       taetigkeit,
+        aufgabe_id:       aufgabeId,
       };
 
       if (session?.access_token) {
@@ -326,7 +334,7 @@ export function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
             <Label>Projekt</Label>
             <div style={{ display:"flex", flexDirection:"column", gap:8, marginTop:6 }}>
               {projekte.map(p => (
-                <button key={p.id} onClick={() => setAktivProjekt(p.id)}
+                <button key={p.id} onClick={() => { setAktivProjekt(p.id); setAufgabeId(null); }}
                   style={{ background:"var(--surface)",
                     border:`1px solid ${'var(--border)'}`,
                     borderLeft:`4px solid ${aktivProjekt===p.id ? "var(--yellow)" : "var(--border)"}`,
@@ -361,6 +369,18 @@ export function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
               ))}
             </div>
           </div>
+          {offeneAufgaben.length > 0 && (
+            <div style={{ marginBottom:12 }}>
+              <Label>Aufgabe (optional)</Label>
+              <select value={aufgabeId ?? ""} onChange={e => setAufgabeId(e.target.value ? Number(e.target.value) : null)}
+                style={{ ...inputStyle(), padding:"11px 12px" }}>
+                <option value="">— keine bestimmte Aufgabe —</option>
+                {offeneAufgaben.map(a => (
+                  <option key={a.id} value={a.id}>{a.titel}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div style={{ marginBottom:12 }}>
             <Label>Notiz (optional)</Label>
             <input value={notiz} onChange={e => setNotiz(e.target.value)}
@@ -378,6 +398,11 @@ export function StempeluhrView({ profil, projekte, session, kolonnen = [] }) {
           <div style={{ color:"var(--text)", fontSize:14, fontWeight:700 }}>
             {projekte.find(p=>p.id===aktiveBuchung.projekt_id)?.name || "—"}
           </div>
+          {aktiveBuchung.aufgabe_id && (
+            <div style={{ color:"var(--text)", fontSize:12, marginTop:4 }}>
+              🔧 {aufgaben.find(a=>a.id===aktiveBuchung.aufgabe_id)?.titel || "Aufgabe"}
+            </div>
+          )}
           {aktiveBuchung.taetigkeit && (
             <div style={{ color:"var(--ydark)", fontSize:12, marginTop:4,
               fontWeight:600 }}>

@@ -134,6 +134,7 @@ export async function sbAufgabeSpeichern(a, projektId, session, istNeu) {
     prioritaet:          a.prioritaet || "mittel",
     faellig_am:          a.faellig_am || null,
     zustaendig:          a.zustaendig || "",
+    soll_stunden:        a.soll_stunden ?? null,
     beschreibung:        a.beschreibung || "",
     fotos:               a.fotos || [],
     ist_mangel:          !!a.ist_mangel,

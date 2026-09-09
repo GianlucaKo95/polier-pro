@@ -2,12 +2,22 @@ import { Calendar, CalendarX, User, Ruler, Camera, TriangleAlert } from "lucide-
 import { AUFGABEN_TYPEN, AUFGABEN_STATUS, AUFGABEN_PRIO } from "../config/konstanten.js";
 import { SwipeToDelete } from "./SwipeToDelete.jsx";
 
-export function AufgabenKarte({ aufgabe, onClick, kolonnen, onDelete, onToggleErledigt, onVorschlagen, onEntscheiden }) {
+export function AufgabenKarte({ aufgabe, onClick, kolonnen, onDelete, onToggleErledigt, onVorschlagen, onEntscheiden, istStunden = 0 }) {
   const typ    = AUFGABEN_TYPEN[aufgabe.typ]    || AUFGABEN_TYPEN.allgemein;
   const status = AUFGABEN_STATUS[aufgabe.status] || AUFGABEN_STATUS.offen;
   const prio   = AUFGABEN_PRIO[aufgabe.prioritaet] || AUFGABEN_PRIO.mittel;
   const erledigt = aufgabe.status === "abgeschlossen";
   const wartetAufBestaetigung = aufgabe.status === "zur_pruefung";
+
+  // Produktivität: Ist-Stunden aus zugeordneten Zeitbuchungen gegen die an
+  // der Aufgabe hinterlegten Soll-Stunden. >15% drüber gilt als kritisch,
+  // >0% als Vorwarnung — willkürliche, aber nachvollziehbare Schwellen.
+  const sollStunden = aufgabe.soll_stunden;
+  const abweichungProzent = sollStunden > 0 ? Math.round(((istStunden - sollStunden) / sollStunden) * 100) : null;
+  const produktivitaet = abweichungProzent === null ? null
+    : abweichungProzent > 15 ? { icon:"🔴", farbe:"var(--red)", label:`${abweichungProzent}% über Plan` }
+    : abweichungProzent > 0  ? { icon:"🟠", farbe:"var(--yellow)", label:`${abweichungProzent}% über Plan` }
+    : { icon:"🟢", farbe:"var(--green)", label:"im Plan" };
   const ueberfaellig = aufgabe.faellig_am &&
     new Date(aufgabe.faellig_am) < new Date() &&
     !erledigt && !wartetAufBestaetigung;
@@ -65,6 +75,12 @@ export function AufgabenKarte({ aufgabe, onClick, kolonnen, onDelete, onToggleEr
             {status.label}
           </div>
         </div>
+        {produktivitaet && (
+          <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:4,
+            fontSize:11.5, fontWeight:700, color:produktivitaet.farbe }}>
+            <span>{produktivitaet.icon} {istStunden.toFixed(1)}h / {sollStunden}h Soll — {produktivitaet.label}</span>
+          </div>
+        )}
         {aufgabe.beschreibung && !erledigt && (
           <div style={{ color:"var(--muted)", fontSize:12, lineHeight:1.4, marginTop:4,
             overflow:"hidden", display:"-webkit-box",

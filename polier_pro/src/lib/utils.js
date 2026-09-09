@@ -49,6 +49,7 @@ export function leereAufgabe() {
     prioritaet:   "mittel",
     faellig_am:   "",
     zustaendig:   "",
+    soll_stunden: null,
     beschreibung: "",
     fotos:        [],
     ist_mangel:   false,

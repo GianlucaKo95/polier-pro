@@ -145,6 +145,15 @@ export function AufgabenFormular({ initial, kolonnen, onSave, onClose }) {
           </div>
         </div>
 
+        {/* Soll-Stunden — Grundlage für den Produktivitätsvergleich gegen
+            die über die Stempeluhr erfassten Ist-Stunden dieser Aufgabe. */}
+        <div style={{ marginBottom:9 }}>
+          <Label>Soll-Stunden (optional)</Label>
+          <input type="number" min="0" step="0.5" value={a.soll_stunden ?? ""}
+            onChange={e=>setA(p=>({...p, soll_stunden: e.target.value === "" ? null : Number(e.target.value)}))}
+            placeholder="z.B. 120" style={inputStyle()} />
+        </div>
+
         {/* Beschreibung */}
         <div style={{ marginBottom:9 }}>
           <Label>Beschreibung</Label>
