@@ -50,6 +50,8 @@ export function leereAufgabe() {
     faellig_am:   "",
     zustaendig:   "",
     soll_stunden: null,
+    dauer_tage:   null,
+    abhaengig_von: [],
     beschreibung: "",
     fotos:        [],
     ist_mangel:   false,

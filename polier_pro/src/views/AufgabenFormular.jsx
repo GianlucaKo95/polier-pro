@@ -4,7 +4,7 @@ import { leereAufgabe } from "../lib/utils.js";
 import { Label, inputStyle } from "../components/Label.jsx";
 import { AUFGABEN_TYPEN, AUFGABEN_STATUS, AUFGABEN_PRIO } from "../config/konstanten.js";
 
-export function AufgabenFormular({ initial, kolonnen, onSave, onClose }) {
+export function AufgabenFormular({ initial, kolonnen, alleAufgaben = [], onSave, onClose }) {
   const [a,       setA]       = useState(initial || leereAufgabe());
   const [bilder,  setBilder]  = useState([]);
   const [planMode,setPlanMode]= useState(false);
@@ -146,13 +146,51 @@ export function AufgabenFormular({ initial, kolonnen, onSave, onClose }) {
         </div>
 
         {/* Soll-Stunden — Grundlage für den Produktivitätsvergleich gegen
-            die über die Stempeluhr erfassten Ist-Stunden dieser Aufgabe. */}
-        <div style={{ marginBottom:9 }}>
-          <Label>Soll-Stunden (optional)</Label>
-          <input type="number" min="0" step="0.5" value={a.soll_stunden ?? ""}
-            onChange={e=>setA(p=>({...p, soll_stunden: e.target.value === "" ? null : Number(e.target.value)}))}
-            placeholder="z.B. 120" style={inputStyle()} />
+            die über die Stempeluhr erfassten Ist-Stunden dieser Aufgabe.
+            Dauer — Grundlage für den kritischen Pfad (siehe unten). */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:9 }}>
+          <div>
+            <Label>Soll-Stunden (optional)</Label>
+            <input type="number" min="0" step="0.5" value={a.soll_stunden ?? ""}
+              onChange={e=>setA(p=>({...p, soll_stunden: e.target.value === "" ? null : Number(e.target.value)}))}
+              placeholder="z.B. 120" style={inputStyle()} />
+          </div>
+          <div>
+            <Label>Dauer in Tagen (optional)</Label>
+            <input type="number" min="0" step="0.5" value={a.dauer_tage ?? ""}
+              onChange={e=>setA(p=>({...p, dauer_tage: e.target.value === "" ? null : Number(e.target.value)}))}
+              placeholder="z.B. 3" style={inputStyle()} />
+          </div>
         </div>
+
+        {/* Abhängigkeiten — diese Aufgabe kann laut Terminketten-Berechnung
+            erst starten, wenn die ausgewählten Aufgaben fertig sind. */}
+        {alleAufgaben.filter(x => x.id !== a.id).length > 0 && (
+          <div style={{ marginBottom:9 }}>
+            <Label>Abhängig von (optional)</Label>
+            <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginTop:6 }}>
+              {alleAufgaben.filter(x => x.id !== a.id).map(x => {
+                const gewaehlt = (a.abhaengig_von || []).includes(x.id);
+                return (
+                  <button key={x.id} type="button"
+                    onClick={() => setA(p => ({ ...p, abhaengig_von: gewaehlt
+                      ? (p.abhaengig_von||[]).filter(id => id !== x.id)
+                      : [...(p.abhaengig_von||[]), x.id] }))}
+                    style={{ background: gewaehlt ? "var(--ink)" : "var(--surface2)",
+                      color: gewaehlt ? "#fff" : "var(--muted)",
+                      border:`1px solid ${gewaehlt ? "var(--ink)" : "var(--border)"}`,
+                      borderRadius:20, padding:"5px 12px", cursor:"pointer",
+                      fontSize:11.5, fontWeight: gewaehlt ? 700 : 500, fontFamily:"inherit" }}>
+                    {x.titel || "Unbenannte Aufgabe"}
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ color:"var(--muted)", fontSize:10.5, marginTop:5 }}>
+              Startet laut Terminplan erst, wenn die ausgewählten Aufgaben abgeschlossen sind.
+            </div>
+          </div>
+        )}
 
         {/* Beschreibung */}
         <div style={{ marginBottom:9 }}>

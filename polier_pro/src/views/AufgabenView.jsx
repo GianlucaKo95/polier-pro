@@ -61,6 +61,7 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
       <AufgabenFormular
         initial={{ ...leereAufgabe(), typ:"mangel", ist_mangel:true }}
         kolonnen={kolonnen}
+        alleAufgaben={aufgaben}
         onSave={handleSave}
         onClose={() => setNeuMangel(false)}
       />
@@ -72,6 +73,7 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
       <AufgabenFormular
         initial={editAufgabe}
         kolonnen={kolonnen}
+        alleAufgaben={aufgaben}
         onSave={handleSave}
         onClose={() => setEditAufgabe(null)}
       />
