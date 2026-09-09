@@ -1,15 +1,38 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { Pencil, Plus, X, Check, TriangleAlert } from "lucide-react";
+import { Pencil, Plus, X, Check, TriangleAlert, Sparkles } from "lucide-react";
 import { leerProjekt } from "../lib/utils.js";
 import { Label, inputStyle } from "../components/Label.jsx";
 import { PROJEKTTYPEN, ALLE_GEWERKE } from "../config/konstanten.js";
+import { DiktierFeld } from "../components/DiktierFeld.jsx";
+import { kiBaustelleAnlegen } from "../lib/ai.js";
 
-export function ProjektFormular({ initial, onSave, onClose, subs = [], speicherFehler = "" }) {
+export function ProjektFormular({ initial, onSave, onClose, subs = [], speicherFehler = "", session, istAdmin = false }) {
   const [p, setP] = useState(initial || leerProjekt());
   const [wirdGespeichert, setWirdGespeichert] = useState(false);
+  const [kiDiktat,  setKiDiktat]  = useState("");
+  const [kiLaedt,   setKiLaedt]   = useState(false);
+  const [kiFehler,  setKiFehler]  = useState("");
+  const [kiErfolg,  setKiErfolg]  = useState(false);
   const FARBEN = ["#F5C400","#4A9EE0","#2EAF6A","#C45C2A","#9B59B6","#E84393"];
   const valid = p.name.trim().length > 0;
+
+  async function kiUebernehmen() {
+    if (!kiDiktat.trim() || kiLaedt) return;
+    setKiLaedt(true);
+    setKiFehler("");
+    setKiErfolg(false);
+    try {
+      const ergebnis = await kiBaustelleAnlegen(kiDiktat, session);
+      if (!ergebnis) { setKiFehler("Konnte aus dem Diktat keine Baustellendaten erkennen."); return; }
+      setP(prev => ({ ...prev, ...ergebnis }));
+      setKiErfolg(true);
+    } catch (e) {
+      setKiFehler(e.message || "KI-Anfrage fehlgeschlagen.");
+    } finally {
+      setKiLaedt(false);
+    }
+  }
 
   async function speichernKlick() {
     if (!valid) return;
@@ -66,6 +89,38 @@ export function ProjektFormular({ initial, onSave, onClose, subs = [], speicherF
             style={{ background:"none", border:"none", color:"var(--muted)",
               cursor:"pointer", display:"flex" }}><X size={20} /></button>
         </div>
+
+        {/* KI-Diktat — nur beim Neuanlegen, nur für Administrator. Füllt das
+            Formular unten vor, angelegt wird die Baustelle weiterhin erst
+            über den normalen "Speichern"-Klick, damit ein Verhören oder eine
+            falsch verstandene Angabe nicht ungeprüft durchrutscht. */}
+        {!initial && istAdmin && (
+          <div style={{ background:"var(--surface)", border:"1px solid var(--border)",
+            borderRadius:12, padding:12, marginBottom:16 }}>
+            <div style={{ color:"var(--text)", fontWeight:700, fontSize:13, marginBottom:6,
+              display:"flex", alignItems:"center", gap:6 }}>
+              <Sparkles size={14} color="var(--yellow)" /> Per Sprache anlegen
+            </div>
+            <DiktierFeld label="Diktat" value={kiDiktat} onChange={setKiDiktat} rows={2} />
+            <button onClick={kiUebernehmen} disabled={!kiDiktat.trim() || kiLaedt}
+              style={{ width:"100%", background: kiDiktat.trim() && !kiLaedt ? "var(--yellow)" : "var(--surface2)",
+                color: kiDiktat.trim() && !kiLaedt ? "#1a1200" : "var(--muted)",
+                border:"none", borderRadius:8, padding:"9px 0", fontWeight:700, fontSize:12.5,
+                cursor: kiDiktat.trim() && !kiLaedt ? "pointer" : "default", fontFamily:"inherit" }}>
+              {kiLaedt ? "Erkenne Felder…" : "Felder mit KI übernehmen"}
+            </button>
+            {kiErfolg && (
+              <div style={{ color:"var(--green)", fontSize:11.5, marginTop:6, display:"flex", alignItems:"center", gap:5 }}>
+                <Check size={12} /> Felder unten übernommen — bitte prüfen und ergänzen.
+              </div>
+            )}
+            {kiFehler && (
+              <div style={{ color:"var(--red)", fontSize:11.5, marginTop:6, display:"flex", alignItems:"center", gap:5 }}>
+                <TriangleAlert size={12} />{kiFehler}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Projekttyp */}
         <div style={{ marginBottom:13 }}>
