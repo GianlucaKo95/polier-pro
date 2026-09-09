@@ -147,7 +147,10 @@ export function AufgabenFormular({ initial, kolonnen, alleAufgaben = [], onSave,
 
         {/* Soll-Stunden — Grundlage für den Produktivitätsvergleich gegen
             die über die Stempeluhr erfassten Ist-Stunden dieser Aufgabe.
-            Dauer — Grundlage für den kritischen Pfad (siehe unten). */}
+            Dauer — Grundlage für den kritischen Pfad (siehe unten).
+            Mindestbesetzung — Grenze für die "Mitarbeiter verschieben"-
+            Simulation: manche Arbeiten gehen nicht schneller mit mehr,
+            aber auch nicht mit beliebig wenig Personal. */}
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:9 }}>
           <div>
             <Label>Soll-Stunden (optional)</Label>
@@ -161,6 +164,20 @@ export function AufgabenFormular({ initial, kolonnen, alleAufgaben = [], onSave,
               onChange={e=>setA(p=>({...p, dauer_tage: e.target.value === "" ? null : Number(e.target.value)}))}
               placeholder="z.B. 3" style={inputStyle()} />
           </div>
+        </div>
+
+        {a.typ === "beton" && (
+          <div style={{ color:"var(--muted)", fontSize:10.5, marginTop:-4, marginBottom:9, lineHeight:1.4 }}>
+            Bei Betonage-Aufgaben bestimmt meist die Aushärtezeit (7–28 Tage, wetterabhängig) die Dauer,
+            nicht die Mannstärke — die Dauer hier entsprechend als Ausführung + Aushärtung ansetzen.
+          </div>
+        )}
+
+        <div style={{ marginBottom:9 }}>
+          <Label>Mindestbesetzung (optional)</Label>
+          <input type="number" min="1" step="1" value={a.mindest_mitarbeiter ?? ""}
+            onChange={e=>setA(p=>({...p, mindest_mitarbeiter: e.target.value === "" ? null : Number(e.target.value)}))}
+            placeholder="z.B. 4 — geht nicht mit weniger Leuten" style={inputStyle()} />
         </div>
 
         {/* Abhängigkeiten — diese Aufgabe kann laut Terminketten-Berechnung
