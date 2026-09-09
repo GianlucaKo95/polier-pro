@@ -20,7 +20,9 @@
 //   `secrets set` nötig.)
 //
 // ENDPOINT: https://<supabase-project>.supabase.co/functions/v1/ki-proxy
-// Erwartet: { prompt: string, maxTokens?: number }, Authorization: Bearer <User-JWT>
+// Erwartet, Authorization: Bearer <User-JWT>, und eine dieser Formen:
+//   { prompt: string, maxTokens?: number }                              — Einzel-Prompt
+//   { system?: string, messages: {role,content}[], maxTokens?: number } — mehrstufiger Chat
 // ═══════════════════════════════════════════════════════════════════════
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -51,14 +53,25 @@ serve(async (req: Request) => {
   const jwt = authHeader.replace(/^Bearer\s+/i, "");
   if (!jwt) return fehlerJSON("Nicht angemeldet.", 401);
 
-  let prompt: string, maxTokens: number;
+  // Zwei Aufrufformen: das ursprüngliche Einzel-Prompt { prompt, maxTokens }
+  // (Bautagebuch-KI) und { system, messages, maxTokens } für mehrstufige
+  // Chats mit Kontext (KI-Assistent) — beide laufen auf denselben
+  // Anthropic-Aufruf hinaus, nur mit bzw. ohne system-Parameter und mit
+  // einer oder mehreren messages.
+  let system: string | undefined, messages: Array<{ role: string; content: string }>, maxTokens: number;
   try {
     const body = await req.json();
-    prompt = body.prompt;
     maxTokens = body.maxTokens || 1000;
-    if (!prompt || typeof prompt !== "string") throw new Error("prompt fehlt");
+    if (Array.isArray(body.messages) && body.messages.length > 0) {
+      messages = body.messages;
+      system = typeof body.system === "string" ? body.system : undefined;
+    } else if (typeof body.prompt === "string" && body.prompt) {
+      messages = [{ role: "user", content: body.prompt }];
+    } else {
+      throw new Error("prompt oder messages fehlt");
+    }
   } catch {
-    return fehlerJSON("Ungültiger JSON-Body (erwartet: { prompt, maxTokens }).", 400);
+    return fehlerJSON("Ungültiger JSON-Body (erwartet: { prompt, maxTokens } oder { system, messages, maxTokens }).", 400);
   }
 
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
@@ -101,7 +114,8 @@ serve(async (req: Request) => {
       body: JSON.stringify({
         model: "claude-opus-5",
         max_tokens: maxTokens,
-        messages: [{ role: "user", content: prompt }],
+        ...(system ? { system } : {}),
+        messages,
       }),
     });
 

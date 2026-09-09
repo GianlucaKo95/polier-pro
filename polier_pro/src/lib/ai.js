@@ -1,4 +1,6 @@
 import { SUPABASE_URL } from "./supabase.js";
+import { betonCheck } from "./geo.js";
+import { AUFGABEN_TYPEN, AUFGABEN_STATUS } from "../config/konstanten.js";
 
 export async function generiereBerichtKI(diktat, projekt, kolonnen, wetter, session) {
   const kolonnenInfo = (kolonnen || []).map(k =>
@@ -45,6 +47,11 @@ Erstelle daraus einen vollständigen, professionellen Bautagesbericht. Antworte 
 // Datenbank (siehe supabase/functions/ki-proxy) und ruft Anthropic damit
 // auf — der Key selbst erreicht den Client nie.
 async function rufeClaudeAuf(prompt, maxTokens, session) {
+  const data = await rufeKiProxyAuf({ prompt, maxTokens }, session);
+  return data;
+}
+
+async function rufeKiProxyAuf(body, session) {
   if (!session?.access_token) {
     throw new Error("Keine gültige Sitzung für KI-Anfrage.");
   }
@@ -54,13 +61,88 @@ async function rufeClaudeAuf(prompt, maxTokens, session) {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${session.access_token}`,
     },
-    body: JSON.stringify({ prompt, maxTokens }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body?.error || `KI-Anfrage fehlgeschlagen (${res.status})`);
+    const fehlerBody = await res.json().catch(() => ({}));
+    throw new Error(fehlerBody?.error || `KI-Anfrage fehlgeschlagen (${res.status})`);
   }
   return res.json();
+}
+
+// ── KI-Assistent: Fragen zu echten Projektdaten ─────────────────────────
+// Baut aus Aufgaben, Kolonnen, Wettervorhersage und Terminprognose einen
+// System-Prompt mit klaren Leitplanken gegen Halluzination — die KI
+// bekommt NUR diese Daten und die Anweisung, nichts darüber hinaus zu
+// behaupten. Läuft als mehrstufiger Chat (verlauf), damit Rückfragen den
+// bisherigen Gesprächskontext behalten.
+function baueProjektKontext({ projekt, aufgaben = [], kolonnen = [], wetterVorhersage, terminprognose }) {
+  const heute = new Date().toLocaleDateString("de-DE", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
+
+  const offeneAufgaben = aufgaben.filter(a => a.status !== "abgeschlossen");
+  const aufgabenText = offeneAufgaben.map(a => {
+    const teile = [
+      AUFGABEN_TYPEN[a.typ]?.label || a.typ,
+      `Status: ${AUFGABEN_STATUS[a.status]?.label || a.status}`,
+    ];
+    if (a.faellig_am) teile.push(`fällig am ${new Date(a.faellig_am).toLocaleDateString("de-DE")}`);
+    if (a.zustaendig) teile.push(`zuständig: ${a.zustaendig}`);
+    if (a.soll_stunden) teile.push(`Soll-Stunden: ${a.soll_stunden}`);
+    if (a.ist_mangel) teile.push("MANGEL");
+    if (a.prioritaet === "kritisch") teile.push("PRIORITÄT KRITISCH");
+    return `- "${a.titel}" (${teile.join(", ")})`;
+  }).join("\n") || "keine offenen Aufgaben erfasst";
+
+  const kolonnenText = kolonnen.map(k =>
+    `- ${k.name}: ${k.mitarbeiter?.length || 0} Mann${k.vorarbeiter ? `, Vorarbeiter ${k.vorarbeiter}` : ""}, Einsatz: ${k.einsatz || "—"}`
+  ).join("\n") || "keine Kolonnen erfasst";
+
+  const wetterText = (wetterVorhersage || []).map(f => {
+    const warn = betonCheck({ temp: f.max, wind: f.wind, rain: f.rain });
+    const status = warn.length ? warn.join("; ") : "keine Einschränkungen für Betonage";
+    return `- ${f.day} ${new Date(f.date).toLocaleDateString("de-DE")}: ${f.min}–${f.max}°C, Regen ${f.rain}mm, Wind ${f.wind}km/h → ${status}`;
+  }).join("\n") || "keine Wettervorhersage verfügbar";
+
+  const terminText = terminprognose?.zielTermin
+    ? `Berechneter Fertigstellungstermin: ${terminprognose.projektEnde.toLocaleDateString("de-DE")}. `
+      + `Ziel laut gesetzten Fälligkeitsdaten: ${terminprognose.zielTermin.toLocaleDateString("de-DE")}. `
+      + (terminprognose.deltaTage > 0
+        ? `Aktuell ${terminprognose.deltaTage} Tag(e) Verzug gegenüber diesem Ziel.`
+        : "Aktuell im Plan.")
+    : "keine Terminberechnung möglich (keine Fälligkeitsdaten an Aufgaben gesetzt)";
+
+  return `Du bist ein erfahrener Baustellen-Assistent in der App "Polaris". Du beantwortest Fragen eines Poliers, Vorarbeiters oder Bauleiters ausschließlich anhand der unten aufgeführten echten Projektdaten.
+
+VERBINDLICHE REGELN:
+- Erfinde niemals Zahlen, Prozentangaben, Uhrzeiten oder Fakten, die sich nicht aus den Daten unten ableiten lassen.
+- Wenn eine angefragte Information nicht in den Daten enthalten ist (z.B. Wetter für ein Datum außerhalb der 7-Tage-Vorhersage, eine nicht existierende Aufgabe oder Kolonne), sage das ausdrücklich — rate niemals.
+- Bei sicherheitsrelevanten Einschätzungen (insbesondere Betonage/Wetter) nenne die konkreten Grenzwerte, die zur Einschätzung geführt haben, und erwähne verbleibende Unsicherheit statt falscher Präzision vorzutäuschen.
+- Antworte kurz, konkret und in der Sprache eines erfahrenen Poliers — keine Floskeln, keine Wiederholung der Frage.
+
+HEUTE: ${heute}
+PROJEKT: ${projekt?.name || "—"}${projekt?.ort ? `, ${projekt.ort}` : ""}
+
+OFFENE AUFGABEN:
+${aufgabenText}
+
+KOLONNEN:
+${kolonnenText}
+
+WETTERVORHERSAGE (7 Tage, sofern verfügbar):
+${wetterText}
+
+TERMINPROGNOSE:
+${terminText}`;
+}
+
+export async function kiProjektFrage(frage, verlauf, kontext, session) {
+  const system = baueProjektKontext(kontext);
+  const messages = [
+    ...verlauf.map(m => ({ role: m.rolle === "ki" ? "assistant" : "user", content: m.text })),
+    { role: "user", content: frage },
+  ];
+  const data = await rufeKiProxyAuf({ system, messages, maxTokens: 700 }, session);
+  return data.content?.find(b => b.type === "text")?.text || "";
 }
 
 export async function kiTagesabschluss(diktat, projekt, kolonnen, wetter, session) {

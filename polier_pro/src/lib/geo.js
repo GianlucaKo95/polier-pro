@@ -21,6 +21,32 @@ export function betonCheck(w) {
   return warn;
 }
 
+// Einmalige 7-Tage-Vorhersage für einen Standort (Ort/PLZ) — dieselbe
+// Geocoding- + Open-Meteo-Logik wie WeatherView, aber als einzelner Abruf
+// statt reaktiver Komponente. Für Stellen, die nur einen aktuellen
+// Datenschnappschuss brauchen (z.B. die KI-Kontextbildung), statt eine
+// zweite <WeatherView> zu mounten.
+export async function holeWettervorhersage(ort, plz) {
+  if (!ort?.trim() && !plz?.trim()) return null;
+  const ziel = plz?.trim() ? await geocodePLZ(plz, ort) : await geocodeAdresse(ort);
+  if (!ziel) return null;
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${ziel.lat}&longitude=${ziel.lon}`
+      + `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,weather_code`
+      + `&timezone=Europe%2FBerlin&forecast_days=7`;
+    const res = await fetch(url);
+    const data = await res.json();
+    return data.daily.time.slice(0, 7).map((day, i) => ({
+      day:  ["So","Mo","Di","Mi","Do","Fr","Sa"][new Date(day).getDay()],
+      date: day,
+      max:  Math.round(data.daily.temperature_2m_max[i]),
+      min:  Math.round(data.daily.temperature_2m_min[i]),
+      rain: data.daily.precipitation_sum[i],
+      wind: Math.round(data.daily.wind_speed_10m_max[i]),
+    }));
+  } catch { return null; }
+}
+
 export async function getGPSPosition() {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {

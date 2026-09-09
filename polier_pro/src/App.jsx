@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Bell, LogOut, Plus, MapPin, Hash, TriangleAlert, LayoutGrid,
   CircleCheckBig, NotebookPen, Users, Clock, Ellipsis, ChevronRight,
   Building2, Calendar, Euro, CloudSun, ChartColumn, FileText, Settings,
-  UserCog, RefreshCw, User } from "lucide-react";
+  UserCog, RefreshCw, User, Sparkles } from "lucide-react";
 import { useTheme } from "./hooks/useTheme.js";
 import { useAuth } from "./hooks/useAuth.js";
 import { DEFAULT_EINHEITSPREISE, DEFAULT_LV_VORLAGEN, ONBOARDING_KEY, ROLLEN, PROJEKTTYPEN } from "./config/konstanten.js";
@@ -31,6 +31,7 @@ import { WeatherView } from "./views/WeatherView.jsx";
 import { KolonnenView } from "./views/KolonnenView.jsx";
 import { TagesbuchView } from "./views/TagesbuchView.jsx";
 import { AufgabenView } from "./views/AufgabenView.jsx";
+import { KiFrageView } from "./views/KiFrageView.jsx";
 import { KostenView } from "./views/KostenView.jsx";
 import { StundenExportView } from "./views/StundenExportView.jsx";
 import { AngebotView } from "./views/AngebotView.jsx";
@@ -863,6 +864,7 @@ export default function PolierApp() {
     { id:"tagebuch",      icon:"📋",  label:"Tagebuch",    rollen:["administrator","polier","vorarbeiter"] },
     { id:"stempeln",      icon:"⏱️",  label:"Stempeln",    rollen:["administrator","polier","vorarbeiter","facharbeiter"] },
     { id:"stunden",       icon:"📊",  label:"Stunden",     rollen:["administrator","bauleiter","polier","vorarbeiter"] },
+    { id:"ki_frage",      icon:"💬",  label:"KI fragen",   rollen:["administrator","bauleiter","polier","vorarbeiter"] },
     { id:"angebot",       icon:"📄",  label:"Angebot",     rollen:["administrator"] },
     { id:"admin_params",  icon:"⚙️",  label:"Parameter",   rollen:["administrator"] },
     { id:"nutzer",        icon:"👥",  label:"Nutzer",      rollen:["administrator"] },
@@ -878,7 +880,7 @@ export default function PolierApp() {
   const aktivInMehr = mehrTabs.some(t => t.id === tab);
   const TAB_ICONS = { dashboard:LayoutGrid, aufgaben:CircleCheckBig, tagebuch:NotebookPen,
     kolonnen:Users, stempeln:Clock, gantt:Calendar, kosten:Euro, wetter:CloudSun,
-    stunden:ChartColumn, angebot:FileText, admin_params:Settings, nutzer:UserCog, profil:User };
+    stunden:ChartColumn, angebot:FileText, admin_params:Settings, nutzer:UserCog, profil:User, ki_frage:Sparkles };
 
   return (
     // position:fixed auf html/body war der Bug (siehe theme.css) — aber
@@ -986,6 +988,7 @@ export default function PolierApp() {
               : projekte}
             session={auth.session} kolonnen={kolonnen} aufgaben={felder} />}
         {tab === "stunden"       && <StundenExportView profil={aktiveProfil} session={auth.session} projekte={projekte} darfAlleSehen={rolleConfig?.kannBearbeiten !== false && aktiveRolle !== "vorarbeiter"} />}
+        {tab === "ki_frage"      && <KiFrageView projekt={projekt} aufgaben={felder} kolonnen={kolonnen} session={auth.session} />}
         {tab === "angebot"       && <AngebotView projekt={projekt} aufgaben={felder} einheitspreise={einheitspreise} lvVorlagen={lvVorlagen} eigeneFirma={eigeneFirma} />}
         {tab === "admin_params" && <AdminParameterView einheitspreise={einheitspreise} setEinheitspreise={setEinheitspreise} lvVorlagen={lvVorlagen} setLvVorlagen={setLvVorlagen} />}
         {tab === "nutzer"       && <NutzerVerwaltungView session={auth.session} kolonnen={kolonnen} firmaId={firma?.id} />}
