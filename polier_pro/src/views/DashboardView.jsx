@@ -42,7 +42,15 @@ export function DashboardView({ aufgaben, kolonnen, sbConnected, onNavigate, pro
     else onNavigate(tabId);
   }
 
-  const hatOffeneBetonage = offeneAufgaben.some(a => a.typ === "beton");
+  // Nur Betonage-Aufgaben, die auch im angezeigten Zeitraum liegen (überfällig
+  // oder in den nächsten 7 Tagen fällig — deckt sich mit der 7-Tage-Vorschau
+  // im Wetterbanner), machen eine Wetter-Einschätzung für "Betonage möglich"
+  // überhaupt relevant. Eine Betonage-Aufgabe in 3 Wochen wird vom heutigen
+  // Wetter nicht betroffen sein.
+  const heute = new Date(); heute.setHours(0,0,0,0);
+  const in7Tagen = new Date(heute); in7Tagen.setDate(in7Tagen.getDate() + 7);
+  const hatOffeneBetonage = offeneAufgaben.some(a =>
+    a.typ === "beton" && a.faellig_am && new Date(a.faellig_am) <= in7Tagen);
   // wetterInfo kommt auch bei fehlgeschlagenem Abruf, dann aber mit
   // weather:null — nur dann gilt das Risiko als tatsächlich eingeschätzt.
   const wetterVorhanden = !!wetterInfo?.weather;
@@ -52,7 +60,8 @@ export function DashboardView({ aufgaben, kolonnen, sbConnected, onNavigate, pro
 
   return (
     <div>
-      <WeatherView compact ort={projekt?.ort} plz={projekt?.plz} projektId={projekt?.id} onData={setWetterInfo} />
+      <WeatherView compact ort={projekt?.ort} plz={projekt?.plz} projektId={projekt?.id}
+        onData={setWetterInfo} hatOffeneBetonage={hatOffeneBetonage} />
 
       {/* Baustellen-Cockpit — automatischer Tagesüberblick, bevor man
           irgendwo hinklicken muss. */}
