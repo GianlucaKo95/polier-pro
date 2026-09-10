@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { FileText, Plus } from "lucide-react";
 import { AngebotEditor } from "./AngebotEditor.jsx";
+import { useBackButton } from "../hooks/useBackButton.js";
 
 export function AngebotView({ projekt, aufgaben, einheitspreise, lvVorlagen, eigeneFirma }) {
   const [angebote,    setAngebote]    = useState([]);
   const [aktAngebot,  setAktAngebot]  = useState(null);
   const [neuAngebot,  setNeuAngebot]  = useState(false);
+  useBackButton(aktAngebot, () => setAktAngebot(null));
 
   function neuesAngebot() {
     const a = {

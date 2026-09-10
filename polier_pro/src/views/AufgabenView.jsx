@@ -6,6 +6,7 @@ import { leereAufgabe } from "../lib/utils.js";
 import { FilterBtn } from "../components/FilterBtn.jsx";
 import { AufgabenKarte } from "../components/AufgabenKarte.jsx";
 import { AUFGABEN_STATUS, AUFGABEN_TYPEN } from "../config/konstanten.js";
+import { useBackButton } from "../hooks/useBackButton.js";
 
 export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, darfBearbeiten = true, initialFilter = "alle",
   kannVorschlagen = false, onVorschlagen, onEntscheiden, zeitbuchungen = [] }) {
@@ -14,6 +15,9 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
   const [neuAufgabe,  setNeuAufgabe]  = useState(false);
   const [neuMangel,   setNeuMangel]   = useState(false);
   const [editAufgabe, setEditAufgabe] = useState(null);
+  useBackButton(neuAufgabe, () => setNeuAufgabe(false));
+  useBackButton(neuMangel,  () => setNeuMangel(false));
+  useBackButton(editAufgabe, () => setEditAufgabe(null));
 
   const gefiltert = aufgaben.filter(a => {
     if (filter === "alle")      return true;

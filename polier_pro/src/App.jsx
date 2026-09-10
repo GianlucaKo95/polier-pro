@@ -5,6 +5,7 @@ import { Bell, LogOut, Plus, MapPin, Hash, TriangleAlert, LayoutGrid,
   UserCog, RefreshCw, User, Sparkles, FlaskConical } from "lucide-react";
 import { useTheme } from "./hooks/useTheme.js";
 import { useAuth } from "./hooks/useAuth.js";
+import { useBackButton } from "./hooks/useBackButton.js";
 import { DEFAULT_EINHEITSPREISE, DEFAULT_LV_VORLAGEN, ONBOARDING_KEY, ROLLEN, PROJEKTTYPEN } from "./config/konstanten.js";
 import { usePWA } from "./hooks/usePWA.js";
 import { usePushNotifications } from "./hooks/usePushNotifications.js";
@@ -106,6 +107,39 @@ export default function PolierApp() {
 
   const [aktivId,       setAktivId]     = useState(null);
   const [tab,           setTab]         = useState("dashboard");
+
+  // Browser-Zurück mit Baustellen-/Tab-Navigation verbinden — bisher gab es
+  // gar kein history.pushState() in der App, ein Klick auf den Browser-
+  // Zurück-Pfeil verließ deshalb sofort die Seite statt einen Tab oder die
+  // Baustelle zurückzuwechseln. Jede Änderung von aktivId/tab legt jetzt
+  // einen Verlaufseintrag an; popstate (Browser-Zurück, Android-Geste)
+  // stellt den vorherigen Stand direkt wieder her, ohne die App zu verlassen.
+  const historyBereitRef = useRef(false);
+  const historySkipRef   = useRef(false);
+
+  useEffect(() => {
+    function aufPopState(e) {
+      const s = e.state || {};
+      historySkipRef.current = true;
+      setAktivId(s.aktivId ?? null);
+      setTab(s.tab ?? "dashboard");
+    }
+    window.addEventListener("popstate", aufPopState);
+    return () => window.removeEventListener("popstate", aufPopState);
+  }, []);
+
+  useEffect(() => {
+    if (!historyBereitRef.current) {
+      // Erster Lauf: aktuellen Stand ersetzen statt einen Eintrag anlegen —
+      // sonst wäre der allererste Zurück-Klick wirkungslos.
+      window.history.replaceState({ aktivId, tab }, "");
+      historyBereitRef.current = true;
+      return;
+    }
+    if (historySkipRef.current) { historySkipRef.current = false; return; }
+    window.history.pushState({ aktivId, tab }, "");
+  }, [aktivId, tab]);
+
   const [aufgabenFilter,setAufgabenFilter] = useState("alle"); // für Dashboard-Sprungziele
   const [zeigeMehr,     setZeigeMehr]    = useState(false);
   const [mehrDragY,     setMehrDragY]    = useState(0);
@@ -114,6 +148,8 @@ export default function PolierApp() {
   const [sbConnected,   setSbConn]      = useState(false);
   const [neuProjekt,    setNeuProjekt]  = useState(false);
   const [editProjekt,   setEditProjekt] = useState(false);
+  useBackButton(neuProjekt,  () => setNeuProjekt(false));
+  useBackButton(editProjekt, () => setEditProjekt(false));
   const [eigeneFirma,   setEigeneFirma] = useState({ name:"", strasse:"", plz:"", ort:"", telefon:"", email:"", geschaeftsfuehrer:"", steuernummer:"", gewerke:[], logo:null });
   const [subs,          setSubs]        = useState([]);
   const [homeTab,       setHomeTab]     = useState("projekte");

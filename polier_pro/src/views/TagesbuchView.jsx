@@ -8,6 +8,7 @@ import { PDFExportButton } from "../components/PDFExportButton.jsx";
 import { RevisionssichererExport } from "./RevisionssichererExport.jsx";
 import { Label, inputStyle } from "../components/Label.jsx";
 import { DiktierFeld } from "../components/DiktierFeld.jsx";
+import { useBackButton } from "../hooks/useBackButton.js";
 
 export function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eigeneFirma, kolonnen, offlineSpeichern, aufgaben, setAufgaben, session }) {
   const [open,       setOpen]       = useState(false);
@@ -17,6 +18,8 @@ export function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eig
   const [uploading,  setUploading]  = useState(false);
   const [wetter,     setWetter]     = useState(null);
   const fileRef = useRef(null);
+  useBackButton(open,   () => setOpen(false));
+  useBackButton(detail, () => setDetail(null));
 
   // Wetter für PDF laden
   useEffect(() => {
