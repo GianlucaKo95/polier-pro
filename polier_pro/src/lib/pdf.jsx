@@ -272,7 +272,20 @@ export function buildBetonprotokollHTML(feld, projekt, eigeneFirma, wetter) {
 export function druckePDF(htmlContent, dateiname) {
   const win = window.open("", "_blank", "width=900,height=700");
   if (!win) { alert("Popup-Blocker aktiv — bitte Popups für diese Seite erlauben."); return; }
-  win.document.write(htmlContent);
+  // Das Druck-Fenster öffnet als echtes separates window.open()-Popup —
+  // in eingebetteten Kontexten (Home-Assistant-Panel-iframe, Companion-App-
+  // WebView) fehlt dem oft die native Fenster-Chrome (keine Titelleiste mit
+  // Schließen-X), sodass Nutzer dort keine Möglichkeit hatten, das Fenster
+  // wieder loszuwerden. Ein eigener, im Druck selbst ausgeblendeter
+  // Schließen-Button behebt das unabhängig vom Embedding-Kontext.
+  const mitSchliessenButton = htmlContent.replace("</body>",
+    `<button onclick="window.close()" style="position:fixed;top:14px;right:14px;z-index:999;
+      background:#1a1a1a;color:#F5C400;border:none;border-radius:8px;padding:10px 18px;
+      font-family:Arial,sans-serif;font-size:13px;font-weight:700;cursor:pointer;
+      box-shadow:0 2px 10px rgba(0,0,0,0.3);" class="polaris-schliessen-btn">✕ Schließen</button>
+    <style>@media print { .polaris-schliessen-btn { display:none !important; } }</style>
+    </body>`);
+  win.document.write(mitSchliessenButton);
   win.document.close();
   win.onload = () => {
     win.focus();
