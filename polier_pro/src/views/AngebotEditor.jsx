@@ -4,6 +4,7 @@ import { ClipboardList, X, CircleCheckBig, ChevronLeft, ChartColumn, FileText, S
 import { AUFGABEN_TYPEN } from "../config/konstanten.js";
 import { inputStyle, Label } from "../components/Label.jsx";
 import { escapeHtml } from "../lib/utils.js";
+import { druckePDF } from "../lib/pdf.jsx";
 
 export function AngebotEditor({ angebot, onSave, onClose, aufgaben, einheitspreise, lvVorlagen, projekt, eigeneFirma }) {
   const [a,         setA]         = useState(angebot);
@@ -156,11 +157,7 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
 
 </div></body></html>`;
 
-    const win = window.open("","_blank","width=900,height=700");
-    if (!win) return;
-    win.document.write(html);
-    win.document.close();
-    win.onload = () => { win.focus(); win.print(); };
+    druckePDF(html, `Angebot_${a.titel || a.id}.pdf`);
   }
 
   function exportCSV() {

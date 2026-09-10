@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { PenLine, X, Check, FileText, CircleCheckBig } from "lucide-react";
 import { UnterschriftPad } from "../components/UnterschriftPad.jsx";
 import { escapeHtml, sha256Hex } from "../lib/utils.js";
+import { druckePDF } from "../lib/pdf.jsx";
 import { useBackButton } from "../hooks/useBackButton.js";
 
 export function RevisionssichererExport({ bericht, projekt, eigeneFirma, wetter,
@@ -154,11 +155,7 @@ ${offeneMaengel.length > 0 ? `<div class="section">
 
 </div></body></html>`;
 
-    const win = window.open("","_blank","width=900,height=700");
-    if (!win) return;
-    win.document.write(html);
-    win.document.close();
-    win.onload = () => { win.focus(); win.print(); };
+    druckePDF(html, `Tagesbericht_${datum || bericht?.datum || "export"}.pdf`);
     setExportiert(true);
   }
 
