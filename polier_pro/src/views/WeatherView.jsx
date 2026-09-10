@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { CircleX, Wind, Droplet, CloudRain, CircleCheckBig, Ban, MapPin, Blocks, Calendar, ChevronDown, Clock3 } from "lucide-react";
 import { geocodePLZ, geocodeAdresse, wmoIcon, betonCheck, holeStuendlicheVorhersage, betonageEignung, besteZeitfenster } from "../lib/geo.js";
 
-export function WeatherView({ compact = false, ort = null, plz = null, projektId = null, onData }) {
+export function WeatherView({ compact = false, ort = null, plz = null, projektId = null, onData, hatOffeneBetonage = true }) {
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loc, setLoc] = useState({ lat: 48.137, lon: 11.576, name: "München" });
@@ -119,12 +119,14 @@ export function WeatherView({ compact = false, ort = null, plz = null, projektId
             <Wind size={11} /> {weather.wind} km/h · <Droplet size={11} /> {weather.humidity}% · <CloudRain size={11} /> {weather.rain}mm
           </div>
         </div>
-        <div style={{ background: ok ? "var(--green)" : "var(--orange)", color:"#fff", borderRadius:8, padding:"6px 14px", fontWeight:700, fontSize:13, textAlign:"center",
-          display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
-          {ok ? <><CircleCheckBig size={16} /> Betonage möglich</> : <><Ban size={16} /> Prüfen</>}
-        </div>
+        {hatOffeneBetonage && (
+          <div style={{ background: ok ? "var(--green)" : "var(--orange)", color:"#fff", borderRadius:8, padding:"6px 14px", fontWeight:700, fontSize:13, textAlign:"center",
+            display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
+            {ok ? <><CircleCheckBig size={16} /> Betonage möglich</> : <><Ban size={16} /> Prüfen</>}
+          </div>
+        )}
       </div>
-      {warn.length > 0 && (
+      {hatOffeneBetonage && warn.length > 0 && (
         <div style={{ background:"#3A1A1A", borderRadius:8, padding:"6px 12px", marginTop:10 }}>
           {warn.map((w,i) => <div key={i} style={{ color:"#FF9999", fontSize:12 }}>{w}</div>)}
         </div>
