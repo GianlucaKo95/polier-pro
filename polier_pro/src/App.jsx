@@ -606,6 +606,8 @@ export default function PolierApp() {
           onSave={handleSaveProjekt}
           onClose={() => setNeuProjekt(false)}
           speicherFehler={projekteLadeFehler}
+          session={auth.session}
+          istAdmin={aktiveRolle === "administrator"}
         />
       );
     }
@@ -849,6 +851,8 @@ export default function PolierApp() {
         onSave={handleSaveProjekt}
         onClose={() => setNeuProjekt(false)}
         speicherFehler={projekteLadeFehler}
+        session={auth.session}
+        istAdmin={aktiveRolle === "administrator"}
       />
     );
   }

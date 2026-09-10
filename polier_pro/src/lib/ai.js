@@ -145,6 +145,50 @@ export async function kiProjektFrage(frage, verlauf, kontext, session) {
   return data.content?.find(b => b.type === "text")?.text || "";
 }
 
+const GUELTIGE_PROJEKTTYPEN = ["hochbau", "tiefgarage", "tiefbau", "dach", "pv"];
+
+// Extrahiert Baustellen-Stammdaten aus einem Diktat — füllt nur das
+// Neue-Baustelle-Formular vor, legt NICHTS selbst an. Der Administrator
+// sieht die übernommenen Felder vor dem Speichern und kann sie noch
+// korrigieren; das Anlegen selbst läuft weiter über den normalen
+// "Speichern"-Klick im Formular.
+export async function kiBaustelleAnlegen(diktat, session) {
+  const prompt = `Du extrahierst aus einem gesprochenen Diktat die Stammdaten für eine neue Baustelle in einer Bauleitungs-App.
+
+Diktat:
+"${diktat}"
+
+Erfinde NICHTS, was im Diktat nicht vorkommt — nicht erwähnte Felder bleiben ein leerer String. Antworte NUR mit einem JSON-Objekt ohne Markdown:
+{
+  "typ": "hochbau|tiefgarage|tiefbau|dach|pv — welche Bauart am ehesten passt, sonst \\"hochbau\\"",
+  "name": "Projektname",
+  "adresse": "Straße und Hausnummer",
+  "plz": "Postleitzahl",
+  "ort": "Ort",
+  "projektnummer": "Projekt-/Auftragsnummer falls genannt",
+  "bauleiter": "Name des Bauleiters falls genannt",
+  "auftraggeber": "Name des Auftraggebers falls genannt"
+}`;
+
+  const data = await rufeClaudeAuf(prompt, 500, session);
+  const text = data.content?.find(b => b.type === "text")?.text || "{}";
+  try {
+    const r = JSON.parse(text.replace(/```json|```/g, "").trim());
+    return {
+      typ:           GUELTIGE_PROJEKTTYPEN.includes(r.typ) ? r.typ : "hochbau",
+      name:          r.name || "",
+      adresse:       r.adresse || "",
+      plz:           r.plz || "",
+      ort:           r.ort || "",
+      projektnummer: r.projektnummer || "",
+      bauleiter:     r.bauleiter || "",
+      auftraggeber:  r.auftraggeber || "",
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function kiTagesabschluss(diktat, projekt, kolonnen, wetter, session) {
   const heute = new Date().toLocaleDateString("de-DE");
   const wetterInfo = wetter
