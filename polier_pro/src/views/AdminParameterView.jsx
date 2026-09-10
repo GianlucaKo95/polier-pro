@@ -3,12 +3,15 @@ import { createPortal } from "react-dom";
 import { Settings, Euro, ClipboardList, Pencil, X, Plus } from "lucide-react";
 import { PreisFormular } from "./PreisFormular.jsx";
 import { VorlageFormular } from "./VorlageFormular.jsx";
+import { useBackButton } from "../hooks/useBackButton.js";
 
 export function AdminParameterView({ einheitspreise, setEinheitspreise, lvVorlagen, setLvVorlagen }) {
   const [aktiv,    setAktiv]    = useState("preise"); // preise | vorlagen
   const [neuPreis, setNeuPreis] = useState(null);
   const [neuVorlage,setNeuVorlage] = useState(null);
   const [editPreis, setEditPreis] = useState(null);
+  useBackButton(neuPreis || editPreis, () => { setNeuPreis(null); setEditPreis(null); });
+  useBackButton(neuVorlage, () => setNeuVorlage(null));
 
   function preisLoeschen(id) {
     setEinheitspreise(prev => prev.filter(p => p.id !== id));

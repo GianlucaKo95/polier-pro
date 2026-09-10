@@ -5,6 +5,7 @@ import { sbFetch } from "../lib/supabase.js";
 import { ROLLEN } from "../config/konstanten.js";
 import { ibanMaskiert } from "../lib/utils.js";
 import { EinladungGenerieren } from "./EinladungGenerieren.jsx";
+import { useBackButton } from "../hooks/useBackButton.js";
 
 const AENDERUNGS_FELD_LABEL = {
   strasse: "Straße", plz: "PLZ", ort: "Ort", iban: "IBAN", kontoinhaber: "Kontoinhaber",
@@ -18,6 +19,7 @@ export function NutzerVerwaltungView({ session, kolonnen = [], firmaId = null })
   const [ansicht,     setAnsicht]     = useState("nutzer"); // nutzer | einladungen | aenderungen
   const [editNutzer,  setEditNutzer]  = useState(null);
   const [zeigeEinladen, setZeigeEinladen] = useState(false);
+  useBackButton(zeigeEinladen, () => setZeigeEinladen(false));
   const [aktionsFehler, setAktionsFehler] = useState("");
   const [ibanAufgedeckt, setIbanAufgedeckt] = useState(new Set());
 

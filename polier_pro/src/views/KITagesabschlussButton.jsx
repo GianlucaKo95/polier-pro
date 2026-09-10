@@ -3,9 +3,11 @@ import { createPortal } from "react-dom";
 import { Bot, X, CircleX, Square, Mic, Sparkles, ClipboardList, CircleCheckBig, TriangleAlert, Wrench, CloudRain, ArrowLeft } from "lucide-react";
 import { kiTagesabschluss } from "../lib/ai.js";
 import { AUFGABEN_TYPEN, AUFGABEN_PRIO } from "../config/konstanten.js";
+import { useBackButton } from "../hooks/useBackButton.js";
 
 export function KITagesabschlussButton({ projekt, kolonnen, wetter, onErgebnis, session }) {
   const [offen,    setOffen]    = useState(false);
+  useBackButton(offen, () => setOffen(false));
   const [diktat,   setDiktat]   = useState("");
   const [laden,    setLaden]    = useState(false);
   const [ergebnis, setErgebnis] = useState(null);

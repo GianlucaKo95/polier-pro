@@ -5,6 +5,7 @@ import { KolonnenSammelstempel } from "./KolonnenSammelstempel.jsx";
 import { sbFetch } from "../lib/supabase.js";
 import { getGPSPosition, reverseGeocode, geocodeAdresse, haversineMeters } from "../lib/geo.js";
 import { Label, inputStyle } from "../components/Label.jsx";
+import { useBackButton } from "../hooks/useBackButton.js";
 
 // Ab dieser Entfernung zur (geocodierten) Projektadresse gilt eine
 // Stempelung als geografisch unplausibel — reine Hinweis-Schwelle, kein
@@ -28,6 +29,7 @@ export function StempeluhrView({ profil, projekte, session, kolonnen = [], aufga
   const [taetigkeit,  setTaetigkeit]  = useState("beton");
   const [aufgabeId,   setAufgabeId]   = useState(null);
   const [zeigeSammel, setZeigeSammel] = useState(false);
+  useBackButton(zeigeSammel, () => setZeigeSammel(false));
 
   // Offene Aufgaben des gewählten Projekts — Grundlage für den späteren
   // Soll/Ist-Stundenvergleich pro Aufgabe. Optional: nicht jede Arbeitszeit
