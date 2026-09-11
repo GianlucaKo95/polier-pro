@@ -67,7 +67,16 @@ async function rufeKiProxyAuf(body, session) {
     const fehlerBody = await res.json().catch(() => ({}));
     throw new Error(fehlerBody?.error || `KI-Anfrage fehlgeschlagen (${res.status})`);
   }
-  return res.json();
+  const data = await res.json();
+  // stop_reason:"refusal" kommt als HTTP 200 zurück (Sicherheits-Klassifikator
+  // hat abgelehnt, z.B. weil der ki-proxy trotz "default"-Fallback kein
+  // Ersatzmodell mehr fand) — content ist dann leer oder unvollständig. Ohne
+  // diese Prüfung würden alle Aufrufer hier einfach ein leeres/falsches
+  // Ergebnis weiterverarbeiten, statt einen sichtbaren Fehler zu zeigen.
+  if (data.stop_reason === "refusal") {
+    throw new Error("Die KI konnte diese Anfrage nicht bearbeiten (vom Sicherheitsfilter abgelehnt). Bitte das Diktat umformulieren oder erneut versuchen.");
+  }
+  return data;
 }
 
 // ── KI-Assistent: Fragen zu echten Projektdaten ─────────────────────────
@@ -141,7 +150,7 @@ export async function kiProjektFrage(frage, verlauf, kontext, session) {
     ...verlauf.map(m => ({ role: m.rolle === "ki" ? "assistant" : "user", content: m.text })),
     { role: "user", content: frage },
   ];
-  const data = await rufeKiProxyAuf({ system, messages, maxTokens: 700 }, session);
+  const data = await rufeKiProxyAuf({ system, messages, maxTokens: 1200 }, session);
   return data.content?.find(b => b.type === "text")?.text || "";
 }
 
@@ -170,7 +179,7 @@ Erfinde NICHTS, was im Diktat nicht vorkommt — nicht erwähnte Felder bleiben 
   "auftraggeber": "Name des Auftraggebers falls genannt"
 }`;
 
-  const data = await rufeClaudeAuf(prompt, 500, session);
+  const data = await rufeClaudeAuf(prompt, 800, session);
   const text = data.content?.find(b => b.type === "text")?.text || "{}";
   try {
     const r = JSON.parse(text.replace(/```json|```/g, "").trim());
@@ -231,7 +240,12 @@ Antworte NUR mit diesem JSON (kein Markdown, keine Erklärungen):
   "wetter_warnung": "Warnung wenn morgen kritisches Wetter für geplante Arbeiten (oder leerer String)"
 }`;
 
-  const data = await rufeClaudeAuf(prompt, 1500, session);
+  // 1500 war bei einem ausführlichen Diktat (mehrere Kolonnen, mehrere neue
+  // Aufgaben UND Mängel als JSON-Arrays) knapp genug, dass die Antwort mitten
+  // im JSON abgeschnitten werden konnte — der Polier bekam dann ausgerechnet
+  // beim größten Tagesabschluss nur "KI-Antwort konnte nicht ausgewertet
+  // werden" statt eines Ergebnisses.
+  const data = await rufeClaudeAuf(prompt, 4000, session);
   const text = data.content?.find(b=>b.type==="text")?.text || "{}";
   try {
     return JSON.parse(text.trim());
