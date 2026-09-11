@@ -67,7 +67,16 @@ async function rufeKiProxyAuf(body, session) {
     const fehlerBody = await res.json().catch(() => ({}));
     throw new Error(fehlerBody?.error || `KI-Anfrage fehlgeschlagen (${res.status})`);
   }
-  return res.json();
+  const data = await res.json();
+  // stop_reason:"refusal" kommt als HTTP 200 zurück (Sicherheits-Klassifikator
+  // hat abgelehnt, z.B. weil der ki-proxy trotz "default"-Fallback kein
+  // Ersatzmodell mehr fand) — content ist dann leer oder unvollständig. Ohne
+  // diese Prüfung würden alle Aufrufer hier einfach ein leeres/falsches
+  // Ergebnis weiterverarbeiten, statt einen sichtbaren Fehler zu zeigen.
+  if (data.stop_reason === "refusal") {
+    throw new Error("Die KI konnte diese Anfrage nicht bearbeiten (vom Sicherheitsfilter abgelehnt). Bitte das Diktat umformulieren oder erneut versuchen.");
+  }
+  return data;
 }
 
 // ── KI-Assistent: Fragen zu echten Projektdaten ─────────────────────────

@@ -110,10 +110,17 @@ serve(async (req: Request) => {
         "Content-Type": "application/json",
         "x-api-key": firma.anthropic_api_key,
         "anthropic-version": "2023-06-01",
+        // Claude Opus 5 kann Anfragen per Sicherheits-Klassifikator ablehnen
+        // (HTTP 200, stop_reason:"refusal") — ohne fallbacks würde das einfach
+        // als leere Antwort beim Nutzer ankommen. "default" lässt Anthropic
+        // serverseitig automatisch auf ein passendes Ersatzmodell ausweichen,
+        // statt dass wir hier ein festes Modell pflegen müssten.
+        "anthropic-beta": "server-side-fallback-2026-07-01",
       },
       body: JSON.stringify({
         model: "claude-opus-5",
         max_tokens: maxTokens,
+        fallbacks: "default",
         ...(system ? { system } : {}),
         messages,
       }),
