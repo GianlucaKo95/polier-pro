@@ -2,11 +2,15 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { PlanErkennung } from "./PlanErkennung.jsx";
 import { leereAufgabe } from "../lib/utils.js";
-import { AUFGABEN_VORLAGEN, AUFGABEN_TYPEN } from "../config/konstanten.js";
+import { AUFGABEN_TYPEN, aufgabenVorlagenFuer, extraFeldLabelFuer,
+  PROJEKTTYPEN_MIT_IMMER_SICHTBAREN_EXTRAFELDERN } from "../config/konstanten.js";
 import { Label, inputStyle } from "../components/Label.jsx";
 
-export function SchnellErstellung({ onSave, onClose }) {
+export function SchnellErstellung({ onSave, onClose, projektTyp }) {
   const [modus, setModus] = useState("vorlage"); // vorlage | einzeln | liste | plan
+  const vorlagen = aufgabenVorlagenFuer(projektTyp);
+  const extraLabel = extraFeldLabelFuer(projektTyp);
+  const immerExtraFelder = PROJEKTTYPEN_MIT_IMMER_SICHTBAREN_EXTRAFELDERN.includes(projektTyp);
 
   // Alle Hooks müssen VOR jedem bedingten return stehen (Rules of Hooks) —
   // vorher standen sie nach dem "plan"-Frühausstieg, sodass beim Wechsel in
@@ -17,7 +21,7 @@ export function SchnellErstellung({ onSave, onClose }) {
 
   // ── Einzeln: minimales Formular ──
   const [titel,     setTitel]     = useState("");
-  const [typ,       setTyp]       = useState("beton");
+  const [typ,       setTyp]       = useState(immerExtraFelder ? "allgemein" : "beton");
   const [m2,        setM2]        = useState("");
   const [betonsorte,setBetonsorte]= useState("");
 
@@ -60,7 +64,7 @@ export function SchnellErstellung({ onSave, onClose }) {
         ...leereAufgabe(),
         id: Date.now() + Math.random(),
         titel: titelTeil || zeile,
-        typ: "beton",
+        typ: immerExtraFelder ? "allgemein" : "beton",
         m2: m2Teil ? Number(m2Teil.replace(/[^\d.,]/g,"").replace(",",".")) || 0 : 0,
       };
     });
@@ -110,7 +114,7 @@ export function SchnellErstellung({ onSave, onClose }) {
               Häufige Aufgabentypen antippen — wird sofort mit sinnvollen
               Standardwerten angelegt. Details kannst du danach ergänzen.
             </div>
-            {AUFGABEN_VORLAGEN.map((v, i) => (
+            {vorlagen.map((v, i) => (
               <div key={i} onClick={() => ausVorlage(v)}
                 style={{ background:"var(--surface)",
                   padding:"10px 16px", marginBottom:6, cursor:"pointer",
@@ -159,18 +163,18 @@ export function SchnellErstellung({ onSave, onClose }) {
                 ))}
               </div>
             </div>
-            {typ === "beton" && (
+            {(typ === "beton" || immerExtraFelder) && (
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10,
                 marginBottom:10 }}>
                 <div>
-                  <Label>Fläche (m²)</Label>
+                  <Label>{extraLabel.m2}</Label>
                   <input type="number" value={m2} onChange={e=>setM2(e.target.value)}
                     placeholder="0" style={inputStyle()} />
                 </div>
                 <div>
-                  <Label>Betonsorte</Label>
+                  <Label>{extraLabel.sorte}</Label>
                   <input value={betonsorte} onChange={e=>setBetonsorte(e.target.value)}
-                    placeholder="C25/30" style={inputStyle()} />
+                    placeholder={extraLabel.sortePlatzhalter} style={inputStyle()} />
                 </div>
               </div>
             )}
@@ -190,13 +194,13 @@ export function SchnellErstellung({ onSave, onClose }) {
           <div>
             <div style={{ color:"var(--muted)", fontSize:12, marginBottom:7,
               lineHeight:1.5 }}>
-              Ein Betonfeld pro Zeile. Optional Fläche mit „|" trennen:
+              Eine Aufgabe pro Zeile. Optional {extraLabel.m2} mit „|" trennen:
               <br/><code style={{ background:"var(--surface2)", padding:"1px 6px",
-                borderRadius:4, fontSize:11 }}>Bodenplatte B1 | 120</code>
+                borderRadius:4, fontSize:11 }}>{vorlagen[0]?.name || "Bodenplatte B1"} | 120</code>
             </div>
             <textarea rows={10} value={listeText}
               onChange={e=>setListeText(e.target.value)}
-              placeholder={"Bodenplatte B1 | 120\nBodenplatte B2 | 135\nWand C1 Nord | 64\nWand C2 Ost"}
+              placeholder={vorlagen.slice(0,3).map(v=>`${v.name} | 120`).join("\n")}
               style={{ width:"100%", background:"var(--surface2)", color:"var(--text)",
                 border:"1.5px solid var(--border)", borderRadius:10, padding:12,
                 fontSize:13, resize:"none", boxSizing:"border-box",

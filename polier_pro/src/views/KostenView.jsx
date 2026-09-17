@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Euro } from "lucide-react";
+import { Euro, Check } from "lucide-react";
 import { Label, inputStyle } from "../components/Label.jsx";
+import { sbProjektKostenSpeichern } from "../lib/supabase.js";
 
-export function KostenView({ projekt, aufgaben, kolonnen, zeitbuchungen }) {
-  const [budgetPos, setBudgetPos] = useState(projekt?.budget_positionen || [
+export function KostenView({ projekt, aufgaben, kolonnen, zeitbuchungen, session, onKostenGespeichert }) {
+  const [budgetPos, setBudgetPos] = useState(projekt?.budget_positionen?.length ? projekt.budget_positionen : [
     { id:1, bezeichnung:"Betonarbeiten",    budget:0, einheit:"m²" },
     { id:2, bezeichnung:"Schalung",         budget:0, einheit:"m²" },
     { id:3, bezeichnung:"Bewehrung",        budget:0, einheit:"t"  },
@@ -11,7 +12,21 @@ export function KostenView({ projekt, aufgaben, kolonnen, zeitbuchungen }) {
     { id:5, bezeichnung:"Material",         budget:0, einheit:"€"  },
   ]);
   const [editPos, setEditPos] = useState(null);
-  const [stundensatz, setStundensatz] = useState(55); // €/h Default
+  const [stundensatz, setStundensatz] = useState(projekt?.stundensatz ?? 55); // €/h Default
+  const [speichern, setSpeichern] = useState(false);
+  const [gespeichertOk, setGespeichertOk] = useState(false);
+
+  async function jetztSpeichern() {
+    if (!projekt?.id) return;
+    setSpeichern(true);
+    setGespeichertOk(false);
+    const ok = await sbProjektKostenSpeichern(projekt.id, budgetPos, stundensatz, session);
+    if (ok) {
+      onKostenGespeichert?.({ budget_positionen: budgetPos, stundensatz });
+      setGespeichertOk(true);
+    }
+    setSpeichern(false);
+  }
 
   // Ist-Kosten aus Zeitbuchungen berechnen
   const stundenGesamt = (zeitbuchungen||[])
@@ -109,6 +124,15 @@ export function KostenView({ projekt, aufgaben, kolonnen, zeitbuchungen }) {
           </div>
         </div>
       ))}
+
+      <button onClick={jetztSpeichern} disabled={speichern}
+        style={{ width:"100%", background: "var(--yellow)", color:"#1a1200",
+          border:"none", borderRadius:12, padding:14, fontWeight:800,
+          cursor: speichern ? "default" : "pointer", fontSize:15,
+          fontFamily:"inherit", marginTop:4,
+          display:"flex", alignItems:"center", justifyContent:"center", gap:7 }}>
+        {gespeichertOk ? <><Check size={16} /> Gespeichert</> : speichern ? "Speichert…" : "Speichern"}
+      </button>
     </div>
   );
 }

@@ -4,10 +4,11 @@ import { PenLine, X, Check, FileText, CircleCheckBig } from "lucide-react";
 import { UnterschriftPad } from "../components/UnterschriftPad.jsx";
 import { escapeHtml, sha256Hex } from "../lib/utils.js";
 import { druckePDF } from "../lib/pdf.jsx";
+import { sbDokumentHashSpeichern } from "../lib/supabase.js";
 import { useBackButton } from "../hooks/useBackButton.js";
 
 export function RevisionssichererExport({ bericht, projekt, eigeneFirma, wetter,
-  aufgaben, maengel, datum }) {
+  aufgaben, maengel, datum, session }) {
 
   const [offen,        setOffen]        = useState(false);
   useBackButton(offen, () => setOffen(false));
@@ -15,6 +16,7 @@ export function RevisionssichererExport({ bericht, projekt, eigeneFirma, wetter,
   const [sigBauleiter, setSigBauleiter] = useState(null);
   const [exportiert,   setExportiert]   = useState(false);
   const [hash,         setHash]         = useState("");
+  const [hashGespeichert, setHashGespeichert] = useState(false);
 
   // Echter Inhalts-Hash statt Base64 von ein paar IDs + Timestamp: der
   // Hash ändert sich, sobald sich Bericht-Inhalt oder Unterschriften ändern,
@@ -32,7 +34,7 @@ export function RevisionssichererExport({ bericht, projekt, eigeneFirma, wetter,
     return () => { aktiv = false; };
   }, [datum, projekt?.id, bericht?.id, bericht?.taetigkeit, bericht?.besonderheiten, maengel, sigPolier, sigBauleiter]);
 
-  function exportPDF() {
+  async function exportPDF() {
     if (!hash) return;
     const offeneMaengel = (maengel||[]).filter(m=>m.status!=="abgeschlossen");
     const html = `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"/>
@@ -155,8 +157,17 @@ ${offeneMaengel.length > 0 ? `<div class="section">
 
 </div></body></html>`;
 
-    druckePDF(html, `Tagesbericht_${datum || bericht?.datum || "export"}.pdf`);
+    await druckePDF(html, `Tagesbericht_${datum || bericht?.datum || "export"}.pdf`);
     setExportiert(true);
+
+    // Hash serverseitig im audit_log hinterlegen — erst dadurch ist die
+    // Dokument-ID später tatsächlich nachprüfbar (vorher stand sie nur auf
+    // dem PDF selbst, ohne gespeicherte Referenz zum Abgleich).
+    const gespeichert = await sbDokumentHashSpeichern({
+      firmaId: projekt?.firma_id, profilId: session?.user?.id,
+      hash, berichtId: bericht?.id, datum,
+    }, session);
+    setHashGespeichert(gespeichert);
   }
 
   return (
@@ -250,6 +261,7 @@ ${offeneMaengel.length > 0 ? `<div class="section">
                 marginTop:10, color:"var(--green)", fontSize:12, fontWeight:600,
                 textAlign:"center", display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
                 <CircleCheckBig size={13} /> PDF erstellt · DOC-{hash} · {new Date().toLocaleString("de-DE")}
+                {!hashGespeichert && " · Prüfreferenz konnte nicht gespeichert werden"}
               </div>
             )}
           </div>

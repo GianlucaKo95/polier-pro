@@ -3,15 +3,14 @@ import { FileText, Plus } from "lucide-react";
 import { AngebotEditor } from "./AngebotEditor.jsx";
 import { useBackButton } from "../hooks/useBackButton.js";
 
-export function AngebotView({ projekt, aufgaben, einheitspreise, lvVorlagen, eigeneFirma }) {
-  const [angebote,    setAngebote]    = useState([]);
+export function AngebotView({ projekt, aufgaben, einheitspreise, lvVorlagen, eigeneFirma, angebote = [], onAngebotSpeichern }) {
   const [aktAngebot,  setAktAngebot]  = useState(null);
-  const [neuAngebot,  setNeuAngebot]  = useState(false);
+  const [fehler,      setFehler]      = useState("");
   useBackButton(aktAngebot, () => setAktAngebot(null));
 
-  function neuesAngebot() {
+  async function neuesAngebot() {
+    setFehler("");
     const a = {
-      id:           Date.now(),
       titel:        `Angebot ${new Date().toLocaleDateString("de-DE")}`,
       empfaenger:   projekt?.auftraggeber || "",
       datum:        new Date().toISOString().slice(0,10),
@@ -21,14 +20,18 @@ export function AngebotView({ projekt, aufgaben, einheitspreise, lvVorlagen, eig
       mwst:         19,
       status:       "entwurf",
     };
-    setAngebote(prev=>[a,...prev]);
-    setAktAngebot(a);
+    const gespeichert = await onAngebotSpeichern?.(a, true);
+    if (!gespeichert) { setFehler("Angebot konnte nicht angelegt werden."); return; }
+    setAktAngebot(gespeichert);
   }
 
   if (aktAngebot) {
     return <AngebotEditor
       angebot={aktAngebot}
-      onSave={a => { setAngebote(prev=>prev.map(x=>x.id===a.id?a:x)); setAktAngebot(a); }}
+      onSave={async a => {
+        const gespeichert = await onAngebotSpeichern?.(a, false);
+        setAktAngebot(gespeichert || a);
+      }}
       onClose={() => setAktAngebot(null)}
       aufgaben={aufgaben}
       einheitspreise={einheitspreise}
@@ -54,6 +57,14 @@ export function AngebotView({ projekt, aufgaben, einheitspreise, lvVorlagen, eig
           <Plus size={14} /> Angebot
         </button>
       </div>
+
+      {fehler && (
+        <div style={{ background:"var(--rbg)", color:"var(--red)", borderRadius:10,
+          padding:"9px 14px", marginBottom:10, fontSize:12,
+          border:"1px solid var(--red)" }}>
+          {fehler}
+        </div>
+      )}
 
       {angebote.length === 0 && (
         <div style={{ textAlign:"center", padding:"35px 20px", color:"var(--muted)" }}>

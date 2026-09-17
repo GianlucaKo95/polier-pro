@@ -265,6 +265,7 @@ export function TagesbuchView({ berichte, setBerichte, sbConnected, projekt, eig
                   wetter={detail?.wetterData}
                   maengel={aufgaben?.filter(a => a.ist_mangel) || []}
                   datum={detail?.datum}
+                  session={session}
                 />
                 <button onClick={() => setDetail(null)}
                   style={{ background: "var(--border)", border:"none", color: "var(--text)",

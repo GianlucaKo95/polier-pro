@@ -9,7 +9,8 @@ import { AUFGABEN_STATUS, AUFGABEN_TYPEN } from "../config/konstanten.js";
 import { useBackButton } from "../hooks/useBackButton.js";
 
 export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, darfBearbeiten = true, initialFilter = "alle",
-  kannVorschlagen = false, onVorschlagen, onEntscheiden, zeitbuchungen = [] }) {
+  kannVorschlagen = false, onVorschlagen, onEntscheiden, zeitbuchungen = [], projekt }) {
+  const projektTyp = projekt?.typ;
   const [ansicht,     setAnsicht]     = useState("liste");  // liste | kanban
   const [filter,      setFilter]      = useState(initialFilter);
   const [neuAufgabe,  setNeuAufgabe]  = useState(false);
@@ -56,6 +57,7 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
       <SchnellErstellung
         onSave={handleSchnellSave}
         onClose={() => setNeuAufgabe(false)}
+        projektTyp={projektTyp}
       />
     );
   }
@@ -68,6 +70,7 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
         alleAufgaben={aufgaben}
         onSave={handleSave}
         onClose={() => setNeuMangel(false)}
+        projektTyp={projektTyp}
       />
     );
   }
@@ -80,6 +83,7 @@ export function AufgabenView({ aufgaben, setAufgaben, kolonnen, sbConnected, dar
         alleAufgaben={aufgaben}
         onSave={handleSave}
         onClose={() => setEditAufgabe(null)}
+        projektTyp={projektTyp}
       />
     );
   }

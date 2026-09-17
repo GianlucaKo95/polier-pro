@@ -10,7 +10,7 @@ import { DEFAULT_EINHEITSPREISE, DEFAULT_LV_VORLAGEN, ONBOARDING_KEY, ROLLEN, PR
 import { usePWA } from "./hooks/usePWA.js";
 import { usePushNotifications } from "./hooks/usePushNotifications.js";
 import { useOfflineSync } from "./hooks/useOfflineSync.js";
-import { sbClientMitToken, SUPABASE_URL, sbAufgabeSpeichern, sbAufgabeLoeschen, sbAufgabeVorschlagen, sbAufgabeVorschlagEntscheiden, sbBerichtSpeichern, sbKolonneSpeichern, sbKolonneLoeschen } from "./lib/supabase.js";
+import { sbClientMitToken, SUPABASE_URL, sbAufgabeSpeichern, sbAufgabeLoeschen, sbAufgabeVorschlagen, sbAufgabeVorschlagEntscheiden, sbBerichtSpeichern, sbKolonneSpeichern, sbKolonneLoeschen, sbFirmaParameterSpeichern, sbAngebotSpeichern } from "./lib/supabase.js";
 import { PasswortSetzenScreen } from "./views/PasswortSetzenScreen.jsx";
 import { EinladungScreen } from "./views/EinladungScreen.jsx";
 import { RegistrierungScreen } from "./views/RegistrierungScreen.jsx";
@@ -156,6 +156,10 @@ export default function PolierApp() {
   const [zeitbuchungen, setZeitbuchungen] = useState([]);
   const [einheitspreise,setEinheitspreise]= useState(DEFAULT_EINHEITSPREISE);
   const [lvVorlagen,    setLvVorlagen]    = useState(DEFAULT_LV_VORLAGEN);
+  // Verhindert, dass der initiale Ladevorgang der Parameter aus Supabase
+  // (setzt dieselben Werte, die gerade erst von dort kamen) sie sofort
+  // wieder zurückschreibt, bevor der Nutzer überhaupt etwas geändert hat.
+  const [parameterGeladen, setParameterGeladen] = useState(false);
   const pwa  = usePWA();
   const push = usePushNotifications(projekte, eigeneFirma);
   const offline = useOfflineSync(pwa.online === false ? false : true, sbConnected);
@@ -199,7 +203,7 @@ export default function PolierApp() {
       // ausgeschlossen, damit der KI-Key nie in den Client-State (firma/
       // eigeneFirma) gelangt. Er wird ausschließlich serverseitig in der
       // ki-proxy Edge Function gelesen (siehe supabase/functions/ki-proxy).
-      client.from("firmen").select("id, name, adresse, plz, ort, telefon, email, steuernummer, logo_url, geschaeftsfuehrer, gewerke")
+      client.from("firmen").select("id, name, adresse, plz, ort, telefon, email, steuernummer, logo_url, geschaeftsfuehrer, gewerke, einheitspreise, lv_vorlagen")
         .eq("id", auth.profil.firma_id)
         .then(({ data: d, error, status }) => {
           if (error) {
@@ -221,6 +225,11 @@ export default function PolierApp() {
               geschaeftsfuehrer: d[0].geschaeftsfuehrer || "",
               gewerke:           d[0].gewerke || [],
             }));
+            // Leere Liste = neue Firma, die noch nie eigene Parameter
+            // gespeichert hat → sinnvolle Beispieldaten statt leerer Liste.
+            setEinheitspreise(d[0].einheitspreise?.length ? d[0].einheitspreise : DEFAULT_EINHEITSPREISE);
+            setLvVorlagen(d[0].lv_vorlagen?.length ? d[0].lv_vorlagen : DEFAULT_LV_VORLAGEN);
+            setParameterGeladen(true);
           } else {
             setFirmaLadeFehler(`Keine Firma mit ID ${auth.profil.firma_id} gefunden — profile.firma_id zeigt ins Leere.`);
           }
@@ -229,6 +238,22 @@ export default function PolierApp() {
         });
     }
   }, [auth.profil?.firma_id, auth.session?.access_token]);
+
+  // Subunternehmer aus Supabase laden, sobald die Firma bekannt ist — vorher
+  // existierten sie nur im Browser-State (setSubs wurde nie mit der DB
+  // verbunden, obwohl die Tabelle längst existierte).
+  useEffect(() => {
+    if (!firma?.id || !auth.session?.access_token) return;
+    const client = sbClientMitToken(auth.session);
+    client.from("subunternehmer").select("*").eq("firma_id", firma.id)
+      .then(({ data }) => { if (Array.isArray(data)) setSubs(data); });
+  }, [firma?.id, auth.session?.access_token]);
+
+  // Einheitspreise/LV-Vorlagen nach jeder Änderung in der Firma persistieren.
+  useEffect(() => {
+    if (!parameterGeladen || !firma?.id || !auth.session?.access_token) return;
+    sbFirmaParameterSpeichern(firma.id, einheitspreise, lvVorlagen, auth.session);
+  }, [einheitspreise, lvVorlagen]);
 
   // Projekte aus Supabase laden, sobald die Firma bekannt ist.
   // Ohne dies existierten Baustellen nur im Browser-Speicher — Neuladen,
@@ -251,6 +276,7 @@ export default function PolierApp() {
             id: p.id, name: p.name, adresse: p.adresse, plz: p.plz, ort: p.ort,
             projektnummer: p.projektnummer, bauleiter: p.bauleiter,
             auftraggeber: p.auftraggeber, typ: p.typ, farbe: p.farbe,
+            firma_id: p.firma_id, budget_positionen: p.budget_positionen, stundensatz: p.stundensatz,
           })));
         }
         setProjekteLaden(false);
@@ -272,12 +298,14 @@ export default function PolierApp() {
   const [aktProjektAufgaben,  setAktProjektAufgaben]  = useState([]);
   const [aktProjektKolonnen,  setAktProjektKolonnen]  = useState([]);
   const [aktProjektBerichte,  setAktProjektBerichte]  = useState([]);
+  const [aktProjektAngebote,  setAktProjektAngebote]  = useState([]);
   const [projektDatenLaden,   setProjektDatenLaden]   = useState(false);
   const [projektDatenFehler,  setProjektDatenFehler]  = useState("");
 
   useEffect(() => {
     if (!aktivId || !auth.session?.access_token) {
       setAktProjektAufgaben([]); setAktProjektKolonnen([]); setAktProjektBerichte([]);
+      setAktProjektAngebote([]);
       setZeitbuchungen([]);
       return;
     }
@@ -292,13 +320,15 @@ export default function PolierApp() {
       client.from("kolonnen").select("*").eq("projekt_id", aktivId).order("created_at", { ascending: true }),
       client.from("tagesberichte").select("*").eq("projekt_id", aktivId).order("datum", { ascending: false }),
       client.from("zeitbuchungen").select("*").eq("projekt_id", aktivId),
-    ]).then(([aRes, kRes, bRes, zRes]) => {
+      client.from("angebote").select("*").eq("projekt_id", aktivId).order("created_at", { ascending: false }),
+    ]).then(([aRes, kRes, bRes, zRes, anRes]) => {
       if (abgebrochen) return;
       const fehler = [];
       if (aRes.error) fehler.push(`Aufgaben: ${aRes.error.message}`);
       if (kRes.error) fehler.push(`Kolonnen: ${kRes.error.message}`);
       if (bRes.error) fehler.push(`Berichte: ${bRes.error.message}`);
       if (zRes.error) fehler.push(`Zeiterfassung: ${zRes.error.message}`);
+      if (anRes.error) fehler.push(`Angebote: ${anRes.error.message}`);
       if (fehler.length) {
         setProjektDatenFehler("Projektdaten konnten nicht vollständig geladen werden: " + fehler.join(", "));
       }
@@ -307,6 +337,7 @@ export default function PolierApp() {
       setAktProjektKolonnen(kRes.data || []);
       setAktProjektBerichte(bRes.data || []);
       setZeitbuchungen(zRes.data || []);
+      setAktProjektAngebote(anRes.data || []);
       setProjektDatenLaden(false);
     }).catch(e => {
       if (abgebrochen) return;
@@ -467,6 +498,20 @@ export default function PolierApp() {
   const felder    = aktProjektAufgaben;
   const berichte  = aktProjektBerichte;
   const kolonnen  = aktProjektKolonnen;
+  const angebote  = aktProjektAngebote;
+
+  // Angebot speichern (neu oder Änderung) — direkt gegen Supabase, dann
+  // lokalen State nachziehen. Analog zu setFelder/sbAufgabeSpeichern unten,
+  // nur ohne Offline-Queue, da Angebote (anders als Aufgaben) admin-only
+  // und nicht baustellen-typisch offline erfasst werden.
+  async function angebotSpeichern(a, istNeu) {
+    const gespeichert = await sbAngebotSpeichern(a, aktivId, auth.session, istNeu);
+    if (!gespeichert) return null;
+    setAktProjektAngebote(prev => istNeu
+      ? [gespeichert, ...prev]
+      : prev.map(x => x.id === gespeichert.id ? gespeichert : x));
+    return gespeichert;
+  }
 
   // ── Aufgaben: laden + speichern direkt gegen Supabase ──
   async function setFelder(fn) {
@@ -1020,8 +1065,8 @@ export default function PolierApp() {
           />}
         {tab === "aufgaben"      && <AufgabenView aufgaben={felder} setAufgaben={setFelder} kolonnen={kolonnen} sbConnected={sbConnected} darfBearbeiten={rolleConfig?.kannBearbeiten !== false} initialFilter={aufgabenFilter}
             kannVorschlagen={aktiveRolle === "facharbeiter"} onVorschlagen={aufgabeVorschlagen} onEntscheiden={aufgabeEntscheiden}
-            zeitbuchungen={zeitbuchungen} />}
-        {tab === "kosten"        && <KostenView projekt={projekt} aufgaben={felder} kolonnen={kolonnen} zeitbuchungen={zeitbuchungen} />}
+            zeitbuchungen={zeitbuchungen} projekt={projekt} />}
+        {tab === "kosten"        && <KostenView projekt={projekt} aufgaben={felder} kolonnen={kolonnen} zeitbuchungen={zeitbuchungen} session={auth.session} onKostenGespeichert={changes => updateProjekt(projekt.id, changes)} />}
         {tab === "stempeln"      && <StempeluhrView profil={aktiveProfil}
             projekte={aktiveProfil?.kolonne_id
               ? projekte.filter(p => (p.kolonnen||[]).some(k => k.id === aktiveProfil.kolonne_id)).length > 0
@@ -1032,7 +1077,7 @@ export default function PolierApp() {
         {tab === "stunden"       && <StundenExportView profil={aktiveProfil} session={auth.session} projekte={projekte} darfAlleSehen={rolleConfig?.kannBearbeiten !== false && aktiveRolle !== "vorarbeiter"} />}
         {tab === "ki_frage"      && <KiFrageView projekt={projekt} aufgaben={felder} kolonnen={kolonnen} session={auth.session} />}
         {tab === "simulation"    && <SimulationView aufgaben={felder} kolonnen={kolonnen} projekt={projekt} projekte={projekte} session={auth.session} />}
-        {tab === "angebot"       && <AngebotView projekt={projekt} aufgaben={felder} einheitspreise={einheitspreise} lvVorlagen={lvVorlagen} eigeneFirma={eigeneFirma} />}
+        {tab === "angebot"       && <AngebotView projekt={projekt} aufgaben={felder} einheitspreise={einheitspreise} lvVorlagen={lvVorlagen} eigeneFirma={eigeneFirma} angebote={angebote} onAngebotSpeichern={angebotSpeichern} />}
         {tab === "admin_params" && <AdminParameterView einheitspreise={einheitspreise} setEinheitspreise={setEinheitspreise} lvVorlagen={lvVorlagen} setLvVorlagen={setLvVorlagen} />}
         {tab === "nutzer"       && <NutzerVerwaltungView session={auth.session} kolonnen={kolonnen} firmaId={firma?.id} />}
         {tab === "profil"       && <MeinProfilView profil={aktiveProfil} session={auth.session} />}
