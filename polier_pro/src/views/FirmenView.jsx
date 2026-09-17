@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Building2, MapPin, User, Phone, Euro, RefreshCw, Pencil, Plus, CircleX, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
-import { sbClientMitToken } from "../lib/supabase.js";
+import { sbClientMitToken, sbSubSpeichern, sbSubLoeschen } from "../lib/supabase.js";
 import { ALLE_GEWERKE, ONBOARDING_KEY } from "../config/konstanten.js";
 import { Chip } from "../components/Chip.jsx";
 import { Label, inputStyle } from "../components/Label.jsx";
@@ -18,6 +18,30 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
   // aus) — das Feld ist reines "write-only": leer lassen behält den
   // bestehenden Key, ein neuer Wert überschreibt ihn.
   const [neuerKiKey, setNeuerKiKey] = useState("");
+  const [subFehler, setSubFehler] = useState("");
+  const [subSpeichert, setSubSpeichert] = useState(false);
+
+  async function subLoeschen(id) {
+    setSubs(prev => prev.filter(x => x.id !== id));
+    const ok = await sbSubLoeschen(id, session);
+    if (!ok) setSubFehler("Subunternehmer konnte nicht auf dem Server gelöscht werden.");
+  }
+
+  async function subSpeichern(sub) {
+    setSubSpeichert(true);
+    setSubFehler("");
+    const gespeichert = await sbSubSpeichern(sub, firmaId, session, !sub.id);
+    if (!gespeichert) {
+      setSubFehler("Subunternehmer konnte nicht auf dem Server gespeichert werden.");
+      setSubSpeichert(false);
+      return;
+    }
+    setSubs(prev => sub.id
+      ? prev.map(s => s.id === sub.id ? gespeichert : s)
+      : [...prev, gespeichert]);
+    setSubSpeichert(false);
+    setScreen("home");
+  }
 
   async function firmaSpeichern() {
     setEigeneFirma(tmpFirma);
@@ -96,6 +120,14 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
             </button>
           </div>
 
+          {subFehler && (
+            <div style={{ background:"var(--rbg)", color:"var(--red)", borderRadius:10,
+              padding:"7px 14px", marginBottom:9, fontSize:12,
+              border:"1px solid var(--red)" }}>
+              {subFehler}
+            </div>
+          )}
+
           {subs.length === 0 ? (
             <div style={{ background: "var(--surface)", borderRadius:12, padding:17, textAlign:"center" }}>
               <div style={{ display:"flex", justifyContent:"center", color:"var(--muted)" }}><Building2 size={28} /></div>
@@ -103,7 +135,7 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
             </div>
           ) : subs.map(s => (
             <SwipeToDelete key={s.id} style={{ marginBottom:6 }}
-              onDelete={() => setSubs(prev => prev.filter(x => x.id !== s.id))}
+              onDelete={() => subLoeschen(s.id)}
               onClick={() => { setEditSub({...s}); setScreen("subEdit"); }}>
             <div
               style={{ background: "var(--surface)", borderRadius:11, padding:"9px 15px",
@@ -313,9 +345,17 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
             </div>
           </div>
 
+          {subFehler && (
+            <div style={{ background:"var(--rbg)", color:"var(--red)", borderRadius:10,
+              padding:"7px 14px", marginBottom:9, fontSize:12,
+              border:"1px solid var(--red)" }}>
+              {subFehler}
+            </div>
+          )}
+
           <div style={{ display:"flex", gap:10 }}>
             {editSub.id && (
-              <button onClick={() => { setSubs(prev => prev.filter(s=>s.id!==editSub.id)); setScreen("home"); }}
+              <button onClick={() => { subLoeschen(editSub.id); setScreen("home"); }}
                 style={{ background:"#2E1A1A", color: "var(--red)", border:`1px solid ${'var(--red)'}`,
                   borderRadius:10, padding:"12px 16px", cursor:"pointer", display:"flex" }}><Trash2 size={16} /></button>
             )}
@@ -323,18 +363,11 @@ export function FirmenView({ owneFirma, setEigeneFirma, subs, setSubs, onOnboard
               style={{ flex:1, background: "var(--border)", color: "var(--muted)", border:"none", borderRadius:10, padding:13, cursor:"pointer" }}>
               Abbrechen
             </button>
-            <button disabled={!editSub.name} onClick={() => {
-                if (editSub.id) {
-                  setSubs(prev => prev.map(s => s.id===editSub.id ? editSub : s));
-                } else {
-                  setSubs(prev => [...prev, { ...editSub, id: Date.now() }]);
-                }
-                setScreen("home");
-              }}
+            <button disabled={!editSub.name || subSpeichert} onClick={() => subSpeichern(editSub)}
               style={{ flex:2, background: editSub.name ? "var(--yellow)" : "var(--border)",
                 color: editSub.name ? "#1C2027" : "var(--muted)",
                 border:"none", borderRadius:10, padding:13, fontWeight:700, cursor:"pointer", fontSize:15 }}>
-              Speichern
+              {subSpeichert ? "Speichert…" : "Speichern"}
             </button>
           </div>
         </div>

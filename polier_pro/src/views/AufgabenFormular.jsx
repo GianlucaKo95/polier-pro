@@ -2,10 +2,13 @@ import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { leereAufgabe } from "../lib/utils.js";
 import { Label, inputStyle } from "../components/Label.jsx";
-import { AUFGABEN_TYPEN, AUFGABEN_STATUS, AUFGABEN_PRIO } from "../config/konstanten.js";
+import { AUFGABEN_TYPEN, AUFGABEN_STATUS, AUFGABEN_PRIO, extraFeldLabelFuer,
+  PROJEKTTYPEN_MIT_IMMER_SICHTBAREN_EXTRAFELDERN } from "../config/konstanten.js";
 
-export function AufgabenFormular({ initial, kolonnen, alleAufgaben = [], onSave, onClose }) {
+export function AufgabenFormular({ initial, kolonnen, alleAufgaben = [], onSave, onClose, projektTyp }) {
   const [a,       setA]       = useState(initial || leereAufgabe());
+  const extraLabel = extraFeldLabelFuer(projektTyp);
+  const immerExtraFelder = PROJEKTTYPEN_MIT_IMMER_SICHTBAREN_EXTRAFELDERN.includes(projektTyp);
   const [bilder,  setBilder]  = useState([]);
   const [planMode,setPlanMode]= useState(false);
   const fileRef               = useRef(null);
@@ -228,24 +231,25 @@ export function AufgabenFormular({ initial, kolonnen, alleAufgaben = [], onSave,
               fontSize:13, resize:"none", boxSizing:"border-box", fontFamily:"inherit" }} />
         </div>
 
-        {/* Beton-spezifisch */}
-        {a.typ === "beton" && (
+        {/* Zusatzfelder (m²/Sorte) — bei Beton-Projekten nur für Betonage-
+            Aufgaben relevant, bei Dach/PV unabhängig vom Aufgabentyp */}
+        {(a.typ === "beton" || immerExtraFelder) && (
           <div style={{ background:"var(--ybg)", borderRadius:12, padding:10,
             marginBottom:10, border:"1px solid var(--yellow)" }}>
             <div style={{ color:"var(--ydark)", fontWeight:700, fontSize:12,
-              marginBottom:7 }}>🏗️ Betonage-Details</div>
+              marginBottom:7 }}>🏗️ Details</div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
               <div>
-                <Label>Fläche (m²)</Label>
+                <Label>{extraLabel.m2}</Label>
                 <input type="number" value={a.m2||""}
                   onChange={e=>setA(p=>({...p,m2:Number(e.target.value)}))}
                   placeholder="0" style={inputStyle()} />
               </div>
               <div>
-                <Label>Betonsorte</Label>
+                <Label>{extraLabel.sorte}</Label>
                 <input value={a.betonsorte||""}
                   onChange={e=>setA(p=>({...p,betonsorte:e.target.value}))}
-                  placeholder="C25/30" style={inputStyle()} />
+                  placeholder={extraLabel.sortePlatzhalter} style={inputStyle()} />
               </div>
             </div>
           </div>

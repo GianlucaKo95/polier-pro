@@ -269,26 +269,53 @@ export function buildBetonprotokollHTML(feld, projekt, eigeneFirma, wetter) {
 </body></html>`;
 }
 
-export function druckePDF(htmlContent, dateiname) {
-  const win = window.open("", "_blank", "width=900,height=700");
-  if (!win) { alert("Popup-Blocker aktiv — bitte Popups für diese Seite erlauben."); return; }
-  // Das Druck-Fenster öffnet als echtes separates window.open()-Popup —
-  // in eingebetteten Kontexten (Home-Assistant-Panel-iframe, Companion-App-
-  // WebView) fehlt dem oft die native Fenster-Chrome (keine Titelleiste mit
-  // Schließen-X), sodass Nutzer dort keine Möglichkeit hatten, das Fenster
-  // wieder loszuwerden. Ein eigener, im Druck selbst ausgeblendeter
-  // Schließen-Button behebt das unabhängig vom Embedding-Kontext.
-  const mitSchliessenButton = htmlContent.replace("</body>",
-    `<button onclick="window.close()" style="position:fixed;top:14px;right:14px;z-index:999;
-      background:#1a1a1a;color:#F5C400;border:none;border-radius:8px;padding:10px 18px;
-      font-family:Arial,sans-serif;font-size:13px;font-weight:700;cursor:pointer;
-      box-shadow:0 2px 10px rgba(0,0,0,0.3);" class="polaris-schliessen-btn">✕ Schließen</button>
-    <style>@media print { .polaris-schliessen-btn { display:none !important; } }</style>
-    </body>`);
-  win.document.write(mitSchliessenButton);
-  win.document.close();
-  win.onload = () => {
-    win.focus();
-    win.print();
-  };
+// Rendert den HTML-String in ein unsichtbares iframe (statt eines echten
+// window.open()-Popups) und exportiert ihn per jsPDF/html2canvas als echte,
+// herunterladbare PDF-Datei. Vorher öffnete druckePDF() nur den Browser-
+// Druckdialog — funktional, aber kein automatischer Download und abhängig
+// vom Popup-Blocker. Das iframe bleibt unsichtbar (kein Fenster, das der
+// Nutzer schließen müsste), und html2canvas rastert daraus Seite für Seite
+// dieselben HTML/CSS-Vorlagen, die vorher an window.print() gingen — die
+// Vorlagen selbst (buildBerichtHTML, RevisionssichererExport, AngebotEditor
+// etc.) mussten dafür nicht angepasst werden.
+export async function druckePDF(htmlContent, dateiname) {
+  const [{ default: jsPDF }] = await Promise.all([
+    import("jspdf"),
+    import("html2canvas"),
+  ]);
+
+  const iframe = document.createElement("iframe");
+  iframe.style.cssText = "position:fixed;top:-10000px;left:-10000px;width:794px;height:1123px;border:none;";
+  document.body.appendChild(iframe);
+
+  try {
+    const idoc = iframe.contentDocument;
+    idoc.open();
+    idoc.write(htmlContent);
+    idoc.close();
+
+    // Ohne dieses Warten rastert html2canvas oft leere Kästen statt Fotos/
+    // Logo/Unterschriften, weil deren <img>-Tags beim Rastern noch laden.
+    await new Promise(resolve => {
+      const imgs = Array.from(idoc.images || []);
+      if (imgs.length === 0) { resolve(); return; }
+      let ausstehend = imgs.length;
+      const fertig = () => { if (--ausstehend <= 0) resolve(); };
+      imgs.forEach(img => img.complete ? fertig() : (img.onload = img.onerror = fertig));
+    });
+
+    const quelle = idoc.querySelector(".page") || idoc.body;
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    await doc.html(quelle, {
+      x: 0, y: 0,
+      width: 210,
+      windowWidth: quelle.scrollWidth || 794,
+      autoPaging: "text",
+    });
+    doc.save(dateiname);
+  } catch (e) {
+    alert("PDF-Export fehlgeschlagen: " + (e?.message || e));
+  } finally {
+    document.body.removeChild(iframe);
+  }
 }

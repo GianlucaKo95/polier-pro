@@ -348,6 +348,54 @@ export const AUFGABEN_VORLAGEN = [
   { name:"Estrich einbringen",typ:"estrich",    betonsorte:"",       icon:"🪣" },
 ];
 
+// Schnellerstellungs-Vorlagen je Projekttyp — ohne das hier würde die
+// Aufgaben-Schnellerstellung IMMER die Beton-Vorlagen oben zeigen, auch für
+// ein Dach- oder PV-Projekt, bei dem "Bodenplatte"/"Schaltafel stellen"
+// keinen Sinn ergeben. Projekttypen ohne eigenen Eintrag (hochbau,
+// tiefgarage, tiefbau) fallen auf AUFGABEN_VORLAGEN zurück, da dort Beton
+// tatsächlich das dominante Gewerk ist.
+export const AUFGABEN_VORLAGEN_NACH_TYP = {
+  dach: [
+    { name:"Hauptfläche eindecken", typ:"allgemein",  betonsorte:"Dachziegel Ton", icon:"🏚️" },
+    { name:"Traufe",                typ:"allgemein",  betonsorte:"",               icon:"🏚️" },
+    { name:"First schließen",       typ:"allgemein",  betonsorte:"",               icon:"🏚️" },
+    { name:"Ortgang",               typ:"allgemein",  betonsorte:"",               icon:"🏚️" },
+    { name:"Kehle abdichten",       typ:"abdichtung", betonsorte:"",               icon:"💧" },
+    { name:"Dachflächenfenster",    typ:"allgemein",  betonsorte:"",               icon:"🏚️" },
+    { name:"Dämmung verlegen",      typ:"allgemein",  betonsorte:"",               icon:"🏚️" },
+  ],
+  pv: [
+    { name:"Modulreihe montieren",  typ:"allgemein", betonsorte:"", icon:"☀️" },
+    { name:"Wechselrichter setzen", typ:"allgemein", betonsorte:"", icon:"☀️" },
+    { name:"DC-Verkabelung",        typ:"allgemein", betonsorte:"", icon:"☀️" },
+    { name:"AC-Verkabelung",        typ:"allgemein", betonsorte:"", icon:"☀️" },
+    { name:"Einspeisepunkt",        typ:"allgemein", betonsorte:"", icon:"☀️" },
+  ],
+};
+
+// Labels + Platzhalter für die generischen "m2"/"betonsorte"-Spalten (die
+// Datenbank hat nur diese zwei Zusatzfelder auf jeder Aufgabe) — je
+// Projekttyp umbeschriftet, damit ein Dach-Projekt "Eingedeckt (m²)" /
+// "Dachmaterial" zeigt statt "Fläche (m²)" / "Betonsorte".
+export const AUFGABEN_EXTRA_FELD_LABEL = {
+  dach: { m2:"Eingedeckt (m²)", sorte:"Dachmaterial", sortePlatzhalter:"z.B. Dachziegel Ton" },
+  pv:   { m2:"Module (Stk.)",   sorte:"Modultyp",     sortePlatzhalter:"z.B. Jinko 440W" },
+};
+const STANDARD_EXTRA_FELD_LABEL = { m2:"Fläche (m²)", sorte:"Betonsorte", sortePlatzhalter:"C25/30" };
+
+export function aufgabenVorlagenFuer(projektTyp) {
+  return AUFGABEN_VORLAGEN_NACH_TYP[projektTyp] || AUFGABEN_VORLAGEN;
+}
+
+export function extraFeldLabelFuer(projektTyp) {
+  return AUFGABEN_EXTRA_FELD_LABEL[projektTyp] || STANDARD_EXTRA_FELD_LABEL;
+}
+
+// Bei diesen Projekttypen sind die "m2"/"betonsorte"-Felder auch außerhalb
+// des Aufgabentyps "beton" sinnvoll (ein Dach-Task heißt nie "Betonage"),
+// deshalb werden sie dort unabhängig vom gewählten Aufgabentyp angezeigt.
+export const PROJEKTTYPEN_MIT_IMMER_SICHTBAREN_EXTRAFELDERN = ["dach", "pv"];
+
 export const DEFAULT_EINHEITSPREISE = [
   { id:1, gewerk:"Betonage",     einheit:"m²", preis:85,  beschreibung:"Beton C25/30 inkl. Einbau" },
   { id:2, gewerk:"Betonage",     einheit:"m³", preis:220, beschreibung:"Beton C30/37 inkl. Einbau" },

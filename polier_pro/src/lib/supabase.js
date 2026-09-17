@@ -221,6 +221,89 @@ export async function sbKolonneLoeschen(id, session) {
   } catch { return false; }
 }
 
+export async function sbSubSpeichern(s, firmaId, session, istNeu) {
+  if (!session?.access_token || !firmaId) return null;
+  const payload = {
+    firma_id:    firmaId,
+    name:        s.name || "",
+    kontakt:     s.kontakt || "",
+    telefon:     s.telefon || "",
+    email:       s.email || "",
+    gewerke:     s.gewerke || [],
+    stundensatz: s.stundensatz || 0,
+    status:      s.status || "aktiv",
+  };
+  try {
+    const client = sbClientMitToken(session);
+    const query = istNeu
+      ? client.from("subunternehmer").insert(payload).select()
+      : client.from("subunternehmer").update(payload).eq("id", s.id).select();
+    const { data, error } = await query;
+    if (error) return null;
+    return data?.[0] || null;
+  } catch { return null; }
+}
+
+export async function sbSubLoeschen(id, session) {
+  if (!session?.access_token) return false;
+  try {
+    const client = sbClientMitToken(session);
+    const { error } = await client.from("subunternehmer").delete().eq("id", id);
+    return !error;
+  } catch { return false; }
+}
+
+export async function sbAngebotSpeichern(a, projektId, session, istNeu) {
+  if (!session?.access_token || !projektId) return null;
+  const payload = {
+    projekt_id:  projektId,
+    titel:       a.titel || "",
+    empfaenger:  a.empfaenger || "",
+    datum:       a.datum || new Date().toISOString().slice(0,10),
+    gueltig_bis: a.gueltig_bis || null,
+    positionen:  a.positionen || [],
+    rabatt:      a.rabatt || 0,
+    mwst:        a.mwst ?? 19,
+    status:      a.status || "entwurf",
+  };
+  try {
+    const client = sbClientMitToken(session);
+    const query = istNeu
+      ? client.from("angebote").insert(payload).select()
+      : client.from("angebote").update(payload).eq("id", a.id).select();
+    const { data, error } = await query;
+    if (error) return null;
+    return data?.[0] || null;
+  } catch { return null; }
+}
+
+// Budget-Positionen + Stundensatz liegen (anders als Aufgaben/Kolonnen/
+// Angebote) direkt als Spalten auf der projekte-Zeile, da es pro Baustelle
+// nur je eine Liste bzw. einen Wert gibt — keine eigene Tabelle nötig.
+export async function sbProjektKostenSpeichern(projektId, budgetPositionen, stundensatz, session) {
+  if (!session?.access_token || !projektId) return false;
+  try {
+    const client = sbClientMitToken(session);
+    const { error } = await client.from("projekte")
+      .update({ budget_positionen: budgetPositionen, stundensatz })
+      .eq("id", projektId);
+    return !error;
+  } catch { return false; }
+}
+
+// Einheitspreise + LV-Vorlagen sind Firmen-weite Konfiguration (nicht
+// projektgebunden), deshalb auf der firmen-Zeile statt einer eigenen Tabelle.
+export async function sbFirmaParameterSpeichern(firmaId, einheitspreise, lvVorlagen, session) {
+  if (!session?.access_token || !firmaId) return false;
+  try {
+    const client = sbClientMitToken(session);
+    const { error } = await client.from("firmen")
+      .update({ einheitspreise, lv_vorlagen: lvVorlagen })
+      .eq("id", firmaId);
+    return !error;
+  } catch { return false; }
+}
+
 export async function sbBerichtSpeichern(b, projektId, session) {
   if (!session?.access_token || !projektId) return null;
   const payload = {
@@ -241,6 +324,27 @@ export async function sbBerichtSpeichern(b, projektId, session) {
     if (error) return null;
     return data?.[0] || null;
   } catch { return null; }
+}
+
+// Schreibt den beim revisionssicheren Export berechneten Inhalts-Hash ins
+// audit_log — vorher wurde er nur aufs PDF gedruckt, aber nie irgendwo
+// gespeichert, sodass "revisionssicher" nicht wirklich nachprüfbar war.
+// Absichtlich nur INSERT (siehe audit_log-RLS-Policies): ein nachträglich
+// änderbares Audit-Log widerspräche dem Zweck.
+export async function sbDokumentHashSpeichern({ firmaId, profilId, hash, berichtId, datum }, session) {
+  if (!session?.access_token || !firmaId) return false;
+  try {
+    const client = sbClientMitToken(session);
+    const { error } = await client.from("audit_log").insert({
+      firma_id: firmaId,
+      profil_id: profilId || null,
+      aktion: "tagesbericht_export",
+      objekt_typ: "tagesbericht",
+      objekt_id: berichtId != null ? String(berichtId) : null,
+      details: { hash, datum },
+    });
+    return !error;
+  } catch { return false; }
 }
 
 export async function sbSignIn(email, password) {
