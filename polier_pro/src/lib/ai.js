@@ -198,6 +198,66 @@ Erfinde NICHTS, was im Diktat nicht vorkommt — nicht erwähnte Felder bleiben 
   }
 }
 
+// ── KI-Angebotserstellung: Positionen aus den hinterlegten Einheitspreisen ──
+// Die KI erfindet NIE einen Preis — sie bekommt den kompletten Einheitspreise-
+// Katalog der Firma mit ep_id und wählt daraus passende Positionen samt
+// geschätzter Menge aus. Der tatsächliche Preis wird danach IMMER clientseitig
+// über die ep_id aus der aktuellen einheitspreise-Liste aufgelöst (genau wie
+// beim Laden einer LV-Vorlage in AngebotEditor.vorlageLaden) — ein von der KI
+// halluzinierter Preis kann also nie ins Angebot gelangen. Passt kein
+// Katalogeintrag, liefert die KI ep_id:null; die Position landet dann mit
+// ep:0 im Angebot, damit der Nutzer den Preis manuell ergänzt statt dass die
+// KI ihn sich ausdenkt.
+export async function kiAngebotErstellen(diktat, einheitspreise, projekt, session) {
+  const katalogText = (einheitspreise || []).map(p =>
+    `id=${p.id}: ${p.gewerk} · ${p.beschreibung} · Einheit ${p.einheit}`
+  ).join("\n") || "kein Einheitspreise-Katalog hinterlegt";
+
+  const prompt = `Du bist ein erfahrener Kalkulator im Baugewerbe und erstellst aus einer Leistungsbeschreibung die Positionen für ein Angebot.
+
+Projekt: ${projekt?.name || ""}${projekt?.ort ? `, ${projekt.ort}` : ""}
+
+Verfügbarer Einheitspreise-Katalog dieser Firma (NUR daraus per id auswählen, NIE einen eigenen Preis nennen):
+${katalogText}
+
+Leistungsbeschreibung (Diktat):
+"${diktat}"
+
+Antworte NUR mit einem JSON-Objekt ohne Markdown:
+{
+  "titel": "Kurzer Angebotstitel falls aus dem Diktat ableitbar, sonst leerer String",
+  "empfaenger": "Name des Auftraggebers falls genannt, sonst leerer String",
+  "positionen": [
+    {
+      "bez": "Bezeichnung der Position",
+      "menge": 0,
+      "einheit": "m²|m³|m|t|h|Stk|pau",
+      "ep_id": 0
+    }
+  ]
+}
+Für "ep_id" ausschließlich eine id aus dem Katalog oben verwenden. Passt keine Katalogposition zur Leistung, setze "ep_id": null — erfinde NIEMALS eine eigene id oder einen eigenen Preis.`;
+
+  const data = await rufeClaudeAuf(prompt, 1500, session);
+  const text = data.content?.find(b => b.type === "text")?.text || "{}";
+  try {
+    const r = JSON.parse(text.replace(/```json|```/g, "").trim());
+    const katalogIds = new Set((einheitspreise || []).map(p => p.id));
+    return {
+      titel: r.titel || "",
+      empfaenger: r.empfaenger || "",
+      positionen: (Array.isArray(r.positionen) ? r.positionen : []).map(p => ({
+        bez: p.bez || "",
+        menge: Number(p.menge) || 0,
+        einheit: p.einheit || "Stk",
+        ep_id: katalogIds.has(p.ep_id) ? p.ep_id : null,
+      })).filter(p => p.bez),
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function kiTagesabschluss(diktat, projekt, kolonnen, wetter, session) {
   const heute = new Date().toLocaleDateString("de-DE");
   const wetterInfo = wetter

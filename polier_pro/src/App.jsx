@@ -941,21 +941,21 @@ export default function PolierApp() {
   // ── Baustellen-Ansicht ──
   // Rollenbasierte Tabs
   const ALLE_TABS = [
-    { id:"dashboard",     icon:"📊",  label:"Übersicht",   rollen:["administrator","bauleiter","polier","vorarbeiter"] },
-    { id:"aufgaben",      icon:"✅",  label:"Aufgaben",    rollen:["administrator","bauleiter","polier","vorarbeiter","facharbeiter"] },
-    { id:"gantt",         icon:"📅",  label:"Zeitplan",    rollen:["administrator","bauleiter","polier"] },
-    { id:"kosten",        icon:"💰",  label:"Kosten",      rollen:["administrator"] },
-    { id:"wetter",        icon:"🌤️", label:"Wetter",      rollen:["administrator","bauleiter","polier","vorarbeiter"] },
-    { id:"kolonnen",      icon:"👷",  label:"Kolonnen",    rollen:["administrator","bauleiter","polier","vorarbeiter"] },
-    { id:"tagebuch",      icon:"📋",  label:"Tagebuch",    rollen:["administrator","polier","vorarbeiter"] },
+    { id:"dashboard",     icon:"📊",  label:"Übersicht",   rollen:["administrator","geschaeftsfuehrer","bauleiter","polier","vorarbeiter"] },
+    { id:"aufgaben",      icon:"✅",  label:"Aufgaben",    rollen:["administrator","geschaeftsfuehrer","bauleiter","polier","vorarbeiter","facharbeiter"] },
+    { id:"gantt",         icon:"📅",  label:"Zeitplan",    rollen:["administrator","geschaeftsfuehrer","bauleiter","polier"] },
+    { id:"kosten",        icon:"💰",  label:"Kosten",      rollen:["administrator","geschaeftsfuehrer"] },
+    { id:"wetter",        icon:"🌤️", label:"Wetter",      rollen:["administrator","geschaeftsfuehrer","bauleiter","polier","vorarbeiter"] },
+    { id:"kolonnen",      icon:"👷",  label:"Kolonnen",    rollen:["administrator","geschaeftsfuehrer","bauleiter","polier","vorarbeiter"] },
+    { id:"tagebuch",      icon:"📋",  label:"Tagebuch",    rollen:["administrator","geschaeftsfuehrer","polier","vorarbeiter"] },
     { id:"stempeln",      icon:"⏱️",  label:"Stempeln",    rollen:["administrator","polier","vorarbeiter","facharbeiter"] },
-    { id:"stunden",       icon:"📊",  label:"Stunden",     rollen:["administrator","bauleiter","polier","vorarbeiter"] },
-    { id:"ki_frage",      icon:"💬",  label:"KI fragen",   rollen:["administrator","bauleiter","polier","vorarbeiter"] },
-    { id:"simulation",    icon:"🧪",  label:"Simulation",  rollen:["administrator","bauleiter","polier"] },
-    { id:"angebot",       icon:"📄",  label:"Angebot",     rollen:["administrator"] },
+    { id:"stunden",       icon:"📊",  label:"Stunden",     rollen:["administrator","geschaeftsfuehrer","bauleiter","polier","vorarbeiter"] },
+    { id:"ki_frage",      icon:"💬",  label:"KI fragen",   rollen:["administrator","geschaeftsfuehrer","bauleiter","polier","vorarbeiter"] },
+    { id:"simulation",    icon:"🧪",  label:"Simulation",  rollen:["administrator","geschaeftsfuehrer","bauleiter","polier"] },
+    { id:"angebot",       icon:"📄",  label:"Angebot",     rollen:["administrator","geschaeftsfuehrer"] },
     { id:"admin_params",  icon:"⚙️",  label:"Parameter",   rollen:["administrator"] },
     { id:"nutzer",        icon:"👥",  label:"Nutzer",      rollen:["administrator"] },
-    { id:"profil",        icon:"👤",  label:"Mein Profil", rollen:["bauleiter","polier","vorarbeiter","facharbeiter"] },
+    { id:"profil",        icon:"👤",  label:"Mein Profil", rollen:["geschaeftsfuehrer","bauleiter","polier","vorarbeiter","facharbeiter"] },
   ];
   const TABS = ALLE_TABS.filter(t => !aktiveRolle || t.rollen.includes(aktiveRolle));
 
@@ -1077,7 +1077,7 @@ export default function PolierApp() {
         {tab === "stunden"       && <StundenExportView profil={aktiveProfil} session={auth.session} projekte={projekte} darfAlleSehen={rolleConfig?.kannBearbeiten !== false && aktiveRolle !== "vorarbeiter"} />}
         {tab === "ki_frage"      && <KiFrageView projekt={projekt} aufgaben={felder} kolonnen={kolonnen} session={auth.session} />}
         {tab === "simulation"    && <SimulationView aufgaben={felder} kolonnen={kolonnen} projekt={projekt} projekte={projekte} session={auth.session} />}
-        {tab === "angebot"       && <AngebotView projekt={projekt} aufgaben={felder} einheitspreise={einheitspreise} lvVorlagen={lvVorlagen} eigeneFirma={eigeneFirma} angebote={angebote} onAngebotSpeichern={angebotSpeichern} />}
+        {tab === "angebot"       && <AngebotView projekt={projekt} aufgaben={felder} einheitspreise={einheitspreise} lvVorlagen={lvVorlagen} eigeneFirma={eigeneFirma} angebote={angebote} onAngebotSpeichern={angebotSpeichern} session={auth.session} />}
         {tab === "admin_params" && <AdminParameterView einheitspreise={einheitspreise} setEinheitspreise={setEinheitspreise} lvVorlagen={lvVorlagen} setLvVorlagen={setLvVorlagen} />}
         {tab === "nutzer"       && <NutzerVerwaltungView session={auth.session} kolonnen={kolonnen} firmaId={firma?.id} />}
         {tab === "profil"       && <MeinProfilView profil={aktiveProfil} session={auth.session} />}

@@ -1,16 +1,22 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { ClipboardList, X, CircleCheckBig, ChevronLeft, ChartColumn, FileText, Settings, Plus } from "lucide-react";
+import { ClipboardList, X, CircleCheckBig, ChevronLeft, ChartColumn, FileText, Settings, Plus, Sparkles, TriangleAlert } from "lucide-react";
 import { AUFGABEN_TYPEN } from "../config/konstanten.js";
 import { inputStyle, Label } from "../components/Label.jsx";
 import { escapeHtml } from "../lib/utils.js";
 import { druckePDF } from "../lib/pdf.jsx";
+import { DiktierFeld } from "../components/DiktierFeld.jsx";
+import { kiAngebotErstellen } from "../lib/ai.js";
 
-export function AngebotEditor({ angebot, onSave, onClose, aufgaben, einheitspreise, lvVorlagen, projekt, eigeneFirma }) {
+export function AngebotEditor({ angebot, onSave, onClose, aufgaben, einheitspreise, lvVorlagen, projekt, eigeneFirma, session }) {
   const [a,         setA]         = useState(angebot);
   const [ansicht,   setAnsicht]   = useState("positionen"); // positionen | einstellungen
   const [vonVorlage,setVonVorlage]= useState(false);
   const [vonAufgabe,setVonAufgabe]= useState(false);
+  const [vonKI,     setVonKI]     = useState(false);
+  const [kiDiktat,  setKiDiktat]  = useState("");
+  const [kiLaedt,   setKiLaedt]   = useState(false);
+  const [kiFehler,  setKiFehler]  = useState("");
 
   const netto   = a.positionen.reduce((s,p)=>s+(p.menge||0)*(p.ep||0),0);
   const rabattBetrag = netto * (a.rabatt||0)/100;
@@ -53,6 +59,36 @@ export function AngebotEditor({ angebot, onSave, onClose, aufgaben, einheitsprei
       ep:       ep?.preis || 0,
     });
     setVonAufgabe(false);
+  }
+
+  async function kiPositionenUebernehmen() {
+    if (!kiDiktat.trim() || kiLaedt) return;
+    setKiLaedt(true);
+    setKiFehler("");
+    try {
+      const ergebnis = await kiAngebotErstellen(kiDiktat, einheitspreise, projekt, session);
+      if (!ergebnis || ergebnis.positionen.length === 0) {
+        setKiFehler("Konnte aus dem Diktat keine Positionen erkennen.");
+        return;
+      }
+      const neuPos = ergebnis.positionen.map(p => {
+        const ep = einheitspreise.find(e => e.id === p.ep_id);
+        return { id:Date.now()+Math.random(), bez:p.bez, einheit:p.einheit,
+          menge:p.menge, ep:ep?.preis || 0 };
+      });
+      setA(x => ({
+        ...x,
+        positionen: [...x.positionen, ...neuPos],
+        titel: x.titel.startsWith("Angebot ") && ergebnis.titel ? ergebnis.titel : x.titel,
+        empfaenger: x.empfaenger || ergebnis.empfaenger,
+      }));
+      setKiDiktat("");
+      setVonKI(false);
+    } catch (e) {
+      setKiFehler(e.message || "KI-Anfrage fehlgeschlagen.");
+    } finally {
+      setKiLaedt(false);
+    }
   }
 
   function exportPDF() {
@@ -177,6 +213,53 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
     const link = document.createElement("a");
     link.href = url; link.download = ("Angebot_"+a.titel.replace(/ /g,"_")+".csv");
     link.click(); URL.revokeObjectURL(url);
+  }
+
+  // ── KI-Angebotserstellung als eigener Screen ──
+  if (vonKI) {
+    return createPortal(
+      <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0,
+        background:"var(--bg)", zIndex:700, overflowY:"auto",
+        WebkitOverflowScrolling:"touch" }}>
+        <div style={{ background:"var(--surface)", padding:"10px 18px",
+          paddingTop:"calc(14px + env(safe-area-inset-top))",
+          borderBottom:"3px solid var(--yellow)", position:"sticky", top:0,
+          display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+          <div style={{ color:"var(--yellow)", fontWeight:700, fontSize:16,
+            display:"flex", alignItems:"center", gap:8 }}>
+            <Sparkles size={15} /> Per KI erstellen
+          </div>
+          <button onClick={() => { setVonKI(false); setKiFehler(""); }}
+            style={{ background:"var(--surface2)", border:"1px solid var(--border)",
+              color:"var(--text)", borderRadius:8, padding:"6px 14px",
+              cursor:"pointer", fontFamily:"inherit", display:"flex" }}><X size={15} /></button>
+        </div>
+        <div style={{ padding:"14px 16px" }}>
+          <div style={{ color:"var(--muted)", fontSize:12, marginBottom:10, lineHeight:1.5 }}>
+            Beschreibe die Leistung — die KI wählt passende Positionen aus euren
+            hinterlegten Einheitspreisen und schätzt die Mengen. Preise kommen
+            immer aus dem Katalog, nie von der KI selbst.
+          </div>
+          <DiktierFeld label="Leistungsbeschreibung" value={kiDiktat} onChange={setKiDiktat} rows={4} />
+          {kiFehler && (
+            <div style={{ color:"var(--red)", fontSize:12, marginTop:8,
+              display:"flex", alignItems:"center", gap:5 }}>
+              <TriangleAlert size={13} /> {kiFehler}
+            </div>
+          )}
+          <button onClick={kiPositionenUebernehmen} disabled={!kiDiktat.trim() || kiLaedt}
+            style={{ width:"100%", marginTop:12,
+              background: kiDiktat.trim() && !kiLaedt ? "var(--yellow)" : "var(--surface2)",
+              color: kiDiktat.trim() && !kiLaedt ? "#1a1200" : "var(--muted)",
+              border:"none", borderRadius:10, padding:14, fontWeight:800,
+              cursor: kiDiktat.trim() && !kiLaedt ? "pointer" : "default", fontSize:14,
+              fontFamily:"inherit" }}>
+            {kiLaedt ? "Erstelle Positionen…" : "Positionen übernehmen"}
+          </button>
+        </div>
+      </div>,
+      document.body
+    );
   }
 
   // ── LV-Vorlage Auswahl als eigener Screen ──
@@ -337,21 +420,27 @@ body { font-family:Arial,sans-serif; font-size:10.5pt; color:#1a1a1a; }
         {ansicht === "positionen" && (
           <div>
             {/* Import-Buttons */}
-            <div style={{ display:"flex", gap:8, marginBottom:9 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:9 }}>
+              <button onClick={() => setVonKI(true)}
+                style={{ background:"var(--ybg)", color:"var(--ydark)",
+                  border:"1.5px solid var(--yellow)", borderRadius:10, padding:"9px 0",
+                  cursor:"pointer", fontSize:12, fontWeight:700,
+                  fontFamily:"inherit",
+                  display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}><Sparkles size={12} /> Per KI</button>
               <button onClick={() => setVonVorlage(true)}
-                style={{ flex:1, background:"var(--bbg)", color:"var(--blue)",
+                style={{ background:"var(--bbg)", color:"var(--blue)",
                   border:"1.5px solid var(--blue)", borderRadius:10, padding:"9px 0",
                   cursor:"pointer", fontSize:12, fontWeight:700,
                   fontFamily:"inherit",
                   display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}><ClipboardList size={12} /> Aus Vorlage</button>
               <button onClick={() => setVonAufgabe(true)}
-                style={{ flex:1, background:"var(--gbg)", color:"var(--green)",
+                style={{ background:"var(--gbg)", color:"var(--green)",
                   border:"1.5px solid var(--green)", borderRadius:10, padding:"9px 0",
                   cursor:"pointer", fontSize:12, fontWeight:700,
                   fontFamily:"inherit",
                   display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}><CircleCheckBig size={12} /> Aus Aufgaben</button>
               <button onClick={() => addPosition({ bez:"", einheit:"m²", menge:0, ep:0 })}
-                style={{ flex:1, background:"var(--surface2)", color:"var(--text)",
+                style={{ background:"var(--surface2)", color:"var(--text)",
                   border:"1.5px solid var(--border)", borderRadius:10, padding:"9px 0",
                   cursor:"pointer", fontSize:12, fontFamily:"inherit",
                   display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}><Plus size={12} /> Manuell</button>
