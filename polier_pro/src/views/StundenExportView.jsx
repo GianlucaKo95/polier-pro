@@ -1,8 +1,14 @@
 import { useState, useEffect } from "react";
 import { ChartColumn, Search, Download } from "lucide-react";
+import writeXlsxFile from "write-excel-file/browser";
 import { sbFetch } from "../lib/supabase.js";
 import { TAETIGKEITEN } from "../config/konstanten.js";
 import { Label, inputStyle } from "../components/Label.jsx";
+
+const SPALTEN = [
+  { width: 11 }, { width: 20 }, { width: 22 }, { width: 14 }, { width: 8 },
+  { width: 8 }, { width: 12 }, { width: 11 }, { width: 26 }, { width: 24 },
+];
 
 export function StundenExportView({ profil, session, projekte, darfAlleSehen = false }) {
   const [vonDatum, setVonDatum] = useState(() => {
@@ -56,9 +62,14 @@ export function StundenExportView({ profil, session, projekte, darfAlleSehen = f
   }
 
   // Pro Mitarbeiter gruppiert statt einer durchmischten Gesamtliste — mit
-  // eigener Zwischensumme je Mitarbeiter, damit "pro MA" auch in der CSV
-  // selbst klar erkennbar ist, nicht nur über eine Namensspalte.
-  function exportCSV() {
+  // eigener Zwischensumme je Mitarbeiter, damit "pro MA" auch in der Datei
+  // selbst klar erkennbar ist, nicht nur über eine Namensspalte. Echtes
+  // .xlsx statt CSV (write-excel-file, browserseitig, ohne Node-Polyfills)
+  // — SheetJS/"xlsx" von npm bringt zwei ungepatchte High-Severity-CVEs mit
+  // (Prototype Pollution, ReDoS) und war deshalb keine Option.
+  const zelle = (value, extra) => ({ value, ...extra });
+
+  async function exportExcel() {
     const gruppen = new Map();
     for (const b of buchungen) {
       const name = buchungName(b);
@@ -67,45 +78,54 @@ export function StundenExportView({ profil, session, projekte, darfAlleSehen = f
     }
     const namenSortiert = [...gruppen.keys()].sort((a,b) => a.localeCompare(b,"de"));
 
-    const rows = [["Datum","Name","Projekt","Tätigkeit","Von","Bis","Pause (min)","Netto (Std)","Adresse Start","Notiz"]];
+    const kopf = ["Datum","Name","Projekt","Tätigkeit","Von","Bis","Pause (min)","Netto (Std)","Adresse Start","Notiz"];
+    const rows = [kopf.map(t => zelle(t, { fontWeight: "bold", type: String }))];
+
     for (const name of namenSortiert) {
-      rows.push([`Mitarbeiter: ${name}`,"","","","","","","","",""]);
+      rows.push([
+        zelle(`Mitarbeiter: ${name}`, { fontWeight: "bold", type: String, columnSpan: kopf.length }),
+        ...Array(kopf.length - 1).fill(null),
+      ]);
       let summeMinuten = 0;
       for (const b of gruppen.get(name)) {
         const von = new Date(b.eingestempelt_at);
         const bis = b.ausgestempelt_at ? new Date(b.ausgestempelt_at) : null;
         summeMinuten += b.netto_minuten || 0;
         rows.push([
-          von.toLocaleDateString("de-DE"),
-          name,
-          projektName(b.projekt_id),
-          TAETIGKEITEN[b.taetigkeit]?.label || "—",
-          von.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}),
-          bis ? bis.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}) : "—",
-          b.pause_minuten || 0,
-          ((b.netto_minuten||0)/60).toFixed(2).replace(".",","),
-          b.ein_adresse || "",
-          b.notiz || "",
+          zelle(von.toLocaleDateString("de-DE"), { type: String }),
+          zelle(name, { type: String }),
+          zelle(projektName(b.projekt_id), { type: String }),
+          zelle(TAETIGKEITEN[b.taetigkeit]?.label || "—", { type: String }),
+          zelle(von.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}), { type: String }),
+          zelle(bis ? bis.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}) : "—", { type: String }),
+          zelle(b.pause_minuten || 0, { type: Number }),
+          zelle(Number(((b.netto_minuten||0)/60).toFixed(2)), { type: Number }),
+          zelle(b.ein_adresse || "", { type: String }),
+          zelle(b.notiz || "", { type: String }),
         ]);
       }
-      rows.push(["","","","","","",`Summe ${name}:`,(summeMinuten/60).toFixed(2).replace(".",","),"",""]);
+      rows.push([
+        zelle("", { type: String }), zelle("", { type: String }), zelle("", { type: String }),
+        zelle("", { type: String }), zelle("", { type: String }), zelle("", { type: String }),
+        zelle(`Summe ${name}:`, { fontWeight: "bold", type: String }),
+        zelle(Number((summeMinuten/60).toFixed(2)), { fontWeight: "bold", type: Number }),
+      ]);
       rows.push([]);
     }
     if (namenSortiert.length > 1) {
-      rows.push(["","","","","","","GESAMT (alle):",gesamtStunden.replace(".",","),"",""]);
+      rows.push([
+        zelle("", { type: String }), zelle("", { type: String }), zelle("", { type: String }),
+        zelle("", { type: String }), zelle("", { type: String }), zelle("", { type: String }),
+        zelle("GESAMT (alle):", { fontWeight: "bold", type: String }),
+        zelle(Number(gesamtStunden), { fontWeight: "bold", type: Number }),
+      ]);
     }
 
-    const csv = rows.map(r => r.map(v => '"'+String(v).replace(/"/g,'""')+'"').join(";")).join("\n");
-    const blob = new Blob(["﻿"+csv], { type:"text/csv;charset=utf-8;" });
-    const url  = URL.createObjectURL(blob);
-    const link = document.createElement("a");
     const maSuffix = gewaehlteMA !== "alle"
       ? "_" + (mitarbeiterListe.find(m => String(m.id) === String(gewaehlteMA))?.nachname || "MA")
       : "";
-    link.href = url;
-    link.download = `Stunden_${vonDatum}_bis_${bisDatum}${maSuffix}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+    await writeXlsxFile(rows, { columns: SPALTEN })
+      .toFile(`Stunden_${vonDatum}_bis_${bisDatum}${maSuffix}.xlsx`);
   }
 
   return (
@@ -169,12 +189,12 @@ export function StundenExportView({ profil, session, projekte, darfAlleSehen = f
           </div>
 
           {buchungen.length > 0 && (
-            <button onClick={exportCSV}
+            <button onClick={exportExcel}
               style={{ width:"100%", background:"var(--yellow)", color:"#1a1200",
                 border:"none", borderRadius:12, padding:14, fontWeight:800,
                 fontSize:15, cursor:"pointer", fontFamily:"inherit",
                 marginBottom:16, display:"flex", alignItems:"center", justifyContent:"center", gap:7 }}>
-              <Download size={15} /> Als CSV exportieren
+              <Download size={15} /> Als Excel exportieren
             </button>
           )}
 

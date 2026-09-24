@@ -1,6 +1,6 @@
 {
   "name": "polier-pro",
-  "version": "1.18.1",
+  "version": "1.18.2",
   "private": true,
   "scripts": {
     "dev": "vite",
@@ -12,7 +12,8 @@
     "jspdf": "^4.2.1",
     "lucide-react": "^0.462.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "write-excel-file": "^4.1.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",
