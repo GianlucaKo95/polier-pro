@@ -259,6 +259,20 @@ export const ROLLEN = {
     kannKolonneLoeschen: true,
     siehtAlleProjekte: true,
   },
+  // "Abgespeckter Admin" für Geschäftsführer/Inhaber: sieht alle Baustellen,
+  // Kosten & Angebote (inkl. KI-Angebotserstellung), aber keine
+  // Nutzerverwaltung, kein Kolonnen-Löschen und keine operative Bearbeitung
+  // von Aufgaben/Kolonnen — das bleibt Sache von Polier/Vorarbeiter/Admin.
+  geschaeftsfuehrer: {
+    label: "Geschäftsführer",
+    icon: "💼",
+    farbe: "#0F766E",
+    tabs: ["dashboard","gantt","kosten","wetter","kolonnen","tagebuch","zeiten","angebot"],
+    kannBearbeiten: false,
+    kannNutzerVerwalten: false,
+    kannKolonneLoeschen: false,
+    siehtAlleProjekte: true,
+  },
   bauleiter: {
     label: "Bauleiter",
     icon: "📋",

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FlaskConical, CloudRain, Clock3, Users, TriangleAlert, CircleCheckBig, ArrowRightLeft } from "lucide-react";
 import { terminprognose } from "../lib/terminkette.js";
 import { sbClientMitToken } from "../lib/supabase.js";
@@ -50,28 +50,40 @@ export function SimulationView({ aufgaben = [], kolonnen = [], projekt, projekte
   const [ergebnis, setErgebnis] = useState(null);
   const [ergebnisFehler, setErgebnisFehler] = useState("");
 
-  async function andereBaustelleLaden(id) {
-    setAndereProjektId(id);
+  // Lädt automatisch neu, sobald sich andereProjektId ändert — auch beim
+  // allerersten Render mit dem von useState vorbelegten Default (z.B. bei
+  // genau einer anderen Baustelle). Vorher hing das Laden ausschließlich am
+  // onChange-Handler des <select>: der von useState() vorausgewählte Wert
+  // löste beim Mount kein onChange aus, "Von Kolonne" blieb leer, und
+  // "Simulieren" war dauerhaft deaktiviert (disabled hängt an !andereDaten)
+  // — ohne jede Fehlermeldung. Admins mit genau zwei Baustellen (der
+  // Normalfall) konnten "Mitarbeiter verschieben" dadurch nie benutzen.
+  useEffect(() => {
     setAndereDaten(null);
     setQuelleKolonne("");
     setAndereFehler("");
-    if (!id || !session?.access_token) return;
+    if (!andereProjektId || !session?.access_token) return;
+    let abgebrochen = false;
     setAndereLaden(true);
-    try {
-      const client = sbClientMitToken(session);
-      const [aRes, kRes] = await Promise.all([
-        client.from("aufgaben").select("*").eq("projekt_id", id),
-        client.from("kolonnen").select("*").eq("projekt_id", id),
-      ]);
-      if (aRes.error || kRes.error) throw new Error(aRes.error?.message || kRes.error?.message);
+    const client = sbClientMitToken(session);
+    Promise.all([
+      client.from("aufgaben").select("*").eq("projekt_id", andereProjektId),
+      client.from("kolonnen").select("*").eq("projekt_id", andereProjektId),
+    ]).then(([aRes, kRes]) => {
+      if (abgebrochen) return;
+      if (aRes.error || kRes.error) {
+        setAndereFehler("Baustelle konnte nicht geladen werden: " + (aRes.error?.message || kRes.error?.message));
+        return;
+      }
       setAndereDaten({ aufgaben: aRes.data || [], kolonnen: kRes.data || [] });
       setQuelleKolonne(kRes.data?.[0]?.name ?? "");
-    } catch (e) {
-      setAndereFehler("Baustelle konnte nicht geladen werden: " + e.message);
-    } finally {
-      setAndereLaden(false);
-    }
-  }
+    }).catch(e => {
+      if (!abgebrochen) setAndereFehler("Baustelle konnte nicht geladen werden: " + e.message);
+    }).finally(() => {
+      if (!abgebrochen) setAndereLaden(false);
+    });
+    return () => { abgebrochen = true; };
+  }, [andereProjektId, session?.access_token]);
 
   function skaliereDauer(aufgabenListe, kolonneName, altAnzahl, neuAnzahl) {
     if (altAnzahl <= 0) return aufgabenListe;
@@ -241,7 +253,7 @@ export function SimulationView({ aufgaben = [], kolonnen = [], projekt, projekte
               </div>
               <div style={{ marginBottom:9 }}>
                 <Label>Von Baustelle</Label>
-                <select value={andereProjektId} onChange={e => andereBaustelleLaden(e.target.value)}
+                <select value={andereProjektId} onChange={e => setAndereProjektId(e.target.value)}
                   style={{ ...inputStyle(), padding:"11px 12px" }}>
                   {andereProjekte.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>

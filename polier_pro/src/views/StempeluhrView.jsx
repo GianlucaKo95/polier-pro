@@ -28,6 +28,11 @@ export function StempeluhrView({ profil, projekte, session, kolonnen = [], aufga
   const [notiz,       setNotiz]       = useState("");
   const [taetigkeit,  setTaetigkeit]  = useState("beton");
   const [aufgabeId,   setAufgabeId]   = useState(null);
+  // Sobald eine Aufgabe mit passendem Typ gewählt wird, ist die Tätigkeit
+  // dadurch bereits eindeutig vorgegeben — die volle Auswahl-Chipleiste
+  // wäre dann nur noch redundanter Klickaufwand. true = Chipleiste
+  // eingeklappt (nur noch Zusammenfassung mit "Ändern"-Option).
+  const [taetigkeitEingeklappt, setTaetigkeitEingeklappt] = useState(false);
   const [zeigeSammel, setZeigeSammel] = useState(false);
   useBackButton(zeigeSammel, () => setZeigeSammel(false));
 
@@ -357,24 +362,55 @@ export function StempeluhrView({ profil, projekte, session, kolonnen = [], aufga
           </div>
           <div style={{ marginBottom:12 }}>
             <Label>Tätigkeit</Label>
-            <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginTop:6 }}>
-              {Object.entries(TAETIGKEITEN).map(([key, t]) => (
-                <button key={key} onClick={() => setTaetigkeit(key)}
-                  style={{ background: taetigkeit===key ? "var(--ink)" : "var(--surface)",
-                    color: taetigkeit===key ? "#fff" : "var(--text2)",
-                    border:`1px solid ${taetigkeit===key ? "var(--ink)" : "var(--border2)"}`,
-                    padding:"10px 14px", cursor:"pointer",
-                    fontSize:12.5, fontWeight: taetigkeit===key ? 700 : 600,
-                    fontFamily:"inherit" }}>
-                  {t.icon} {t.label}
-                </button>
-              ))}
-            </div>
+            {taetigkeitEingeklappt ? (
+              <div onClick={() => setTaetigkeitEingeklappt(false)}
+                style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+                  background:"var(--ink)", color:"#fff", padding:"10px 14px",
+                  cursor:"pointer", marginTop:6 }}>
+                <span style={{ fontSize:12.5, fontWeight:700 }}>
+                  {TAETIGKEITEN[taetigkeit]?.icon} {TAETIGKEITEN[taetigkeit]?.label}
+                  <span style={{ fontWeight:500, color:"var(--ink-text2)", marginLeft:7 }}>
+                    · von Aufgabe übernommen
+                  </span>
+                </span>
+                <span style={{ fontSize:11.5, fontWeight:700, textDecoration:"underline" }}>Ändern</span>
+              </div>
+            ) : (
+              <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginTop:6 }}>
+                {Object.entries(TAETIGKEITEN).map(([key, t]) => (
+                  <button key={key} onClick={() => setTaetigkeit(key)}
+                    style={{ background: taetigkeit===key ? "var(--ink)" : "var(--surface)",
+                      color: taetigkeit===key ? "#fff" : "var(--text2)",
+                      border:`1px solid ${taetigkeit===key ? "var(--ink)" : "var(--border2)"}`,
+                      padding:"10px 14px", cursor:"pointer",
+                      fontSize:12.5, fontWeight: taetigkeit===key ? 700 : 600,
+                      fontFamily:"inherit" }}>
+                    {t.icon} {t.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           {offeneAufgaben.length > 0 && (
             <div style={{ marginBottom:12 }}>
               <Label>Aufgabe (optional)</Label>
-              <select value={aufgabeId ?? ""} onChange={e => setAufgabeId(e.target.value ? Number(e.target.value) : null)}
+              <select value={aufgabeId ?? ""} onChange={e => {
+                  const id = e.target.value ? Number(e.target.value) : null;
+                  setAufgabeId(id);
+                  const gewaehlte = offeneAufgaben.find(a => a.id === id);
+                  // Aufgaben- und Tätigkeitstypen teilen sich dieselben
+                  // Schlüssel für Beton/Schalung/Bewehrung/Abdichtung/Estrich
+                  // (TAETIGKEITEN hat zusätzlich Aufräumen/Transport/
+                  // Vorarbeit/Sonstiges, AUFGABEN_TYPEN zusätzlich Allgemein/
+                  // Mangel) — nur bei einem gemeinsamen Schlüssel automatisch
+                  // übernehmen, sonst bleibt die Auswahl dem Nutzer überlassen.
+                  if (gewaehlte && TAETIGKEITEN[gewaehlte.typ]) {
+                    setTaetigkeit(gewaehlte.typ);
+                    setTaetigkeitEingeklappt(true);
+                  } else {
+                    setTaetigkeitEingeklappt(false);
+                  }
+                }}
                 style={{ ...inputStyle(), padding:"11px 12px" }}>
                 <option value="">— keine bestimmte Aufgabe —</option>
                 {offeneAufgaben.map(a => (
